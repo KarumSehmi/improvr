@@ -61,6 +61,20 @@ If you already logged some days in local mode, use **More → Export backup** be
 
 Open the site in **Safari → Share → Add to Home Screen**. It then opens full-screen like an app, works offline and syncs when it has signal.
 
+### 4. Your own domain (improvr.karum.co.uk)
+
+Put Improvr on a subdomain so it doesn't touch the main karum.co.uk site.
+
+1. **Vercel** → your project → **Settings → Domains** → type `improvr.karum.co.uk` → **Add**. Vercel then shows a **CNAME** record to create. Leave that page open.
+2. **GoDaddy** → **Domain Portfolio** → `karum.co.uk` → **DNS** → **Add New Record**:
+   - Type: **CNAME**
+   - Name: **improvr**
+   - Value: the target Vercel showed (usually `cname.vercel-dns.com`)
+   - TTL: leave the default
+   Save. Don't change the existing `@` / `www` records, because those are your main site.
+3. Back in Vercel, wait for the domain to turn green (a few minutes, occasionally up to an hour). HTTPS is set up automatically.
+4. On your iPhone, open **https://improvr.karum.co.uk** in Safari → Share → **Add to Home Screen** (delete any old home-screen icon from the vercel.app address first), then sign in.
+
 ---
 
 ## Changing things
@@ -68,6 +82,8 @@ Open the site in **Safari → Share → Add to Home Screen**. It then opens full
 Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days) and **More → Settings** (fine amount, charity, donate link, gym target, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
 
 ## Running locally
+
+Needs Node **20.19+** or **22.12+** (`node -v` to check). Run `npm install` once after cloning; until you do, VS Code shows "Cannot find type definition file for 'vite/client'" errors.
 
 ```bash
 npm install
