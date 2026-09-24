@@ -3,7 +3,7 @@ import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBottle, IconBottleFilled } from '@tabler/icons-react';
 import type { MouseEvent, ReactNode } from 'react';
-import { WATER_TARGET, scheduleLabel } from '../lib/config';
+import { BONUS, WATER_TARGET, scheduleLabel } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import type { ItemEval, Streak } from '../lib/engine';
@@ -193,6 +193,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           meta={
             <>
               {missed && log?.times?.[id] && <Meta c="red.4">~{log.times[id]}</Meta>}
+              {log?.sleepAuto && <Meta>⌚ {id === 'sleep' ? log.sleepAuto.asleep : log.sleepAuto.awake}</Meta>}
               {meta}
             </>
           }
@@ -334,15 +335,19 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
 
     case 'avoid': {
       const answer = log?.avoid?.[id];
+      const allowance = item.allowance;
+      const urges = log?.urges?.[id] ?? 0;
+      const slipLabel = habit.weeklyLimit ? (id === 'alcohol' ? 'Drank' : 'Did it') : 'Slipped';
       const choose = (value: 'clean' | 'slip', e: MouseEvent) => {
         const next = answer === value ? undefined : value;
         if (next === 'clean') reward(e);
         if (next === 'slip') {
-          notifications.show({
-            color: 'gray',
-            title: 'Logged. Honesty beats streaks.',
-            message: 'Tomorrow is a fresh start — be better than today.',
-          });
+          const usedAfter = (allowance?.used ?? 0) + 1;
+          if (allowance && usedAfter <= allowance.limit) {
+            notifications.show({ color: 'orange', title: 'Logged — within your allowance', message: `That's ${usedAfter} of ${allowance.limit} for this week. Streak's safe.` });
+          } else {
+            notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Tomorrow is a fresh start — be better than today.' });
+          }
         }
         set((l) => {
           const avoid = { ...l.avoid };
@@ -358,13 +363,47 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           color={color}
           label={habit.label}
           focus={focus}
-          state={answer === 'clean' ? 'done' : answer === 'slip' ? 'missed' : undefined}
-          meta={meta}
+          state={answer === 'clean' ? 'done' : missed ? 'missed' : undefined}
+          meta={
+            <>
+              {allowance && allowance.limit > 0 && (
+                <Meta c={allowance.used > allowance.limit ? 'red.4' : allowance.used === allowance.limit ? 'orange.4' : 'dimmed'}>
+                  {allowance.used}/{allowance.limit} this week
+                </Meta>
+              )}
+              {meta}
+              <Tap
+                aria-label="I beat an urge"
+                onClick={(e) => {
+                  if (urges < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
+                  pop(e);
+                  set((l) => {
+                    l.urges = { ...l.urges, [id]: urges + 1 };
+                  });
+                  notifications.show({
+                    color: 'teal',
+                    title: `💪 Urge beaten${urges ? ` (${urges + 1} today)` : ''}`,
+                    message: 'Cravings peak and pass in about 10 minutes. Ride it out.',
+                  });
+                }}
+              >
+                <Badge component="div" size="sm" variant="light" color="grape" style={{ textTransform: 'none', cursor: 'pointer' }}>
+                  💪 {urges ? `${urges} urge${urges === 1 ? '' : 's'} beaten` : 'beat an urge'}
+                </Badge>
+              </Tap>
+            </>
+          }
           right={
             <Group gap={6} wrap="nowrap">
-              <Tap onClick={(e) => choose('slip', e)} aria-label="Slipped">
-                <Button component="div" size="compact-sm" variant={answer === 'slip' ? 'filled' : 'default'} color="red" px={10}>
-                  Slipped
+              <Tap onClick={(e) => choose('slip', e)} aria-label={slipLabel}>
+                <Button
+                  component="div"
+                  size="compact-sm"
+                  variant={answer === 'slip' ? 'filled' : 'default'}
+                  color={answer === 'slip' && allowance?.allowed ? 'orange' : 'red'}
+                  px={10}
+                >
+                  {slipLabel}
                 </Button>
               </Tap>
               <Tap onClick={(e) => choose('clean', e)} aria-label="Clean">

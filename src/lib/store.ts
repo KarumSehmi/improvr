@@ -6,11 +6,23 @@ import type { AppData, Birthday, CalEvent, DayLog, Payment, Settings } from './t
 export type Collection = 'days' | 'events' | 'birthdays' | 'payments';
 export const COLLECTIONS: Collection[] = ['days', 'events', 'birthdays', 'payments'];
 
+/** What the background server last reported (notifications, buddy email, Apple Watch sleep). */
+export interface ServerStatus {
+  lastRun?: number;
+  emailReady?: boolean;
+  lastEmail?: number;
+  lastSleep?: { date: string; asleep: string; awake: string; at: number };
+}
+
 export interface AppState extends AppData {
   status: 'loading' | 'signedOut' | 'ready';
   mode: 'local' | 'cloud';
   email: string | null;
+  uid: string | null;
   syncError: string | null;
+  server: ServerStatus | null;
+  /** Devices signed up for notifications. */
+  pushDevices: number;
 }
 
 /** Where writes go. Local mode saves to localStorage, cloud mode to Firestore. */
@@ -29,7 +41,10 @@ export const useApp = create<AppState>()(() => ({
   status: 'loading',
   mode: 'local',
   email: null,
+  uid: null,
   syncError: null,
+  server: null,
+  pushDevices: 0,
 }));
 
 let backend: Backend | null = null;

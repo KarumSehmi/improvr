@@ -2,7 +2,7 @@ import { Badge, Card, Group, Progress, RollingNumber, Stack, Text, Title, Unstyl
 import type { ReactNode } from 'react';
 import { QUOTE, type Habit } from '../lib/config';
 import { fmt, type DateKey } from '../lib/dates';
-import { grade, type DayEval, type Summary } from '../lib/engine';
+import { grade, totalSaved, type DayEval, type Summary } from '../lib/engine';
 import { goTo } from '../lib/hooks';
 import { ScoreRing } from './ui';
 
@@ -38,6 +38,7 @@ export default function HeroCard({ date, isToday, evaluation: e, yesterdayPct, s
   const { level, logStreak, habitStreaks, trainingStreak } = summary;
   const vape = habitStreaks.vape;
   const beating = yesterdayPct != null && pct > yesterdayPct;
+  const saved = totalSaved(summary);
 
   return (
     <Stack gap="md">
@@ -115,6 +116,11 @@ export default function HeroCard({ date, isToday, evaluation: e, yesterdayPct, s
           {vape && (
             <Pill emoji="🚭" color="teal">
               {vape.current} vape-free
+            </Pill>
+          )}
+          {saved != null && saved > 0 && (
+            <Pill emoji="💰" color="green">
+              £{saved} saved
             </Pill>
           )}
           <Pill emoji="💪" color="grape">

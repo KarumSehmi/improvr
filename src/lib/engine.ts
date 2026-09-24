@@ -96,8 +96,10 @@ export interface ItemEval {
   done: boolean;
   skipped: boolean;
   overdueDays: number;
-  /** Explicit "no" (missed sleep/wake target, or slipped). */
+  /** Explicit "no" (missed sleep/wake target, or slipped past your allowance). */
   missed: boolean;
+  /** Stay-clean habits with a weekly allowance: slips used this week so far. */
+  allowance?: { used: number; limit: number; allowed: boolean };
 }
 
 export interface DayEval {
@@ -132,8 +134,18 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed: false };
     }
     const done = isDone(habit, log);
-    // Only an honest "no" is a miss (slipped, or late night / late up). Unticking something isn't.
-    const missed = habit.kind === 'avoid' ? log?.avoid?.[habit.id] === 'slip' : habit.kind === 'time' && log?.done?.[habit.id] === false;
+    if (habit.kind === 'avoid') {
+      const slipped = log?.avoid?.[habit.id] === 'slip';
+      if (habit.weeklyLimit != null) {
+        // e.g. one drinking night a week is fine; the second one counts as a slip.
+        const used = slipsThisWeek(data, habit.id, date);
+        const allowed = slipped && used <= habit.weeklyLimit;
+        return { habit, visible: true, required: true, done: done || allowed, skipped: false, overdueDays: 0, missed: slipped && !allowed, allowance: { used, limit: habit.weeklyLimit, allowed } };
+      }
+      return { habit, visible: true, required: true, done, skipped: false, overdueDays: 0, missed: slipped };
+    }
+    // Only an honest "no" is a miss (late night / late up). Unticking something isn't.
+    const missed = habit.kind === 'time' && log?.done?.[habit.id] === false;
     return { habit, visible: true, required: true, done, skipped: false, overdueDays: 0, missed };
   });
 
@@ -146,12 +158,21 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
   const perfect = !dayOff && required > 0 && completed === required;
 
   const workouts = new Set(log?.workouts ?? []);
-  let points = items.reduce((sum, i) => sum + (i.done ? i.habit.points : 0), 0);
+  // A slip inside your allowance keeps the streak alive but doesn't earn XP.
+  let points = items.reduce((sum, i) => sum + (i.done && !i.allowance?.allowed ? i.habit.points : 0), 0);
+  for (const n of Object.values(log?.urges ?? {})) points += BONUS.urge * Math.min(n, BONUS.urgeCap);
   points += WORKOUTS.reduce((sum, w) => sum + (workouts.has(w.id) ? w.points : 0), 0);
   if (onTime) points += BONUS.loggedOnTime;
   if (perfect) points += BONUS.perfectDay;
 
   return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size };
+}
+
+/** Slip days for a habit from Monday up to and including `date`. */
+export function slipsThisWeek(data: Pick<AppData, 'days'>, habitId: string, date: DateKey): number {
+  let n = 0;
+  for (let d = weekStart(date); d <= date; d = addDays(d, 1)) if (data.days[d]?.avoid?.[habitId] === 'slip') n++;
+  return n;
 }
 
 export function grade(pct: number | null): { letter: string; color: string } {
@@ -245,6 +266,7 @@ export interface WeekTraining {
 
 export interface Summary {
   today: DateKey;
+  settings: Settings;
   habits: Habit[];
   tracks: Record<string, ChoreTrack>;
   evals: DayEval[];
@@ -311,6 +333,7 @@ export function summarize(data: AppData, today: DateKey): Summary {
 
   return {
     today,
+    settings: data.settings,
     habits,
     tracks,
     evals,
@@ -347,6 +370,12 @@ export interface SlipStats {
   cleanDays: number;
   daysSinceSlip: number | null;
   lastSlip: DateKey | null;
+  urges7: number;
+  urgesPrev7: number;
+  urgesAll: number;
+  /** £ not spent: clean days × what it cost per day (null if you haven't set a cost). */
+  saved: number | null;
+  savedSinceSlip: number | null;
 }
 
 export function slipStats(summary: Summary): SlipStats[] {
@@ -356,19 +385,64 @@ export function slipStats(summary: Summary): SlipStats[] {
     let slips30 = 0;
     let slipsAll = 0;
     let cleanDays = 0;
+    let cleanSinceSlip = 0;
+    let urges7 = 0;
+    let urgesPrev7 = 0;
+    let urgesAll = 0;
     let lastSlip: DateKey | null = null;
     for (const e of evals) {
       const a = e.log?.avoid?.[habit.id];
-      if (a === 'clean') cleanDays++;
+      const u = e.log?.urges?.[habit.id] ?? 0;
+      const ago = diffDays(today, e.date);
+      urgesAll += u;
+      if (ago < 7) urges7 += u;
+      else if (ago < 14) urgesPrev7 += u;
+      if (a === 'clean') {
+        cleanDays++;
+        cleanSinceSlip++;
+      }
       if (a !== 'slip') continue;
+      cleanSinceSlip = 0;
       slipsAll++;
       lastSlip = e.date;
-      const ago = diffDays(today, e.date);
       if (ago < 7) slips7++;
       if (ago < 30) slips30++;
     }
-    return { habit, slips7, slips30, slipsAll, cleanDays, lastSlip, daysSinceSlip: lastSlip ? diffDays(today, lastSlip) : null };
+    const perDay = (summary.settings.costPerWeek?.[habit.id] ?? 0) / 7;
+    return {
+      habit,
+      slips7,
+      slips30,
+      slipsAll,
+      cleanDays,
+      lastSlip,
+      daysSinceSlip: lastSlip ? diffDays(today, lastSlip) : null,
+      urges7,
+      urgesPrev7,
+      urgesAll,
+      saved: perDay > 0 ? Math.round(cleanDays * perDay) : null,
+      savedSinceSlip: perDay > 0 ? Math.round(cleanSinceSlip * perDay) : null,
+    };
   });
+}
+
+/** Total £ saved across every stay-clean habit you've given a cost to (null if none set). */
+export function totalSaved(summary: Summary): number | null {
+  const list = slipStats(summary).filter((s) => s.saved != null);
+  return list.length ? list.reduce((sum, s) => sum + (s.saved ?? 0), 0) : null;
+}
+
+/** Longest run of days actually answered "Clean" (allowances and days off don't extend it). */
+export function cleanBest(summary: Summary, habitId: string): number | null {
+  if (!summary.habits.some((h) => h.id === habitId)) return null;
+  let best = 0;
+  let run = 0;
+  for (const e of summary.evals) {
+    const a = e.log?.avoid?.[habitId];
+    if (a === 'clean') best = Math.max(best, ++run);
+    else if (a === 'slip' || (!e.dayOff && !isOpen(e.date, summary.today))) run = 0;
+  }
+  return best;
 }
 
 /** Completion % for a habit over the last `n` days (only days it was required, excluding days off). */

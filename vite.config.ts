@@ -27,6 +27,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Push notification handlers live in public/push-sw.js
+        importScripts: ['push-sw.js'],
+        // Never answer API calls with the cached app shell
+        navigateFallbackDenylist: [/^\/api\//],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),

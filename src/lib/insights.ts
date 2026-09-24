@@ -4,7 +4,7 @@
  */
 import { WEEKDAYS } from './config';
 import { addDays, diffDays, weekday, weekStart } from './dates';
-import { habitRates, weekStats, type DayEval, type Summary } from './engine';
+import { habitRates, slipStats, weekStats, type DayEval, type Summary } from './engine';
 
 export interface Insight {
   id: string;
@@ -60,6 +60,17 @@ export function insights(summary: Summary): Insight[] {
     .sort((a, b) => Number(!!b.h.important) - Number(!!a.h.important) || b.s.current - a.s.current)[0];
   if (record) {
     out.push({ id: `record-${record.h.id}`, emoji: '🏆', tone: 'good', weight: 92, text: `You're on your best-ever "${record.h.label.toLowerCase()}" run: ${record.s.current} days. Don't break it.` });
+  }
+
+  // Cravings fading, and money kept in your pocket
+  for (const s of slipStats(summary)) {
+    const label = s.habit.label.replace(/^No /, '').toLowerCase();
+    if (s.urgesPrev7 >= 3 && s.urges7 < s.urgesPrev7) {
+      out.push({ id: `urges-${s.habit.id}`, emoji: '🌊', tone: 'good', weight: 84, text: `Cravings for ${label} are fading: ${s.urges7} this week vs ${s.urgesPrev7} the week before.` });
+    }
+    if (s.saved != null && s.saved >= 5) {
+      out.push({ id: `saved-${s.habit.id}`, emoji: '💷', tone: 'good', weight: 76, text: `Staying off ${label} has saved you £${s.saved}${s.savedSinceSlip != null && s.savedSinceSlip !== s.saved ? ` (£${s.savedSinceSlip} since your last slip)` : ''}.` });
+    }
   }
 
   // Sleep & wake → how the rest of the day goes

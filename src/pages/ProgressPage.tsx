@@ -135,6 +135,20 @@ function CleanCard({ summary }: { summary: Summary }) {
                   </Text>
                 </div>
               </SimpleGrid>
+              {(s.urgesAll > 0 || s.saved != null) && (
+                <Group gap="md" mt={6}>
+                  {s.urgesAll > 0 && (
+                    <Text size="xs" fw={600} c="grape.3">
+                      💪 {s.urges7} urges beaten this week ({s.urgesAll} total)
+                    </Text>
+                  )}
+                  {s.saved != null && (
+                    <Text size="xs" fw={600} c="teal.4">
+                      💰 £{s.saved} saved{s.savedSinceSlip != null && s.savedSinceSlip !== s.saved ? ` · £${s.savedSinceSlip} since last slip` : ''}
+                    </Text>
+                  )}
+                </Group>
+              )}
             </Card>
           );
         })}

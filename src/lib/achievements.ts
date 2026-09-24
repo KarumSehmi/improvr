@@ -1,6 +1,6 @@
 /** Badges you unlock along the way. Each has a progress value so locked ones show how close you are. */
 import { weekStart } from './dates';
-import { weekStats, type Summary } from './engine';
+import { cleanBest, slipStats, totalSaved, weekStats, type Summary } from './engine';
 
 export interface Achievement {
   id: string;
@@ -38,7 +38,10 @@ const DEFS: Def[] = [
   { id: 'porn-7', emoji: '🧠', title: 'Clear Head', detail: '7 days porn-free', target: 7, value: best('porn') },
   { id: 'porn-30', emoji: '🔋', title: 'Rewired', detail: '30 days porn-free', target: 30, value: best('porn') },
   { id: 'porn-90', emoji: '🧘', title: 'Reboot Complete', detail: '90 days porn-free', target: 90, value: best('porn') },
-  { id: 'dry-14', emoji: '🥤', title: 'Dry Fortnight', detail: '14 days without alcohol', target: 14, value: best('alcohol') },
+  { id: 'dry-14', emoji: '🥤', title: 'Dry Fortnight', detail: '14 days without a drink', target: 14, value: (s) => cleanBest(s, 'alcohol') },
+  { id: 'urge-10', emoji: '🌊', title: 'Urge Surfer', detail: 'Beat 10 cravings', target: 10, value: (s) => slipStats(s).reduce((n, x) => n + x.urgesAll, 0) },
+  { id: 'urge-50', emoji: '🗿', title: 'Iron Will', detail: 'Beat 50 cravings', target: 50, value: (s) => slipStats(s).reduce((n, x) => n + x.urgesAll, 0) },
+  { id: 'saved-100', emoji: '💷', title: 'Ton Saved', detail: 'Save £100 by staying clean', target: 100, value: (s) => totalSaved(s) },
   { id: 'gym-1', emoji: '💪', title: 'Target Hit', detail: 'Hit your weekly training target', target: 1, value: (s) => s.weeks.filter((w) => w.outcome === 'success').length },
   { id: 'gym-4', emoji: '🏋️', title: 'Month of Gains', detail: '4 weeks in a row hitting your target', target: 4, value: (s) => s.trainingStreak.best },
   { id: 'gym-12', emoji: '🦍', title: 'Beast Mode', detail: '12 weeks in a row hitting your target', target: 12, value: (s) => s.trainingStreak.best },

@@ -33,6 +33,8 @@ export interface Habit {
   missPrompt?: string;
   /** Added part-way through — days before this don't count. */
   since?: DateKey;
+  /** Stay-clean habits only: slips allowed per Mon–Sun week before it counts as a miss. */
+  weeklyLimit?: number;
   custom?: boolean;
 }
 
@@ -106,7 +108,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   // Stayed clean
   { id: 'vape', label: 'No vaping', emoji: '🚭', section: 'clean', kind: 'avoid', points: 25, important: true },
   { id: 'porn', label: 'No porn', emoji: '🔞', section: 'clean', kind: 'avoid', points: 20 },
-  { id: 'alcohol', label: 'No alcohol', emoji: '🍺', section: 'clean', kind: 'avoid', points: 10 },
+  { id: 'alcohol', label: 'No alcohol', emoji: '🍺', section: 'clean', kind: 'avoid', points: 10, weeklyLimit: 1 },
   { id: 'caffeine', label: 'No caffeine after 2pm', emoji: '☕', section: 'clean', kind: 'avoid', points: 10 },
 ];
 
@@ -120,8 +122,10 @@ export function habitsFor(settings: Settings): Habit[] {
   if (hit) return hit;
   const hidden = new Set(settings.hiddenHabits ?? []);
   const overrides = settings.scheduleOverrides ?? {};
-  const builtIn = BUILT_IN_HABITS.filter((h) => !hidden.has(h.id)).map((h) => (overrides[h.id] ? { ...h, schedule: overrides[h.id] } : h));
-  const custom = (settings.customHabits ?? []).filter((h) => !hidden.has(h.id)).map((h) => ({ ...h, custom: true }));
+  const limits = settings.weeklyLimits ?? {};
+  const withLimit = (h: Habit) => (h.kind === 'avoid' && limits[h.id] != null ? { ...h, weeklyLimit: limits[h.id] } : h);
+  const builtIn = BUILT_IN_HABITS.filter((h) => !hidden.has(h.id)).map((h) => withLimit(overrides[h.id] ? { ...h, schedule: overrides[h.id] } : h));
+  const custom = (settings.customHabits ?? []).filter((h) => !hidden.has(h.id)).map((h) => withLimit({ ...h, custom: true }));
   // Keep section order stable: each custom habit goes after the built-ins of its section.
   const order = SECTIONS.map((s) => s.id);
   const all = [...builtIn, ...custom].sort((a, b) => order.indexOf(a.section) - order.indexOf(b.section));
@@ -149,6 +153,9 @@ export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: 
 export const BONUS = {
   loggedOnTime: 10,
   perfectDay: 25,
+  /** Per craving beaten, up to `urgeCap` a day per habit. */
+  urge: 5,
+  urgeCap: 3,
 };
 
 export const MOODS = [

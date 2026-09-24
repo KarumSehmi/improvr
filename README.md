@@ -23,7 +23,12 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
-- **More** – fines (with a one-tap donate link), reminders, habits, the rules, settings, sync and backup.
+- **🔔 Smart notifications** – only when something needs doing: morning routine not done, caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
+- **🤝 Accountability buddy** – a friend gets a private link with your grade, streaks, slips (optional) and fines owed, updated every 15 minutes even if you stop opening the app. There's also a one-tap weekly report to send them, plus an automatic Sunday email if you set up Gmail.
+- **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what vaping etc. cost you per week and see £ saved.
+- **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
+- **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning.
+- **More** – fines (with a one-tap donate link), notifications, buddy, Apple Watch, habits, the rules, settings, sync and backup.
 
 ## The rules (lenient but strict)
 
@@ -75,6 +80,40 @@ Put Improvr on a subdomain so it doesn't touch the main karum.co.uk site.
 3. Back in Vercel, wait for the domain to turn green (a few minutes, occasionally up to an hour). HTTPS is set up automatically.
 4. On your iPhone, open **https://improvr.karum.co.uk** in Safari → Share → **Add to Home Screen** (delete any old home-screen icon from the vercel.app address first), then sign in.
 
+### 5. Update the security rules (for the buddy link)
+
+Firebase → Firestore Database → **Rules** → paste the new contents of [`firestore.rules`](firestore.rules) → **Publish**. This lets someone with your exact buddy link read that one page, and nothing else.
+
+---
+
+## Extras (all optional, all free)
+
+These need one "server key" from Firebase. Get it once and paste it in two places.
+
+**Get the key:** Firebase console → ⚙️ **Project settings** → **Service accounts** → **Generate new private key**. A `.json` file downloads. Open it and copy everything. ⚠️ Keep it secret: never commit it or post it anywhere.
+
+### 🔔 Smart notifications + 🤝 buddy page (GitHub)
+
+1. GitHub → the `improvr` repo → **Settings → Secrets and variables → Actions → New repository secret**.
+   - Name: `FIREBASE_SERVICE_ACCOUNT`
+   - Value: paste the whole JSON.
+2. **Actions** tab. If GitHub asks, click **"I understand my workflows, go ahead and enable them"**. The **Notify** job then runs every 15 minutes, for free since the repo is public.
+3. On your iPhone, open Improvr **from the Home Screen icon** → More → Notifications → **Turn on notifications** → Allow.
+4. Test it: GitHub → Actions → **Notify** → **Run workflow** → tick *Send a test notification* → Run. Your phone should buzz within a minute.
+
+> GitHub pauses scheduled jobs on public repos after 60 days with no commits. If notifications stop, go to Actions → Notify → **Enable workflow**.
+
+**Buddy weekly email (optional).** To have your buddy emailed every Sunday evening automatically, add two more secrets:
+- `GMAIL_USER`: a Gmail address to send from.
+- `GMAIL_APP_PASSWORD`: Google Account → Security → turn on 2-Step Verification → search **App passwords** → create one called "Improvr" → paste the 16-letter password.
+
+Without these, the buddy link still works, and you can tap **Send this week's report** to send it on WhatsApp/iMessage.
+
+### ⌚ Apple Watch sleep (Vercel)
+
+1. Vercel → your project → **Settings → Environment Variables** → add `FIREBASE_SERVICE_ACCOUNT` with the same JSON → Save → **Deployments → ⋯ → Redeploy**.
+2. In the app: More → Apple Watch sleep → **Set it up**, and follow the steps to build the Shortcut (it shows your personal key and URL to copy).
+
 ---
 
 ## Changing things
@@ -88,8 +127,8 @@ Needs Node **20.19+** or **22.12+** (`node -v` to check). Run `npm install` once
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # logic tests (streaks, carry-over, fines, day off, insights, badges, reminders)
+npm test         # logic tests (streaks, fines, day off, insights, badges, notifications, buddy, sleep)
 npm run build
 ```
 
-Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.
+Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), web-push + GitHub Actions (notifications), nodemailer (buddy email), a Vercel function (Apple Watch sleep), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.

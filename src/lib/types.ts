@@ -21,6 +21,10 @@ export interface DayLog {
   note?: string;
   /** 1 (awful) – 5 (great). Optional, used for insights. */
   mood?: number;
+  /** Cravings you felt and beat, per stay-clean habit. */
+  urges?: Record<string, number>;
+  /** Sleep times sent from your Apple Watch via the iPhone Shortcut. */
+  sleepAuto?: { asleep: string; awake: string; at: number };
   /** When the day was locked in. Must be before the deadline to avoid a fine. */
   closedAt?: number | null;
   dayOff?: boolean;
@@ -82,6 +86,26 @@ export interface Settings {
   seenAchievements?: string[];
   onboarded?: boolean;
   reminders?: ReminderSettings;
+
+  /** IANA time zone of your phone, so the notification server knows your local time. */
+  timeZone?: string;
+  /** Web address the app was last opened on, for links in notifications and the buddy email. */
+  appUrl?: string;
+  /** Smart notifications you've switched off (missing = on). */
+  notify?: Record<string, boolean>;
+  /** What each stay-clean habit used to cost you per week, in £. */
+  costPerWeek?: Record<string, number>;
+  /** Weekly allowance for stay-clean habits (e.g. 1 drinking night a week). */
+  weeklyLimits?: Record<string, number>;
+  buddy?: BuddySettings | null;
+}
+
+export interface BuddySettings {
+  name: string;
+  email?: string;
+  /** Secret part of the share link. */
+  token: string;
+  showSlips: boolean;
 }
 
 export interface ReminderSettings {

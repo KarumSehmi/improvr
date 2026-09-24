@@ -197,6 +197,27 @@ export default function HabitsEditor() {
                     )}
                     <Switch checked={on} onChange={(e) => toggle(h.id, e.currentTarget.checked)} color="teal" aria-label={`Track ${h.label}`} />
                   </div>
+                  {h.kind === 'avoid' && on && (
+                    <Group grow gap="xs" mt={8} pl={44}>
+                      <NumberInput
+                        size="xs"
+                        label="It cost me / week"
+                        prefix="£"
+                        min={0}
+                        placeholder="£0"
+                        value={settings.costPerWeek?.[h.id] ?? ''}
+                        onChange={(v) => updateSettings({ costPerWeek: { ...settings.costPerWeek, [h.id]: Number(v) || 0 } })}
+                      />
+                      <NumberInput
+                        size="xs"
+                        label="Allowed / week"
+                        min={0}
+                        max={7}
+                        value={settings.weeklyLimits?.[h.id] ?? h.weeklyLimit ?? 0}
+                        onChange={(v) => updateSettings({ weeklyLimits: { ...settings.weeklyLimits, [h.id]: Math.max(0, Number(v) || 0) } })}
+                      />
+                    </Group>
+                  )}
                 </div>
               );
             })}

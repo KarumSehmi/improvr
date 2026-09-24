@@ -1,11 +1,12 @@
 import { AppShell, Badge, Center, Container, Group, Loader, NavLink, Stack, Text } from '@mantine/core';
 import { IconCalendar, IconChartBar, IconChecklist, IconDots } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { ComponentType } from 'react';
+import { useEffect, type ComponentType } from 'react';
+import { buddySnapshot } from './lib/buddy';
 import Overlays from './components/Overlays';
 import { FloaterLayer, Tap } from './components/ui';
 import { goTo, useSummary, useUi, type Page } from './lib/hooks';
-import { useApp } from './lib/store';
+import { updateSettings, useApp } from './lib/store';
 import CalendarPage from './pages/CalendarPage';
 import LoginPage from './pages/LoginPage';
 import MorePage from './pages/MorePage';
@@ -38,9 +39,38 @@ export default function App() {
   return <Shell />;
 }
 
+/** Background housekeeping for synced mode: remember your time zone and keep the buddy link fresh. */
+function useCloudSync() {
+  const summary = useSummary();
+  const mode = useApp((s) => s.mode);
+  const uid = useApp((s) => s.uid);
+  const settings = summary.settings;
+  const token = settings.buddy?.token;
+
+  useEffect(() => {
+    if (mode !== 'cloud') return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const url = window.location.origin;
+    const isLocal = /localhost|127\.0\.0\.1/.test(url);
+    if ((tz && settings.timeZone !== tz) || (!isLocal && settings.appUrl !== url)) {
+      updateSettings({ timeZone: tz || settings.timeZone, ...(isLocal ? {} : { appUrl: url }) });
+    }
+  }, [mode, settings.timeZone, settings.appUrl]);
+
+  useEffect(() => {
+    if (mode !== 'cloud' || !uid || !token) return;
+    const t = setTimeout(() => {
+      const { uid: _omit, ...snapshot } = buddySnapshot(summary, uid);
+      void import('./lib/cloud').then((m) => m.writeBuddy(token, snapshot)).catch(() => {});
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [mode, uid, token, summary]);
+}
+
 function Shell() {
   const page = useUi((s) => s.page);
   const summary = useSummary();
+  useCloudSync();
   const alerts = summary.owed > 0 || summary.openUnlogged.some((d) => d !== summary.today);
   const Page = PAGES[page];
 
