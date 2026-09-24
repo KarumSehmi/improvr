@@ -3,7 +3,7 @@ import { SECTIONS } from '../lib/config';
 import { scrollToAndFlash } from '../lib/actions';
 import type { DayEval } from '../lib/engine';
 import { useUi } from '../lib/hooks';
-import { sectionLater } from '../lib/moments';
+import { sectionLater, sectionStatus } from '../lib/moments';
 import { ScoreRing, Tap } from './ui';
 
 const SHORT: Record<string, string> = { morning: 'Morning', day: 'Day', room: 'Jobs', night: 'Night', clean: 'Clean' };
@@ -18,15 +18,12 @@ export default function DayRail({ e, hour, live, sessions, target }: { e: DayEva
   return (
     <div className="rail">
       {SECTIONS.map((sec) => {
-        const items = e.items.filter((i) => i.habit.section === sec.id && i.visible);
+        const { items, total, done, open, complete, closed } = sectionStatus(e, sec.id);
         if (!items.length) return null;
-        const req = items.filter((i) => i.required);
-        const done = req.filter((i) => i.done).length;
-        const complete = req.length > 0 && done === req.length;
-        const later = live && !complete && sectionLater(sec.id, hour);
+        const later = live && !closed && sectionLater(sec.id, hour);
         return (
           <Tap key={sec.id} className="rail-item" data-later={later || undefined} onClick={() => go(`section-${sec.id}`, sec.id)} aria-label={sec.title}>
-            <ScoreRing value={req.length ? (done / req.length) * 100 : 100} size={48} stroke={4} color={complete ? 'teal' : 'violet'}>
+            <ScoreRing value={total ? (done / total) * 100 : 100} size={48} stroke={4} color={complete ? 'teal' : 'violet'}>
               <Text fz={20} lh={1}>
                 {complete ? '✅' : sec.emoji}
               </Text>
@@ -34,8 +31,8 @@ export default function DayRail({ e, hour, live, sessions, target }: { e: DayEva
             <Text fz={10.5} fw={800} lh={1.1}>
               {SHORT[sec.id]}
             </Text>
-            <Text fz={10} c={complete ? 'teal.4' : later ? 'dimmed' : 'orange.4'} fw={700} lh={1.1}>
-              {complete ? 'done' : later ? 'later' : `${req.length - done} left`}
+            <Text fz={10} c={complete ? 'teal.4' : closed || later ? 'dimmed' : 'orange.4'} fw={700} lh={1.1}>
+              {complete ? 'done' : closed ? 'closed' : later ? 'later' : `${open.length} left`}
             </Text>
           </Tap>
         );

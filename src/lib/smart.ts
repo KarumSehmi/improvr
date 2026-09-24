@@ -86,7 +86,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   // Water
   const water = item('water');
   const bottles = e.log?.water ?? 0;
-  if (water && !water.done && h >= 11) {
+  if (water && !water.done && !water.missed && h >= 11) {
     const left = WATER_TARGET - bottles;
     out.push({
       id: 'water',

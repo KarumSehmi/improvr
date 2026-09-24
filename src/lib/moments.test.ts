@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BUILT_IN_BY_ID, CHECKINS, QUESTS, defaultSettings, scheduleLabel } from './config';
 import { startOfDay } from './dates';
 import { summarize } from './engine';
-import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, rollChest, sectionLater } from './moments';
+import { markNotDone } from './actions';
+import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, rollChest, sectionLater, sectionStatus } from './moments';
 import { dueNudges } from './nudges';
 import { updateDay, useApp } from './store';
 import type { AppData, DayLog, Settings } from './types';
@@ -136,6 +137,44 @@ describe('ticking remembers when', () => {
     expect(useApp.getState().days['2026-09-25'].doneAt).toMatchObject({ pills: first.pills, water: expect.any(Number) });
     updateDay('2026-09-25', (l) => void (l.done = { pills: false }));
     expect(useApp.getState().days['2026-09-25'].doneAt?.pills).toBeUndefined();
+  });
+});
+
+describe('sections close once everything is answered, done or not', () => {
+  const t = '2026-09-25';
+  const morning = { done: { weigh: true, wake: true, pills: true, teethAm: true, faceAm: true } };
+
+  it('a missed bedtime closes Morning instead of leaving it open all day', () => {
+    const s = summarize(data({ [t]: { ...morning, done: { ...morning.done, sleep: false } } }), t);
+    expect(sectionStatus(s.evalByDate[t], 'morning')).toMatchObject({ total: 6, done: 5, missed: 1, open: [], complete: false, closed: true });
+    const s2 = summarize(data({ [t]: morning }), t);
+    expect(sectionStatus(s2.evalByDate[t], 'morning')).toMatchObject({ missed: 0, closed: false });
+    expect(sectionStatus(s2.evalByDate[t], 'morning').open.map((i) => i.habit.id)).toEqual(['sleep']);
+  });
+
+  it('"didn\'t do it" counts as a miss now (streak breaks, no XP), and doing it later still counts', () => {
+    const missed = summarize(data({ [t]: { missed: { protein: true } } }), t);
+    const item = missed.evalByDate[t].items.find((i) => i.habit.id === 'protein')!;
+    expect(item).toMatchObject({ done: false, missed: true });
+    expect(missed.habitStreaks.protein.current).toBe(0);
+    const later = summarize(data({ [t]: { missed: { protein: true }, done: { protein: true } } }), t);
+    expect(later.evalByDate[t].items.find((i) => i.habit.id === 'protein')).toMatchObject({ done: true, missed: false });
+  });
+
+  it('a chore marked not done carries over to tomorrow', () => {
+    const s = summarize(data({ '2026-09-24': { missed: { haircut: true } } }), t);
+    expect(s.evalByDate['2026-09-24'].items.find((i) => i.habit.id === 'haircut')).toMatchObject({ missed: true, done: false });
+    expect(s.evalByDate[t].items.find((i) => i.habit.id === 'haircut')).toMatchObject({ visible: true, overdueDays: 1, missed: false });
+  });
+
+  it('"close it" marks the rest not done (sleep gets its own "no")', () => {
+    useApp.setState({ days: {}, settings: defaultSettings(START) });
+    markNotDone(t, [BUILT_IN_BY_ID.weigh, BUILT_IN_BY_ID.sleep, BUILT_IN_BY_ID.water]);
+    const day = useApp.getState().days[t];
+    expect(day.missed).toEqual({ weigh: true, water: true });
+    expect(day.done?.sleep).toBe(false);
+    const e = summarize(data(useApp.getState().days), t).evalByDate[t];
+    expect(['weigh', 'sleep', 'water'].map((id) => e.items.find((i) => i.habit.id === id)!.missed)).toEqual([true, true, true]);
   });
 });
 

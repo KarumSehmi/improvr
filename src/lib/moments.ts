@@ -71,6 +71,29 @@ export function sectionLater(id: SectionId, hour: number): boolean {
   return hour < (SECTION_FROM[id] ?? 0);
 }
 
+export interface SectionStatus {
+  /** Items shown in the section today. */
+  items: ItemEval[];
+  total: number;
+  done: number;
+  /** Answered "no" (missed, slipped, didn't do it). */
+  missed: number;
+  /** Not answered yet. */
+  open: ItemEval[];
+  /** Everything done. */
+  complete: boolean;
+  /** Everything answered, done or not — nothing left to do here today. */
+  closed: boolean;
+}
+
+export function sectionStatus(e: DayEval, id: SectionId): SectionStatus {
+  const items = e.items.filter((i) => i.habit.section === id && i.visible);
+  const req = items.filter((i) => i.required);
+  const done = req.filter((i) => i.done).length;
+  const open = req.filter((i) => !i.done && !i.missed);
+  return { items, total: req.length, done, missed: req.length - done - open.length, open, complete: req.length > 0 && done === req.length, closed: req.length > 0 && !open.length };
+}
+
 /** Still-open items whose part of the day has started. */
 export function dueNow(e: DayEval, hour: number): ItemEval[] {
   if (e.dayOff || e.closed) return [];

@@ -24,6 +24,20 @@ export function tickAll(date: DateKey, habits: Habit[], e?: { clientX: number; c
   notifyUndo(`${habits.length} ticked off`, () => setDay(date, before));
 }
 
+/** "Didn't do the rest": mark what's left as not done, so its section closes. Ticking one later still counts. */
+export function markNotDone(date: DateKey, habits: Habit[]) {
+  if (!habits.length) return;
+  const before = structuredClone(useApp.getState().days[date] ?? {});
+  updateDay(date, (l) => {
+    for (const h of habits) {
+      // Sleep / wake already have their own "no".
+      if (h.kind === 'time') l.done = { ...l.done, [h.id]: false };
+      else l.missed = { ...l.missed, [h.id]: true };
+    }
+  });
+  notifyUndo(`${habits.length} marked not done`, () => setDay(date, before));
+}
+
 export function addWater(date: DateKey) {
   updateDay(date, (l) => {
     l.water = (l.water ?? 0) + 1;

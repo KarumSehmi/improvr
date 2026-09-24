@@ -97,7 +97,7 @@ export interface ItemEval {
   done: boolean;
   skipped: boolean;
   overdueDays: number;
-  /** Explicit "no" (missed sleep/wake target, or slipped past your allowance). */
+  /** Explicit "no": missed sleep/wake target, slipped past your allowance, or marked "didn't do it". */
   missed: boolean;
   /** Stay-clean habits with a weekly allowance: slips used this week so far. */
   allowance?: { used: number; limit: number; allowed: boolean };
@@ -134,7 +134,9 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       const done = !!cd?.done;
       const skipped = !!cd?.skipped;
       const visible = !!cd && (cd.due || done || skipped);
-      return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed: false };
+      // Not done today still carries over to tomorrow.
+      const missed = visible && !done && !skipped && log?.missed?.[habit.id] === true;
+      return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed };
     }
     const done = isDone(habit, log);
     if (habit.kind === 'avoid') {
@@ -147,8 +149,8 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       }
       return { habit, visible: true, required: true, done, skipped: false, overdueDays: 0, missed: slipped };
     }
-    // Only an honest "no" is a miss (late night / late up). Unticking something isn't.
-    const missed = habit.kind === 'time' && log?.done?.[habit.id] === false;
+    // Only an honest "no" is a miss (late night / late up, or "didn't do it"). Unticking something isn't.
+    const missed = !done && ((habit.kind === 'time' && log?.done?.[habit.id] === false) || log?.missed?.[habit.id] === true);
     return { habit, visible: true, required: true, done, skipped: false, overdueDays: 0, missed };
   });
 

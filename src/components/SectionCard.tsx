@@ -2,6 +2,7 @@ import { Button, Card, Collapse, Group, Text, UnstyledButton } from '@mantine/co
 import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { useUi } from '../lib/hooks';
+import type { SectionStatus } from '../lib/moments';
 import { ScoreRing, Tap, Tile } from './ui';
 
 interface Props {
@@ -10,25 +11,31 @@ interface Props {
   title: string;
   subtitle: string;
   color: string;
-  done: number;
-  total: number;
+  status: SectionStatus;
   quick?: { label: string; onClick: (e: MouseEvent) => void } | null;
   /** Not its time yet (e.g. "from 8pm"): starts folded away. */
   later?: string | null;
+  /** "Didn't do the rest": marks what's left as not done so the section closes. */
+  onCloseRest?: (() => void) | null;
+  /** The day's locked in: everything folds away. */
+  dayClosed?: boolean;
   children: ReactNode;
 }
 
-/** A checklist section that folds itself away once everything in it is done (or until its time comes). */
-export default function SectionCard({ id, emoji, title, subtitle, color, done, total, quick, later, children }: Props) {
-  const complete = total > 0 && done >= total;
+/**
+ * A checklist section. It folds itself away once everything in it is answered — done or not
+ * (a missed bedtime shouldn't keep it open all day) — and until its time comes.
+ */
+export default function SectionCard({ id, emoji, title, subtitle, color, status, quick, later, onCloseRest, dayClosed, children }: Props) {
+  const { total, done, missed, open: left, complete, closed } = status;
   const [override, setOverride] = useState<boolean | null>(null);
-  const state = `${complete}|${!!later}`;
+  const state = `${complete}|${closed}|${!!later}|${!!dayClosed}`;
   const [lastState, setLastState] = useState(state);
   if (lastState !== state) {
     setLastState(state);
     setOverride(null);
   }
-  const open = override ?? (!complete && !later);
+  const open = override ?? (!closed && !later && !dayClosed);
 
   // Tapped in the rail at the top: unfold.
   const wanted = useUi((s) => s.openSection === id);
@@ -36,6 +43,16 @@ export default function SectionCard({ id, emoji, title, subtitle, color, done, t
   useEffect(() => {
     if (wanted) useUi.setState({ openSection: null });
   }, [wanted]);
+
+  const line = complete
+    ? 'All done — nice.'
+    : closed
+      ? `Closed · ${missed} ${id === 'clean' ? 'slipped' : 'missed'}`
+      : dayClosed
+        ? `Locked in · ${left.length} not done`
+        : later
+          ? `Later · ${later}`
+          : subtitle;
 
   return (
     <Card
@@ -47,13 +64,13 @@ export default function SectionCard({ id, emoji, title, subtitle, color, done, t
       <Group justify="space-between" wrap="nowrap" gap="xs">
         <UnstyledButton onClick={() => setOverride(!open)} style={{ flex: 1, minWidth: 0 }}>
           <Group gap="sm" wrap="nowrap">
-            <Tile emoji={complete ? '✅' : emoji} color={complete ? 'teal' : color} size={42} />
+            <Tile emoji={complete ? '✅' : emoji} color={complete ? 'teal' : color} size={42} dim={closed && !complete} />
             <div style={{ minWidth: 0 }}>
               <Text fw={800} fz={17} lh={1.2}>
                 {title}
               </Text>
               <Text size="xs" c="dimmed" truncate>
-                {complete ? 'All done — nice.' : later ? `Later · ${later}` : subtitle}
+                {line}
               </Text>
             </div>
           </Group>
@@ -78,6 +95,13 @@ export default function SectionCard({ id, emoji, title, subtitle, color, done, t
       </Group>
       <Collapse expanded={open}>
         <div style={{ marginTop: 6 }}>{children}</div>
+        {onCloseRest && (
+          <Group justify="center" mt={4}>
+            <Button size="compact-xs" variant="subtle" color="gray" onClick={onCloseRest}>
+              Didn't do the rest? Close it
+            </Button>
+          </Group>
+        )}
       </Collapse>
     </Card>
   );

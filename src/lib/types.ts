@@ -10,6 +10,8 @@ export interface DayLog {
   done?: Record<string, boolean>;
   /** Skippable chores skipped on this day (e.g. Paula's Choice). */
   skipped?: Record<string, boolean>;
+  /** Things you marked "didn't do it", so their section can close (ticking one later still counts). */
+  missed?: Record<string, boolean>;
   avoid?: Record<string, AvoidAnswer>;
   /** Rough time (HH:mm) for sleep / wake when the target was missed. */
   times?: Record<string, string>;

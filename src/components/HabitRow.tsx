@@ -67,6 +67,15 @@ function Meta({ children, c = 'dimmed' }: { children: ReactNode; c?: string }) {
   );
 }
 
+/** Marked "didn't do it" (tap the tick to do it after all). */
+function NotDone({ chore }: { chore?: boolean }) {
+  return (
+    <Badge size="xs" color="red" variant="light">
+      {chore ? 'not today' : 'not done'}
+    </Badge>
+  );
+}
+
 function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
   if (streak.current < 2) return null;
   return (
@@ -112,6 +121,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
         set((l) => {
           l.done = { ...l.done, [id]: !done };
           if (l.skipped) delete l.skipped[id];
+          if (l.missed) delete l.missed[id];
         });
       };
       const schedule = habit.kind === 'chore' && habit.schedule && !('every' in habit.schedule && habit.schedule.every === 1) ? scheduleLabel(habit.schedule) : null;
@@ -122,11 +132,12 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : undefined}
+          state={done ? 'done' : missed ? 'missed' : undefined}
           onClick={habit.skippable ? undefined : toggle}
           meta={
             <>
-              {overdueDays > 0 && !done && (
+              {missed && <NotDone chore={habit.kind === 'chore'} />}
+              {overdueDays > 0 && !done && !missed && (
                 <Badge size="xs" color="orange" variant="filled">
                   {overdueDays}d overdue
                 </Badge>
@@ -158,12 +169,12 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                 )}
                 {!skipped && (
                   <Tap onClick={toggle} aria-label={habit.label}>
-                    <CheckCircle checked={done} />
+                    <CheckCircle checked={done} missed={missed} />
                   </Tap>
                 )}
               </Group>
             ) : (
-              <CheckCircle checked={done} />
+              <CheckCircle checked={done} missed={missed} />
             )
           }
         />
@@ -249,9 +260,10 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : undefined}
+          state={done ? 'done' : missed ? 'missed' : undefined}
           meta={
             <>
+              {missed ? <NotDone /> : null}
               <Meta>
                 {water}/{WATER_TARGET} bottles
               </Meta>
@@ -274,6 +286,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                       }
                       set((l) => {
                         l.water = next;
+                        if (l.missed) delete l.missed[id];
                       });
                     }}
                   >
@@ -297,6 +310,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
         if (!done) reward(e);
         set((l) => {
           l.finMl = done ? null : settings.finTargetMl;
+          if (l.missed) delete l.missed[id];
         });
       };
       return (
@@ -306,9 +320,10 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : undefined}
+          state={done ? 'done' : missed ? 'missed' : undefined}
           meta={
             <>
+              {missed && <NotDone />}
               <Meta>{ml ? `${ml} ml · ${(ml * mgPerMl).toFixed(3)} mg` : `${settings.finTargetMl} ml · ${settings.finConcentration}%`}</Meta>
               <StreakTag streak={streak} atRisk={atRisk} />
             </>
@@ -336,7 +351,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                 />
               )}
               <Tap onClick={toggle} aria-label={habit.label}>
-                <CheckCircle checked={done} />
+                <CheckCircle checked={done} missed={missed} />
               </Tap>
             </Group>
           }

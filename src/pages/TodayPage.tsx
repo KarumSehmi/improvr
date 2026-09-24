@@ -12,14 +12,14 @@ import TodoCard from '../components/Todos';
 import TrainingCard from '../components/TrainingCard';
 import UpNextCard from '../components/UpNextCard';
 import UpcomingCard, { BirthdayBanner } from '../components/UpcomingCard';
-import { tickAll } from '../lib/actions';
+import { markNotDone, tickAll } from '../lib/actions';
 import { lockDay } from '../lib/lock';
 import { SECTIONS, STREAK_MILESTONES } from '../lib/config';
 import { burst, fireworks } from '../lib/celebrate';
 import { addDays, fmt, formatCountdown, logDeadline, weekStart, type DateKey } from '../lib/dates';
 import { isOpen, weekStats, type DayEval, type Streak, type Summary } from '../lib/engine';
 import { goTo, openDay, useNow, useSummary, useToday, useUi } from '../lib/hooks';
-import { logicalNow, sectionLater } from '../lib/moments';
+import { logicalNow, sectionLater, sectionStatus } from '../lib/moments';
 import { updateDay, useApp } from '../lib/store';
 
 const hourLabel = (h: number) => (h % 12 || 12) + (h % 24 < 12 ? 'am' : 'pm');
@@ -192,11 +192,12 @@ export default function TodayPage() {
       )}
 
       {SECTIONS.map((sec) => {
-        const items = e.items.filter((i) => i.habit.section === sec.id && i.visible);
+        const status = sectionStatus(e, sec.id);
+        const { items, open: left } = status;
         if (!items.length) return null;
-        const req = items.filter((i) => i.required);
-        const pending = items.filter((i) => i.required && !i.done && !i.missed && !i.skipped);
-        const quickable = pending.filter((i) => (sec.id === 'clean' ? i.habit.kind === 'avoid' : ['check', 'chore', 'dose'].includes(i.habit.kind) && !i.habit.skippable));
+        const quickable = left.filter((i) => (sec.id === 'clean' ? i.habit.kind === 'avoid' : ['check', 'chore', 'dose'].includes(i.habit.kind) && !i.habit.skippable));
+        // Stayed clean always needs an honest answer, so it can't just be closed.
+        const closable = left.length > 0 && left.every((i) => i.habit.kind !== 'avoid');
         return (
           <Stack key={sec.id} gap="md">
             <SectionCard
@@ -205,14 +206,15 @@ export default function TodayPage() {
               title={sec.title}
               subtitle={sec.subtitle}
               color={sec.color}
-              done={req.filter((i) => i.done).length}
-              total={req.length}
+              status={status}
               quick={
                 quickable.length >= 2
                   ? { label: sec.id === 'clean' ? 'All clean' : 'All ✓', onClick: (ev) => tickAll(date, quickable.map((i) => i.habit), ev) }
                   : null
               }
-              later={live && sectionLater(sec.id, moment.hour) ? `from ${hourLabel(sec.from)}` : null}
+              later={live && !status.closed && sectionLater(sec.id, moment.hour) ? `from ${hourLabel(sec.from)}` : null}
+              onCloseRest={closable ? () => markNotDone(date, left.map((i) => i.habit)) : null}
+              dayClosed={e.closed}
             >
               {items.map((item) => {
                 const streak = summary.habitStreaks[item.habit.id];
