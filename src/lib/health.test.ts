@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import handler, { judgeSleep, localDate, parseStamp, parseTimes, readNight } from '../../api/health';
+import handler, { judgeSleep, localDate, mergeSleep, parseStamp, parseTimes, readNight } from '../../api/health';
+import { averageClock, formatDuration, sleepMinutes } from './sleep';
 
 describe('Apple Watch sleep endpoint', () => {
   it('reads times however the Shortcut formats them', () => {
@@ -73,5 +74,20 @@ describe('Apple Watch sleep endpoint', () => {
     await handler({ method: 'POST', body: { 'abc123uid.0123456789abcdef0123456789': '', asleep: '00:42', awake: '08:15' } }, res as never);
     expect(out!.code).toBe(400);
     expect(out!.body.error).toMatch(/wrong box/);
+  });
+
+  it('fills in both answers and the actual times, even over a manual answer', () => {
+    const day = { done: { sleep: true, pills: true }, times: {}, note: 'hi' };
+    const out = mergeSleep(day, '01:25', '08:40', 123) as { done: Record<string, boolean>; times: Record<string, string>; note: string };
+    expect(out.done).toEqual({ sleep: false, wake: true, pills: true });
+    expect(out.times).toEqual({ sleep: '01:25', wake: '08:40' });
+    expect(out.note).toBe('hi');
+  });
+
+  it('works out time asleep and averages', () => {
+    expect(formatDuration(sleepMinutes('23:41', '08:12'))).toBe('8h 31m');
+    expect(formatDuration(sleepMinutes('00:30', '07:35'))).toBe('7h 05m');
+    expect(averageClock(['23:30', '00:30'])).toBe('00:00');
+    expect(averageClock([])).toBeNull();
   });
 });

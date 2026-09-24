@@ -26,7 +26,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🔔 Smart notifications** – only when something needs doing: morning routine not done, caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
 - **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what vaping etc. cost you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
-- **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning.
+- **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.
 - **More** – fines (with a one-tap donate link), notifications, Apple Watch, habits, the rules, settings, sync and backup.
 
 ## The rules (lenient but strict)

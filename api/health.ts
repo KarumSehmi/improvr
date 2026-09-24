@@ -1,6 +1,6 @@
 /**
  * Vercel function: your iPhone Shortcut posts last night's Apple Watch sleep here each morning,
- * and it fills in "Asleep before 1am" and "Up before 9am" for you (unless you've already answered).
+ * and it fills in "Asleep before 1am" and "Up before 9am" for you, with the actual times.
  *
  * Needs FIREBASE_SERVICE_ACCOUNT in Vercel → Settings → Environment Variables (same JSON as the GitHub secret).
  * Kept self-contained on purpose — Vercel builds each /api file on its own.
@@ -114,6 +114,21 @@ export function judgeSleep(asleep: string, awake: string): { sleepOk: boolean; w
   return { sleepOk: ah >= 12 || ah < 1, wakeOk: wh * 60 + wm < 9 * 60 };
 }
 
+/**
+ * Fill a day in from the Watch: both answers and the actual times. The Watch is the source of truth,
+ * so this overwrites whatever was there when it syncs (you can still change it by hand afterwards).
+ */
+export function mergeSleep(day: Record<string, unknown>, asleep: string, awake: string, at: number): Record<string, unknown> {
+  const { sleepOk, wakeOk } = judgeSleep(asleep, awake);
+  return {
+    ...day,
+    done: { ...(day.done as object), sleep: sleepOk, wake: wakeOk },
+    times: { ...(day.times as object), sleep: asleep, wake: awake },
+    sleepAuto: { asleep, awake, at },
+    updatedAt: at,
+  };
+}
+
 /** Today's date (YYYY-MM-DD) in the given time zone. */
 export function localDate(timeZone: string, now = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
@@ -171,18 +186,7 @@ export default async function handler(req: Req, res: Res) {
 
   await db.runTransaction(async (t) => {
     const day = (await t.get(ref)).data() ?? {};
-    const done = { ...(day.done ?? {}) } as Record<string, boolean>;
-    const times = { ...(day.times ?? {}) } as Record<string, string>;
-    // Anything you answered yourself wins.
-    if (done.sleep == null) {
-      done.sleep = sleepOk;
-      if (!sleepOk) times.sleep = asleep;
-    }
-    if (done.wake == null) {
-      done.wake = wakeOk;
-      if (!wakeOk) times.wake = awake;
-    }
-    t.set(ref, { ...day, done, times, sleepAuto: { asleep, awake, at }, updatedAt: at });
+    t.set(ref, mergeSleep(day, asleep, awake, at));
   });
   await db.doc(`users/${uid}/meta/server`).set({ lastSleep: { date, asleep, awake, at } }, { merge: true });
 

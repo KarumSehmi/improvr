@@ -39,8 +39,8 @@ export default function SleepSyncCard() {
         ⌚ Apple Watch sleep
       </Text>
       <Text size="xs" c="dimmed">
-        Fills in "Asleep before 1am" and "Up before 9am" for you every morning, using an iPhone Shortcut. Anything you've already answered
-        yourself is left alone.
+        Fills in "Asleep before 1am" and "Up before 9am" every morning with the actual times (and how long you slept), using an iPhone
+        Shortcut. The Watch's times take over when it syncs; you can still change them by hand after.
       </Text>
       {last && (
         <Text size="xs" c="teal.4" fw={600} mt="xs">

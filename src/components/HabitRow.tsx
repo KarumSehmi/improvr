@@ -8,6 +8,7 @@ import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import type { ItemEval, Streak } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
+import { formatDuration, sleepMinutes } from '../lib/sleep';
 import type { DayLog } from '../lib/types';
 import { floatXp } from '../lib/feedback';
 import { CheckCircle, Tap, Tile } from './ui';
@@ -171,6 +172,9 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
 
     case 'time': {
       const answer = log?.done?.[id];
+      // Filled in by the Apple Watch Shortcut, if you've set it up.
+      const watch = log?.sleepAuto;
+      const watchTime = watch ? (id === 'sleep' ? watch.asleep : watch.awake) : null;
       const yes = (e: MouseEvent) => {
         if (answer !== true) reward(e);
         set((l) => {
@@ -181,6 +185,8 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       const no = () =>
         set((l) => {
           l.done = { ...l.done, [id]: answer === false ? undefined : false } as Record<string, boolean>;
+          // Pre-fill "roughly when?" from the Watch so there's nothing to type.
+          if (answer !== false && watchTime && !l.times?.[id]) l.times = { ...l.times, [id]: watchTime };
         });
       return (
         <Row
@@ -192,8 +198,13 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           state={done ? 'done' : missed ? 'missed' : undefined}
           meta={
             <>
-              {missed && log?.times?.[id] && <Meta c="red.4">~{log.times[id]}</Meta>}
-              {log?.sleepAuto && <Meta>⌚ {id === 'sleep' ? log.sleepAuto.asleep : log.sleepAuto.awake}</Meta>}
+              {watch ? (
+                <Meta c={missed ? 'red.4' : 'dimmed'}>
+                  ⌚ {id === 'sleep' ? `asleep ${watch.asleep} · ${formatDuration(sleepMinutes(watch.asleep, watch.awake))}` : `up ${watch.awake}`}
+                </Meta>
+              ) : (
+                missed && log?.times?.[id] && <Meta c="red.4">~{log.times[id]}</Meta>
+              )}
               {meta}
             </>
           }
@@ -215,7 +226,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                 size="sm"
                 radius="md"
                 description={habit.missPrompt}
-                value={log?.times?.[id] ?? ''}
+                value={log?.times?.[id] ?? watchTime ?? ''}
                 onChange={(e) => {
                   const v = e.currentTarget.value;
                   set((l) => {

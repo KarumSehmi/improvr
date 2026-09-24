@@ -19,6 +19,7 @@ import { addDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
 import { completionRate, grade, slipStats, weekStats, type Summary } from '../lib/engine';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { insights } from '../lib/insights';
+import { averageClock, formatDuration, sleepMinutes } from '../lib/sleep';
 import { SCORE_COLORS } from '../lib/scoreColors';
 import { useApp } from '../lib/store';
 import { Tile } from '../components/ui';
@@ -251,8 +252,22 @@ function BodyCard({ summary }: { summary: Summary }) {
   const finTotalMl = finDays.reduce((s, e) => s + (e.log?.finMl ?? 0), 0);
   const avgMl = finDays.length ? finTotalMl / finDays.length : 0;
   const mgPerMl = settings.finConcentration * 10;
+  // Apple Watch nights (only if the Shortcut is set up)
+  const watched = last30.map((e) => e.log?.sleepAuto).filter((s): s is NonNullable<typeof s> => !!s);
+  const avgSleep = watched.length ? watched.reduce((sum, s) => sum + sleepMinutes(s.asleep, s.awake), 0) / watched.length : null;
   return (
-    <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+    <SimpleGrid cols={{ base: 2, sm: avgSleep != null ? 3 : 4 }} spacing="sm">
+      {avgSleep != null && (
+        <>
+          <StatTile emoji="⌚" value={formatDuration(avgSleep)} label="Average sleep" sub={`${watched.length} night${watched.length === 1 ? '' : 's'} from your Watch`} />
+          <StatTile
+            emoji="🛏️"
+            value={averageClock(watched.map((s) => s.asleep)) ?? '—'}
+            label="Average bedtime"
+            sub={`up around ${averageClock(watched.map((s) => s.awake))}`}
+          />
+        </>
+      )}
       <StatTile emoji="🌙" value={lateNights.length} label="Nights after 1am" sub="last 30 days" />
       <StatTile emoji="⏰" value={lateWakes.length} label="Up after 9am" sub="last 30 days" />
       <StatTile emoji="💧" value={`${finDays.length}/${last30.length}`} label="Finasteride days" sub={`avg ${avgMl.toFixed(2)} ml · ${(avgMl * mgPerMl).toFixed(3)} mg`} />
