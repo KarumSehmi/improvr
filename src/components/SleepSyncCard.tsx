@@ -1,4 +1,4 @@
-import { Button, Card, CopyButton, Group, List, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Card, CopyButton, Group, List, Stack, Table, Text, TextInput } from '@mantine/core';
 import { IconCopy } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -61,33 +61,58 @@ export default function SleepSyncCard() {
           <CopyField label="URL" value={url} />
           <CopyField label="Your key (keep it private)" value={key ?? 'Loading…'} />
           <Text size="sm" fw={700}>
-            In the Shortcuts app, make a new shortcut called "Improvr sleep":
+            In the Shortcuts app, make a shortcut with just these two actions:
           </Text>
-          <List type="ordered" size="sm" spacing={6}>
+          <List type="ordered" size="sm" spacing={8}>
             <List.Item>
-              <b>Find Health Samples</b> → Type: <i>Sleep Analysis</i>, add a filter <i>Start Date is in the last 16 hours</i>, sort by{' '}
-              <i>Start Date</i>, <i>Oldest First</i>.
+              <b>Find Health Samples</b> where <i>Type is Sleep</i> and <i>Start Date is in the last 12 hours</i>. Leave everything else as it
+              is.
             </List.Item>
             <List.Item>
-              <b>Get Item from List</b> → <i>First Item</i> of Health Samples → <b>Get Details of Health Sample</b> → <i>Start Date</i> →{' '}
-              <b>Format Date</b> → Custom: <code>HH:mm</code> → <b>Set Variable</b> <i>asleep</i>.
+              <b>Get Contents of URL</b>: paste the URL, tap the arrow to show more, set <i>Method</i> to <b>POST</b> and <i>Request Body</i>{' '}
+              to <b>JSON</b>. Then add three <b>Text</b> fields:
+              <Table withTableBorder withColumnBorders mt={6} fz="xs">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Left box (Key)</Table.Th>
+                    <Table.Th>Right box (Text)</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Td>
+                      <code>key</code>
+                    </Table.Td>
+                    <Table.Td>paste your key</Table.Td>
+                  </Table.Tr>
+                  <Table.Tr>
+                    <Table.Td>
+                      <code>asleep</code>
+                    </Table.Td>
+                    <Table.Td>
+                      pick <i>Health Samples</i>, tap it, choose <b>Start Date</b>
+                    </Table.Td>
+                  </Table.Tr>
+                  <Table.Tr>
+                    <Table.Td>
+                      <code>awake</code>
+                    </Table.Td>
+                    <Table.Td>
+                      pick <i>Health Samples</i>, tap it, choose <b>End Date</b>
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
             </List.Item>
             <List.Item>
-              <b>Get Item from List</b> → <i>Last Item</i> of Health Samples → <i>End Date</i> → <b>Format Date</b> <code>HH:mm</code> →{' '}
-              <b>Set Variable</b> <i>awake</i>.
-            </List.Item>
-            <List.Item>
-              <b>Get Contents of URL</b> → paste the URL, Method <i>POST</i>, Request Body <i>JSON</i> with three Text fields: <code>key</code>{' '}
-              (paste your key), <code>asleep</code> and <code>awake</code> (the variables).
-            </List.Item>
-            <List.Item>
-              <b>Automation</b> tab → + → <i>Alarm</i> → <i>Is Stopped</i> (or a time like 09:30) → <i>Run Immediately</i> → pick "Improvr
-              sleep".
+              <b>Automation</b> tab → + → <i>Alarm</i> → <i>Is Stopped</i> (or a time like 09:30) → <i>Run Immediately</i> → pick your
+              shortcut.
             </List.Item>
           </List>
           <Text size="xs" c="dimmed">
-            Run the shortcut once by hand to test — it should say <code>"ok": true</code>. If it says the server isn't set up, add the
-            FIREBASE_SERVICE_ACCOUNT variable in Vercel (README → Apple Watch sleep).
+            No need for "Get Item from List" or "Format Date" — Improvr works out when you fell asleep and woke up from all the samples. Tap ▶
+            to test: you should see <code>"ok": true</code>. If it says the server isn't set up, add FIREBASE_SERVICE_ACCOUNT in Vercel
+            (README → Apple Watch sleep).
           </Text>
         </Stack>
       )}

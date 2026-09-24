@@ -8,14 +8,40 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-/** Accepts "00:42", "0:42", "00.42" or anything containing a time, like "24 Sep 2026 at 00:42". */
-export function parseTime(value: unknown): string | null {
-  const m = /(\d{1,2})[:.](\d{2})/.exec(String(value ?? ''));
-  if (!m) return null;
-  const h = Number(m[1]);
-  const min = Number(m[2]);
-  if (h > 23 || min > 59) return null;
-  return `${String(h).padStart(2, '0')}:${m[2]}`;
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * Every time in the text, as minutes past midnight. Handles "00:42", "12:42 am" and the list the
+ * Shortcut sends when you pass all the Watch's sleep samples ("24 Sep 2026 at 23:41\n25 Sep 2026 at 00:10…").
+ */
+export function parseTimes(value: unknown): number[] {
+  const out: number[] = [];
+  for (const m of String(value ?? '').matchAll(/(\d{1,2})[:.](\d{2})(?:\s*([ap])\.?\s?m\.?)?/gi)) {
+    let h = Number(m[1]);
+    const min = Number(m[2]);
+    if (m[3]) {
+      if (h < 1 || h > 12) continue;
+      h = (h % 12) + (m[3].toLowerCase() === 'p' ? 12 : 0);
+    }
+    if (h > 23 || min > 59) continue;
+    out.push(h * 60 + min);
+  }
+  return out;
+}
+
+// Evening times (6pm onwards) belong to "before midnight", so they sort before 00:xx.
+const toNight = (m: number) => (m >= 18 * 60 ? m - 24 * 60 : m);
+const toClock = (m: number) => {
+  const x = ((m % 1440) + 1440) % 1440;
+  return `${pad(Math.floor(x / 60))}:${pad(x % 60)}`;
+};
+
+/** Fell asleep = earliest start, woke = latest end, whatever order the samples arrive in. */
+export function readNight(asleep: unknown, awake: unknown): { asleep: string; awake: string } | null {
+  const starts = parseTimes(asleep).map(toNight);
+  const ends = parseTimes(awake).map(toNight);
+  if (!starts.length || !ends.length) return null;
+  return { asleep: toClock(Math.min(...starts)), awake: toClock(Math.max(...ends)) };
 }
 
 /** "Before 1am" = any time in the evening or 00:00–00:59. "Before 9am" = woke before 09:00. */
@@ -51,10 +77,20 @@ export default async function handler(req: Req, res: Res) {
   }
   const fields = (body ?? {}) as Record<string, unknown>;
   const [uid, secret] = String(fields.key ?? '').split('.');
-  const asleep = parseTime(fields.asleep);
-  const awake = parseTime(fields.awake);
-  if (!uid || !secret) return res.status(401).json({ error: 'Missing key — copy it from Improvr → More → Apple Watch sleep.' });
-  if (!asleep || !awake) return res.status(400).json({ error: 'Send "asleep" and "awake" as times, e.g. 00:42 and 08:15.' });
+  if (!uid || !secret) {
+    // Common mix-up: pasting the key into the left (name) box instead of the right (value) box.
+    const misplaced = Object.keys(fields).some((k) => k.length > 30 && k.includes('.'));
+    return res.status(400).json({
+      error: misplaced
+        ? 'Your key is in the wrong box. In Get Contents of URL the left box should say key, and your long code goes in the right box.'
+        : 'Missing "key" field — copy your key from Improvr → More → Apple Watch sleep.',
+    });
+  }
+  const night = readNight(fields.asleep, fields.awake);
+  if (!night) {
+    return res.status(400).json({ error: 'Couldn\'t find any times in "asleep" / "awake". Set them to Health Samples → Start Date and End Date.' });
+  }
+  const { asleep, awake } = night;
 
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccount) return res.status(500).json({ error: 'Server not set up: add FIREBASE_SERVICE_ACCOUNT in Vercel.' });

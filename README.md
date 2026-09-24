@@ -101,7 +101,10 @@ These need one "server key" from Firebase. Get it once and paste it in two place
 ### ⌚ Apple Watch sleep (Vercel)
 
 1. Vercel → your project → **Settings → Environment Variables** → add `FIREBASE_SERVICE_ACCOUNT` with the same JSON → Save → **Deployments → ⋯ → Redeploy**.
-2. In the app: More → Apple Watch sleep → **Set it up**, and follow the steps to build the Shortcut (it shows your personal key and URL to copy).
+2. In the app: More → Apple Watch sleep → **Set it up** (it shows your personal key and URL to copy), then build this 2-action Shortcut:
+   - **Find Health Samples**: Type *is Sleep*, Start Date *is in the last 12 hours*.
+   - **Get Contents of URL**: the URL, Method **POST**, Request Body **JSON**, three Text fields: `key` → your key · `asleep` → Health Samples → **Start Date** · `awake` → Health Samples → **End Date**.
+   - Automation → Alarm *Is Stopped* → Run Immediately.
 
 ---
 
