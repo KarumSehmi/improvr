@@ -71,7 +71,7 @@ describe('up next', () => {
   it('mornings offer one tap for the routine', () => {
     const s = suggestions(at(8), today, e, sum, d);
     const morning = s.find((x) => x.id === 'morning');
-    expect(morning?.action).toMatchObject({ kind: 'tick', habitIds: ['weigh', 'pills', 'faceAm', 'fin'] });
+    expect(morning?.action).toMatchObject({ kind: 'tick', habitIds: ['weigh', 'pills', 'faceAm'] });
   });
 
   it('counts down to the caffeine cutoff', () => {

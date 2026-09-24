@@ -42,7 +42,7 @@ export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: 
   { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, face', color: 'orange' },
   { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water & food', color: 'cyan' },
   { id: 'room', title: 'Room & jobs', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape' },
-  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Skin routine', color: 'indigo' },
+  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Skin routine & finasteride', color: 'indigo' },
   { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal' },
 ];
 
@@ -73,7 +73,6 @@ export const BUILT_IN_HABITS: Habit[] = [
   },
   { id: 'pills', label: 'Took all my pills', emoji: '💊', section: 'morning', kind: 'check', points: 10 },
   { id: 'faceAm', label: 'Face wash + moisturiser', emoji: '🧴', section: 'morning', kind: 'check', points: 5, hint: 'AM' },
-  { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'morning', kind: 'dose', points: 10 },
   { id: 'pillRefill', label: 'Refill pill organiser', emoji: '🗓️', section: 'morning', kind: 'chore', points: 15, schedule: { weekday: 0, everyWeeks: 2 } },
 
   // Through the day
@@ -93,6 +92,7 @@ export const BUILT_IN_HABITS: Habit[] = [
 
   // Night
   { id: 'facePm', label: 'Face wash + moisturiser', emoji: '🫧', section: 'night', kind: 'check', points: 5, hint: 'PM' },
+  { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'night', kind: 'dose', points: 10 },
   {
     id: 'paulas',
     label: "Paula's Choice",
