@@ -5,7 +5,7 @@
  * These values are not secret — your data is protected by login + the rules in firestore.rules.
  * Leave apiKey empty to run in local-only mode (data stays in this browser only).
  */
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyBs8CiuhaVFVP0c_c31I8_6s-tn1lB0pYU",
   authDomain: "improvr-9c547.firebaseapp.com",
   projectId: "improvr-9c547",
