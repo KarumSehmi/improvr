@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import handler, { judgeSleep, localDate, parseTimes, readNight } from '../../api/health';
+import handler, { judgeSleep, localDate, parseStamp, parseTimes, readNight } from '../../api/health';
 
 describe('Apple Watch sleep endpoint', () => {
   it('reads times however the Shortcut formats them', () => {
@@ -19,6 +19,39 @@ describe('Apple Watch sleep endpoint', () => {
     expect(readNight('12:30 am\n3:10 am', '3:00 am\n9:20 am')).toEqual({ asleep: '00:30', awake: '09:20' });
     expect(readNight('00:42', '08:15')).toEqual({ asleep: '00:42', awake: '08:15' });
     expect(readNight('', '08:15')).toBeNull();
+  });
+
+  it('reads dates in UK, US and ISO formats', () => {
+    const base = Date.UTC(2026, 8, 24) / 60_000;
+    expect(parseStamp('24 Sep 2026 at 23:41')).toBe(base + 23 * 60 + 41);
+    expect(parseStamp('Sep 24, 2026 at 11:41 PM')).toBe(base + 23 * 60 + 41);
+    expect(parseStamp('Thursday 24 September 2026 at 23:41')).toBe(base + 23 * 60 + 41);
+    expect(parseStamp('24/09/2026, 23:41')).toBe(base + 23 * 60 + 41);
+    expect(parseStamp('2026-09-24T23:41:00+01:00')).toBe(base + 23 * 60 + 41);
+    expect(parseStamp('23:41')).toBeNull();
+  });
+
+  it('"in the last 1 day" picks out last night, ignoring yesterday\'s lie-in and a nap', () => {
+    // Samples from yesterday morning (end of the night before), an afternoon nap, then last night
+    const starts = [
+      '24 Sep 2026 at 08:40', '24 Sep 2026 at 09:30', // yesterday's lie-in
+      '24 Sep 2026 at 15:05', // nap
+      '24 Sep 2026 at 23:41', '25 Sep 2026 at 01:10', '25 Sep 2026 at 04:02', '25 Sep 2026 at 07:30',
+    ].join('\n');
+    const ends = [
+      '24 Sep 2026 at 09:30', '24 Sep 2026 at 10:15',
+      '24 Sep 2026 at 15:45',
+      '25 Sep 2026 at 01:10', '25 Sep 2026 at 04:02', '25 Sep 2026 at 07:30', '25 Sep 2026 at 08:12',
+    ].join('\n');
+    expect(readNight(starts, ends)).toEqual({ asleep: '23:41', awake: '08:12' });
+    // Same night in US format, samples in random order
+    const us = (s: string) => s;
+    expect(
+      readNight(
+        us('Sep 25, 2026 at 1:10 AM\nSep 24, 2026 at 11:41 PM\nSep 25, 2026 at 4:02 AM'),
+        us('Sep 25, 2026 at 4:02 AM\nSep 25, 2026 at 1:10 AM\nSep 25, 2026 at 8:12 AM'),
+      ),
+    ).toEqual({ asleep: '23:41', awake: '08:12' });
   });
 
   it('judges before 1am / before 9am', () => {

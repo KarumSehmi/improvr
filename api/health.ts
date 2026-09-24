@@ -29,19 +29,82 @@ export function parseTimes(value: unknown): number[] {
   return out;
 }
 
-// Evening times (6pm onwards) belong to "before midnight", so they sort before 00:xx.
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/**
+ * Date + time of one sample as minutes on a simple local timeline (null if there's no readable date).
+ * Handles ISO ("2026-09-24T23:41:00+01:00"), UK ("24 Sep 2026 at 23:41", "24/09/2026, 23:41")
+ * and US ("Sep 24, 2026 at 11:41 PM") formats — whatever the phone's Shortcuts uses.
+ */
+export function parseStamp(text: string): number | null {
+  const time = parseTimes(text)[0];
+  if (time == null) return null;
+  let y = 0;
+  let m = 0;
+  let d = 0;
+  let x: RegExpExecArray | null;
+  if ((x = /(\d{4})-(\d{2})-(\d{2})/.exec(text))) {
+    [y, m, d] = [Number(x[1]), Number(x[2]), Number(x[3])];
+  } else if ((x = /\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/.exec(text))) {
+    const [a, b] = [Number(x[1]), Number(x[2])];
+    y = Number(x[3]) < 100 ? 2000 + Number(x[3]) : Number(x[3]);
+    [d, m] = b > 12 ? [b, a] : [a, b]; // UK order unless that's impossible
+  } else {
+    const month = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?/i.exec(text);
+    const year = /\b(20\d{2})\b/.exec(text);
+    if (!month || !year) return null;
+    m = MONTHS.indexOf(month[1].toLowerCase()) + 1;
+    y = Number(year[1]);
+    const before = /(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?$/i.exec(text.slice(0, month.index)); // "24 Sep"
+    const after = /^\s*(\d{1,2})\b/.exec(text.slice(month.index + month[0].length)); // "Sep 24"
+    d = Number(before?.[1] ?? after?.[1] ?? 0);
+  }
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return Date.UTC(y, m - 1, d) / 60_000 + time;
+}
+
+// Without dates, evening times (6pm onwards) count as "before midnight" so they sort before 00:xx.
 const toNight = (m: number) => (m >= 18 * 60 ? m - 24 * 60 : m);
 const toClock = (m: number) => {
   const x = ((m % 1440) + 1440) % 1440;
   return `${pad(Math.floor(x / 60))}:${pad(x % 60)}`;
 };
 
-/** Fell asleep = earliest start, woke = latest end, whatever order the samples arrive in. */
+/** A night is lots of back-to-back samples; a gap longer than this starts a new block (e.g. a nap). */
+const GAP_MIN = 180;
+/** Blocks shorter than this are naps. */
+const MIN_NIGHT = 3 * 60;
+
+/**
+ * Works out last night from every sleep sample the Shortcut sends (one per line; the Nth start goes with
+ * the Nth end). The samples can cover more than last night — "in the last 1 day" also catches yesterday's
+ * lie-in or a nap — so they're joined into blocks and the most recent proper night wins.
+ */
 export function readNight(asleep: unknown, awake: unknown): { asleep: string; awake: string } | null {
-  const starts = parseTimes(asleep).map(toNight);
-  const ends = parseTimes(awake).map(toNight);
+  const lines = (v: unknown) => String(v ?? '').split(/\r?\n/).filter((l) => l.trim());
+  const startLines = lines(asleep);
+  const endLines = lines(awake);
+  const startStamps = startLines.map(parseStamp);
+  const endStamps = endLines.map(parseStamp);
+  const dated = [...startStamps, ...endStamps].every((t) => t != null);
+
+  // Minutes on a timeline: real dates if we have them, otherwise clock times with the evening before midnight.
+  const starts = dated ? (startStamps as number[]) : parseTimes(asleep).map(toNight);
+  const ends = dated ? (endStamps as number[]) : parseTimes(awake).map(toNight);
   if (!starts.length || !ends.length) return null;
-  return { asleep: toClock(Math.min(...starts)), awake: toClock(Math.max(...ends)) };
+
+  // Lists don't line up (shouldn't happen) — fall back to earliest start / latest end.
+  if (starts.length !== ends.length) return { asleep: toClock(Math.min(...starts)), awake: toClock(Math.max(...ends)) };
+
+  const samples = starts.map((s, i) => ({ s, e: Math.max(s, ends[i]) })).sort((a, b) => a.s - b.s);
+  const blocks: { s: number; e: number }[] = [];
+  for (const x of samples) {
+    const last = blocks.at(-1);
+    if (last && x.s <= last.e + GAP_MIN) last.e = Math.max(last.e, x.e);
+    else blocks.push({ ...x });
+  }
+  const night = blocks.filter((b) => b.e - b.s >= MIN_NIGHT).at(-1) ?? blocks.reduce((a, b) => (b.e - b.s > a.e - a.s ? b : a));
+  return { asleep: toClock(night.s), awake: toClock(night.e) };
 }
 
 /** "Before 1am" = any time in the evening or 00:00–00:59. "Before 9am" = woke before 09:00. */

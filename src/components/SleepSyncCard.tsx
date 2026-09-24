@@ -65,7 +65,7 @@ export default function SleepSyncCard() {
           </Text>
           <List type="ordered" size="sm" spacing={8}>
             <List.Item>
-              <b>Find Health Samples</b> where <i>Type is Sleep</i> and <i>Start Date is in the last 12 hours</i>. Leave everything else as it
+              <b>Find Health Samples</b> where <i>Type is Sleep</i> and <i>Start Date is in the last 1 day</i>. Leave everything else as it
               is.
             </List.Item>
             <List.Item>
