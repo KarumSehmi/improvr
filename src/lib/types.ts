@@ -1,3 +1,4 @@
+import type { ChoreSchedule, Habit } from './config';
 import type { DateKey } from './dates';
 
 export type AvoidAnswer = 'clean' | 'slip';
@@ -17,6 +18,8 @@ export interface DayLog {
   finMl?: number | null;
   workouts?: WorkoutType[];
   note?: string;
+  /** 1 (awful) – 5 (great). Optional, used for insights. */
+  mood?: number;
   /** When the day was locked in. Must be before the deadline to avoid a fine. */
   closedAt?: number | null;
   dayOff?: boolean;
@@ -60,6 +63,34 @@ export interface Settings {
   finConcentration: number;
   /** Anchor dates for every-N-weeks chores, keyed by chore id. */
   anchors?: Record<string, DateKey>;
+
+  /** Habits you added in the app. */
+  customHabits?: Habit[];
+  /** Built-in or custom habits you switched off. */
+  hiddenHabits?: string[];
+  /** Changed schedules for built-in chores (e.g. hoover on Sundays instead). */
+  scheduleOverrides?: Record<string, ChoreSchedule>;
+
+  /** Link to your charity's donation page. */
+  donateUrl?: string;
+  /** This week's focus habit, picked in the weekly review. */
+  focus?: { week: DateKey; habitId: string } | null;
+  /** Monday of the last week you reviewed. */
+  reviewedWeek?: DateKey;
+  /** Rewards already celebrated (so each one pops once). */
+  seenLevel?: number;
+  seenAchievements?: string[];
+  onboarded?: boolean;
+  reminders?: ReminderSettings;
+}
+
+export interface ReminderSettings {
+  morning: string;
+  caffeine: string;
+  lockIn: string;
+  bedtime: string;
+  weeklyJobs: boolean;
+  birthdays: boolean;
 }
 
 export interface AppData {

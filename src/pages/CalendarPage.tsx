@@ -24,7 +24,7 @@ import { IconCake, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { EVENT_COLORS, birthdaysOn, eventsOn, upcomingBirthdays } from '../lib/calendar';
 import { fmt, relativeDay, type DateKey } from '../lib/dates';
-import { grade } from '../lib/engine';
+import { grade, isOpen } from '../lib/engine';
 import { scoreColor } from '../lib/scoreColors';
 import { openDay, useSummary, useToday } from '../lib/hooks';
 import { newId, removeItem, upsert, useApp } from '../lib/store';
@@ -229,8 +229,8 @@ export default function CalendarPage() {
                   </Text>
                 </div>
                 {e && (
-                  <Badge size="xl" color={g.color} variant="light">
-                    {e.dayOff ? 'Day off' : `${g.letter} · ${e.pct}%`}
+                  <Badge size="xl" color={e.closed || !isOpen(e.date, today) ? g.color : 'violet'} variant="light" tt="none">
+                    {e.dayOff ? 'Day off' : e.closed || !isOpen(e.date, today) ? `${g.letter} · ${e.pct}%` : `${e.completed}/${e.required} so far`}
                   </Badge>
                 )}
               </Group>

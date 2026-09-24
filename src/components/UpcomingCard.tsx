@@ -1,6 +1,5 @@
 import { Badge, Button, Card, Group, Stack, Text } from '@mantine/core';
 import { birthdaysOn, eventsBetween, upcomingBirthdays } from '../lib/calendar';
-import { CHORES } from '../lib/config';
 import { addDays, diffDays, relativeDay, type DateKey } from '../lib/dates';
 import type { Summary } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
@@ -26,7 +25,7 @@ export default function UpcomingCard({ today, summary }: { today: DateKey; summa
   const bdays = upcomingBirthdays(birthdays, today, 14).filter((b) => b.daysAway > 0);
   const doneToday = new Set(todayEval?.items.filter((i) => i.done || i.skipped).map((i) => i.habit.id));
   // Bigger jobs due in the next few days (daily room chores would just be noise here).
-  const chores = CHORES.filter((h) => !(h.schedule && 'every' in h.schedule && h.schedule.every === 1) && !doneToday.has(h.id))
+  const chores = summary.habits.filter((h) => h.kind === 'chore' && !(h.schedule && 'every' in h.schedule && h.schedule.every === 1) && !doneToday.has(h.id))
     .map((h) => ({ h, next: summary.tracks[h.id]?.nextDue ?? today }))
     .filter((c) => c.next > today && diffDays(c.next, today) <= 4)
     .sort((a, b) => a.next.localeCompare(b.next));
@@ -35,7 +34,7 @@ export default function UpcomingCard({ today, summary }: { today: DateKey; summa
 
   return (
     <Card p="sm">
-      <Text fw={800} px={4} mb="xs">
+      <Text fw={800} fz={17} px={4} mb="xs">
         🔭 Coming up
       </Text>
       <Stack gap={6}>

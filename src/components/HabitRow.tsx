@@ -1,14 +1,16 @@
-import { ActionIcon, Badge, Button, Checkbox, Group, NumberInput, Paper, Stack, Text } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, NumberInput, Text } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconBottle, IconBottleFilled, IconCheck, IconX } from '@tabler/icons-react';
-import type { MouseEvent, ReactNode } from 'react';
-import { WATER_TARGET } from '../lib/config';
+import { IconBottle, IconBottleFilled } from '@tabler/icons-react';
+import { useRef, type MouseEvent, type ReactNode } from 'react';
+import { WATER_TARGET, scheduleLabel } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import type { ItemEval, Streak } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
 import type { DayLog } from '../lib/types';
+import { floatXp } from '../lib/feedback';
+import { CheckCircle, Tap, Tile } from './ui';
 
 interface Props {
   item: ItemEval;
@@ -16,84 +18,90 @@ interface Props {
   log: DayLog | undefined;
   streak: Streak;
   lastWeight: number | null;
+  color: string;
+  atRisk: boolean;
+  focus: boolean;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-function Shell(props: {
+function Row(props: {
   id: string;
   emoji: string;
+  color: string;
   label: string;
   meta?: ReactNode;
   right?: ReactNode;
   below?: ReactNode;
-  state?: 'done' | 'missed' | 'overdue';
+  state?: 'done' | 'missed';
+  focus?: boolean;
   onClick?: (e: MouseEvent) => void;
 }) {
+  const main = (
+    <div className="hrow-main">
+      <Tile emoji={props.emoji} color={props.color} dim={props.state === 'done'} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="hrow-label">{props.label}</div>
+        {props.meta && (
+          <Group gap={6} wrap="wrap" mt={2}>
+            {props.meta}
+          </Group>
+        )}
+      </div>
+      {props.right}
+    </div>
+  );
   return (
-    <Paper
-      data-habit={props.id}
-      p="xs"
-      pl="sm"
-      radius="md"
-      className={props.state ? `row-${props.state}` : undefined}
-      onClick={props.onClick}
-      role={props.onClick ? 'button' : undefined}
-      style={{ cursor: props.onClick ? 'pointer' : undefined, userSelect: 'none', transition: 'background 150ms' }}
-    >
-      <Group wrap="nowrap" gap="sm" mih={40}>
-        <Text fz={22} w={30} ta="center" style={{ flexShrink: 0 }}>
-          {props.emoji}
-        </Text>
-        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-          <Text fw={600} size="sm" lh={1.25}>
-            {props.label}
-          </Text>
-          {props.meta && (
-            <Group gap={6} wrap="wrap">
-              {props.meta}
-            </Group>
-          )}
-        </Stack>
-        {props.right}
-      </Group>
+    <div className="hrow" id={`row-${props.id}`} data-habit={props.id} data-state={props.state} data-focus={props.focus || undefined}>
+      {props.onClick ? <Tap onClick={props.onClick}>{main}</Tap> : main}
       {props.below}
-    </Paper>
+    </div>
   );
 }
 
-function StreakTag({ streak, important }: { streak: Streak; important?: boolean }) {
-  if (streak.current < 2) return null;
+function Meta({ children, c = 'dimmed' }: { children: ReactNode; c?: string }) {
   return (
-    <Text size="xs" fw={700} c={important ? 'orange.5' : 'orange.4'}>
-      <span className="flame">🔥</span> {streak.current}
-    </Text>
-  );
-}
-
-function Hint({ children }: { children: ReactNode }) {
-  return (
-    <Text size="xs" c="dimmed">
+    <Text size="xs" c={c} fw={500}>
       {children}
     </Text>
   );
 }
 
-export default function HabitRow({ item, date, log, streak, lastWeight }: Props) {
+function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
+  if (streak.current < 2) return null;
+  return (
+    <Text size="xs" fw={800} c={atRisk ? 'orange.5' : 'orange.4'}>
+      <span className="flame">🔥</span> {streak.current}
+      {atRisk ? ' at risk' : ''}
+    </Text>
+  );
+}
+
+export default function HabitRow({ item, date, log, streak, lastWeight, color, atRisk, focus }: Props) {
   const settings = useApp((s) => s.settings);
+  const weightAtFocus = useRef<number | null>(null);
   const { habit, done, missed, overdueDays, skipped } = item;
   const id = habit.id;
   const set = (fn: (l: DayLog) => void) => updateDay(date, fn);
+  const reward = (e: { clientX: number; clientY: number } | undefined) => {
+    pop(e);
+    floatXp(e, `+${habit.points}`);
+  };
 
-  const baseMeta = (
+  const meta = (
     <>
-      {habit.important && (
+      {focus && (
+        <Badge size="xs" variant="gradient">
+          focus
+        </Badge>
+      )}
+      {habit.important && !focus && (
         <Badge size="xs" variant="light" color="pink">
           key
         </Badge>
       )}
-      {habit.hint && <Hint>{habit.hint}</Hint>}
-      <StreakTag streak={streak} important={habit.important} />
+      {habit.hint && <Meta>{habit.hint}</Meta>}
+      <StreakTag streak={streak} atRisk={atRisk} />
     </>
   );
 
@@ -101,24 +109,27 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
     case 'check':
     case 'chore': {
       const toggle = (e: MouseEvent) => {
-        if (!done) pop(e);
+        if (!done) reward(e);
         set((l) => {
           l.done = { ...l.done, [id]: !done };
           if (l.skipped) delete l.skipped[id];
         });
       };
+      const schedule = habit.kind === 'chore' && habit.schedule && !('every' in habit.schedule && habit.schedule.every === 1) ? scheduleLabel(habit.schedule) : null;
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
-          state={done ? 'done' : overdueDays > 0 ? 'overdue' : undefined}
-          onClick={skipped ? undefined : toggle}
+          focus={focus}
+          state={done ? 'done' : undefined}
+          onClick={habit.skippable ? undefined : toggle}
           meta={
             <>
               {overdueDays > 0 && !done && (
-                <Badge size="xs" color="orange" variant="light">
-                  carried over · {overdueDays}d
+                <Badge size="xs" color="orange" variant="filled">
+                  {overdueDays}d overdue
                 </Badge>
               )}
               {skipped && (
@@ -126,31 +137,35 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
                   skipped
                 </Badge>
               )}
-              {baseMeta}
+              {schedule && <Meta>{schedule}</Meta>}
+              {meta}
             </>
           }
           right={
-            <Group gap={6} wrap="nowrap" onClick={stop}>
-              {habit.skippable && !done && (
-                <Button
-                  size="compact-xs"
-                  variant={skipped ? 'filled' : 'subtle'}
-                  color="gray"
-                  onClick={() =>
-                    set((l) => {
-                      l.skipped = { ...l.skipped, [id]: !skipped };
-                    })
-                  }
-                >
-                  {skipped ? 'Undo skip' : 'Skip'}
-                </Button>
-              )}
-              {!skipped && (
-                <div onClick={toggle} style={{ cursor: 'pointer' }}>
-                  <Checkbox.Indicator checked={done} size="lg" radius="xl" color="teal" />
-                </div>
-              )}
-            </Group>
+            habit.skippable ? (
+              <Group gap={6} wrap="nowrap">
+                {!done && (
+                  <Tap
+                    onClick={() =>
+                      set((l) => {
+                        l.skipped = { ...l.skipped, [id]: !skipped };
+                      })
+                    }
+                  >
+                    <Button component="div" size="compact-xs" variant={skipped ? 'filled' : 'subtle'} color="gray">
+                      {skipped ? 'Undo skip' : 'Skip'}
+                    </Button>
+                  </Tap>
+                )}
+                {!skipped && (
+                  <Tap onClick={toggle} aria-label={habit.label}>
+                    <CheckCircle checked={done} />
+                  </Tap>
+                )}
+              </Group>
+            ) : (
+              <CheckCircle checked={done} />
+            )
           }
         />
       );
@@ -158,58 +173,49 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
 
     case 'time': {
       const answer = log?.done?.[id];
+      const yes = (e: MouseEvent) => {
+        if (answer !== true) reward(e);
+        set((l) => {
+          l.done = { ...l.done, [id]: answer === true ? undefined : true } as Record<string, boolean>;
+          if (l.times) delete l.times[id];
+        });
+      };
+      const no = () =>
+        set((l) => {
+          l.done = { ...l.done, [id]: answer === false ? undefined : false } as Record<string, boolean>;
+        });
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
+          focus={focus}
           state={done ? 'done' : missed ? 'missed' : undefined}
           meta={
             <>
-              {missed && log?.times?.[id] && <Hint>~{log.times[id]}</Hint>}
-              {baseMeta}
+              {missed && log?.times?.[id] && <Meta c="red.4">~{log.times[id]}</Meta>}
+              {meta}
             </>
           }
           right={
-            <Group gap={6} wrap="nowrap">
-              <ActionIcon
-                size="lg"
-                radius="xl"
-                variant={answer === true ? 'filled' : 'default'}
-                color="teal"
-                aria-label="Yes"
-                onClick={(e) => {
-                  if (answer !== true) pop(e);
-                  set((l) => {
-                    l.done = { ...l.done, [id]: true };
-                    if (l.times) delete l.times[id];
-                  });
-                }}
-              >
-                <IconCheck size={18} />
-              </ActionIcon>
-              <ActionIcon
-                size="lg"
-                radius="xl"
-                variant={answer === false ? 'filled' : 'default'}
-                color="red"
-                aria-label="No"
-                onClick={() =>
-                  set((l) => {
-                    l.done = { ...l.done, [id]: false };
-                  })
-                }
-              >
-                <IconX size={18} />
-              </ActionIcon>
+            <Group gap={8} wrap="nowrap">
+              <Tap onClick={no} aria-label="No">
+                <CheckCircle checked={false} missed={answer === false} idle="x" />
+              </Tap>
+              <Tap onClick={yes} aria-label="Yes">
+                <CheckCircle checked={answer === true} idle="check" />
+              </Tap>
             </Group>
           }
           below={
             missed && (
               <TimeInput
                 mt="xs"
+                ml={50}
                 size="sm"
-                label={habit.missPrompt}
+                radius="md"
+                description={habit.missPrompt}
                 value={log?.times?.[id] ?? ''}
                 onChange={(e) => {
                   const v = e.currentTarget.value;
@@ -227,41 +233,44 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
     case 'water': {
       const water = log?.water ?? 0;
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
+          focus={focus}
           state={done ? 'done' : undefined}
           meta={
             <>
-              <Hint>
+              <Meta>
                 {water}/{WATER_TARGET} bottles
-              </Hint>
-              {baseMeta}
+              </Meta>
+              {meta}
             </>
           }
           right={
-            <Group gap={4} wrap="nowrap">
+            <Group gap={2} wrap="nowrap">
               {Array.from({ length: WATER_TARGET }, (_, i) => {
                 const filled = i < water;
                 return (
-                  <ActionIcon
+                  <Tap
                     key={i}
-                    size="xl"
-                    radius="xl"
-                    variant={filled ? 'light' : 'subtle'}
-                    color={filled ? 'blue' : 'gray'}
                     aria-label={`Bottle ${i + 1}`}
                     onClick={(e) => {
                       const next = filled && water === i + 1 ? i : i + 1;
-                      if (next > water) pop(e);
+                      if (next > water) {
+                        pop(e);
+                        if (next >= WATER_TARGET) floatXp(e, `+${habit.points}`);
+                      }
                       set((l) => {
                         l.water = next;
                       });
                     }}
                   >
-                    {filled ? <IconBottleFilled size={24} /> : <IconBottle size={24} />}
-                  </ActionIcon>
+                    <ActionIcon component="div" size={40} radius="xl" variant={filled ? 'light' : 'subtle'} color={filled ? 'blue' : 'gray'}>
+                      {filled ? <IconBottleFilled size={24} /> : <IconBottle size={24} />}
+                    </ActionIcon>
+                  </Tap>
                 );
               })}
             </Group>
@@ -273,26 +282,34 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
     case 'weight': {
       const delta = log?.weight && lastWeight ? log.weight - lastWeight : null;
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
+          focus={focus}
           state={done ? 'done' : undefined}
           meta={
             <>
               {lastWeight != null && (
-                <Hint>
-                  last {lastWeight} {settings.weightUnit}
-                  {delta != null && delta !== 0 && ` (${delta > 0 ? '+' : ''}${delta.toFixed(1)})`}
-                </Hint>
+                <Meta>
+                  last {lastWeight}
+                  {delta != null && delta !== 0 && (
+                    <Text span size="xs" fw={700} c={delta < 0 ? 'teal.4' : 'orange.4'}>
+                      {' '}
+                      {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}
+                    </Text>
+                  )}
+                </Meta>
               )}
-              <StreakTag streak={streak} />
+              <StreakTag streak={streak} atRisk={atRisk} />
             </>
           }
           right={
             <NumberInput
-              w={112}
+              w={104}
               size="sm"
+              radius="md"
               inputMode="decimal"
               placeholder={lastWeight ? String(lastWeight) : settings.weightUnit}
               suffix={` ${settings.weightUnit}`}
@@ -306,6 +323,14 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
                   l.weight = typeof v === 'number' ? v : null;
                 })
               }
+              onFocus={() => (weightAtFocus.current = log?.weight ?? null)}
+              onBlur={(e) => {
+                // First weigh-in of the day earns the pop, not every edit.
+                if (weightAtFocus.current == null && log?.weight) {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  reward({ clientX: r.left + r.width / 2, clientY: r.top });
+                }
+              }}
             />
           }
         />
@@ -316,38 +341,40 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
       const ml = log?.finMl ?? null;
       // % w/v → mg per ml: 0.025% = 0.025 g / 100 ml = 0.25 mg/ml
       const mgPerMl = settings.finConcentration * 10;
+      const toggle = (e: MouseEvent) => {
+        if (!done) reward(e);
+        set((l) => {
+          l.finMl = done ? null : settings.finTargetMl;
+        });
+      };
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
+          focus={focus}
           state={done ? 'done' : undefined}
-          onClick={(e) => {
-            if (!done) pop(e);
-            set((l) => {
-              l.finMl = done ? null : settings.finTargetMl;
-            });
-          }}
           meta={
             <>
-              <Hint>
-                {settings.finConcentration}% · {ml ? `${(ml * mgPerMl).toFixed(3)} mg` : `target ${settings.finTargetMl} ml`}
-              </Hint>
-              <StreakTag streak={streak} />
+              <Meta>{ml ? `${ml} ml · ${(ml * mgPerMl).toFixed(3)} mg` : `${settings.finTargetMl} ml · ${settings.finConcentration}%`}</Meta>
+              <StreakTag streak={streak} atRisk={atRisk} />
             </>
           }
           right={
             <Group gap={8} wrap="nowrap" onClick={stop}>
               {done && (
                 <NumberInput
-                  w={92}
+                  w={84}
                   size="sm"
+                  radius="md"
                   inputMode="decimal"
                   suffix=" ml"
                   step={0.1}
                   decimalScale={2}
                   min={0}
                   max={10}
+                  hideControls
                   value={ml ?? ''}
                   onChange={(v) =>
                     set((l) => {
@@ -356,17 +383,9 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
                   }
                 />
               )}
-              <div
-                style={{ cursor: 'pointer' }}
-                onClick={(e) => {
-                  if (!done) pop(e);
-                  set((l) => {
-                    l.finMl = done ? null : settings.finTargetMl;
-                  });
-                }}
-              >
-                <Checkbox.Indicator checked={done} size="lg" radius="xl" color="teal" />
-              </div>
+              <Tap onClick={toggle} aria-label={habit.label}>
+                <CheckCircle checked={done} />
+              </Tap>
             </Group>
           }
         />
@@ -377,7 +396,7 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
       const answer = log?.avoid?.[id];
       const choose = (value: 'clean' | 'slip', e: MouseEvent) => {
         const next = answer === value ? undefined : value;
-        if (next === 'clean') pop(e);
+        if (next === 'clean') reward(e);
         if (next === 'slip') {
           notifications.show({
             color: 'gray',
@@ -393,32 +412,32 @@ export default function HabitRow({ item, date, log, streak, lastWeight }: Props)
         });
       };
       return (
-        <Shell
+        <Row
           id={id}
           emoji={habit.emoji}
+          color={color}
           label={habit.label}
+          focus={focus}
           state={answer === 'clean' ? 'done' : answer === 'slip' ? 'missed' : undefined}
-          meta={baseMeta}
+          meta={meta}
           right={
-            <Group gap={4} wrap="nowrap">
-              <Button
-                size="compact-sm"
-                radius="xl"
-                variant={answer === 'clean' ? 'filled' : 'default'}
-                color="teal"
-                onClick={(e) => choose('clean', e)}
-              >
-                Clean
-              </Button>
-              <Button
-                size="compact-sm"
-                radius="xl"
-                variant={answer === 'slip' ? 'filled' : 'default'}
-                color="red"
-                onClick={(e) => choose('slip', e)}
-              >
-                Slipped
-              </Button>
+            <Group gap={6} wrap="nowrap">
+              <Tap onClick={(e) => choose('slip', e)} aria-label="Slipped">
+                <Button component="div" size="compact-sm" variant={answer === 'slip' ? 'filled' : 'default'} color="red" px={10}>
+                  Slipped
+                </Button>
+              </Tap>
+              <Tap onClick={(e) => choose('clean', e)} aria-label="Clean">
+                <Button
+                  component="div"
+                  size="compact-sm"
+                  variant={answer === 'clean' ? 'gradient' : 'default'}
+                  gradient={{ from: 'teal.5', to: 'green.6', deg: 135 }}
+                  px={12}
+                >
+                  Clean
+                </Button>
+              </Tap>
             </Group>
           }
         />

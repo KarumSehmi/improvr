@@ -65,9 +65,11 @@ interface UiState {
   page: Page;
   /** Day shown on the Today page (null = today). */
   viewDate: DateKey | null;
+  /** Weekly review opened by hand (it also opens itself once a week). */
+  reviewOpen: boolean;
 }
 
-export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null }));
+export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null, reviewOpen: false }));
 
 export function openDay(date: DateKey | null) {
   useUi.setState({ page: 'today', viewDate: date });

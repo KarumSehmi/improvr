@@ -23,7 +23,9 @@ import { IconDownload, IconTrash, IconUpload } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { fireworks } from '../lib/celebrate';
-import { HABIT_BY_ID } from '../lib/config';
+import HabitsEditor from '../components/HabitsEditor';
+import RemindersCard from '../components/RemindersCard';
+import { BUILT_IN_BY_ID } from '../lib/config';
 import { dateKey, fmt, weekday } from '../lib/dates';
 import { useSummary } from '../lib/hooks';
 import { getData, importData, newId, removeItem, updateSettings, upsert, useApp } from '../lib/store';
@@ -68,6 +70,11 @@ function FinesCard() {
             Missed: {summary.fineDays.slice(-10).map((d) => fmt(d, 'ddd D MMM')).join(', ')}
             {summary.fineDays.length > 10 && ` and ${summary.fineDays.length - 10} more`}
           </Text>
+          {settings.donateUrl && (
+            <Button component="a" href={settings.donateUrl} target="_blank" rel="noreferrer" color="red" variant="light">
+              Donate £{summary.owed} now
+            </Button>
+          )}
           <Group align="flex-end" wrap="nowrap">
             <NumberInput
               label="Amount donated"
@@ -185,7 +192,7 @@ function RulesCard() {
 function SettingsCard() {
   const settings = useApp((s) => s.settings);
   const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const refill = HABIT_BY_ID.pillRefill;
+  const refill = BUILT_IN_BY_ID.pillRefill;
 
   return (
     <Card>
@@ -198,6 +205,13 @@ function SettingsCard() {
           label="Charity for fines"
           defaultValue={settings.charity}
           onBlur={(e) => updateSettings({ charity: e.currentTarget.value.trim() || 'a charity of your choice' })}
+        />
+        <TextInput
+          label="Donation link"
+          description="Makes paying a fine one tap"
+          placeholder="https://…"
+          defaultValue={settings.donateUrl ?? ''}
+          onBlur={(e) => updateSettings({ donateUrl: e.currentTarget.value.trim() || undefined })}
         />
         <Group grow>
           <NumberInput label="Fine per missed day" prefix="£" min={1} value={settings.fineAmount} onChange={(v) => Number(v) > 0 && updateSettings({ fineAmount: Number(v) })} />
@@ -354,6 +368,8 @@ export default function MorePage() {
     <Stack>
       <Title order={2}>More</Title>
       <FinesCard />
+      <RemindersCard />
+      <HabitsEditor />
       <RulesCard />
       <SettingsCard />
       <AccountCard />

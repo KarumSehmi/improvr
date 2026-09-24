@@ -1,7 +1,7 @@
 /**
  * Pure logic: what's due, scores, streaks, fines, XP. No React, no storage — easy to test.
  */
-import { AVOIDS, BONUS, CHORES, HABITS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, type Habit } from './config';
+import { BONUS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, habitsFor, type Habit } from './config';
 import { addDays, diffDays, fromNum, logDeadline, maxKey, toNum, weekday, weekStart, type DateKey } from './dates';
 import type { AppData, DayLog, Settings } from './types';
 
@@ -22,11 +22,10 @@ export interface ChoreTrack {
   nextDue: DateKey;
 }
 
-function weeklyAnchor(h: Habit, settings: Settings, wd: number): DateKey {
+function weeklyAnchor(h: Habit, settings: Settings, wd: number, start: DateKey): DateKey {
   const custom = settings.anchors?.[h.id];
   if (custom && weekday(custom) === wd) return custom;
-  const s = settings.startDate;
-  return addDays(s, (wd - weekday(s) + 7) % 7);
+  return addDays(start, (wd - weekday(start) + 7) % 7);
 }
 
 function occurrenceOnOrAfter(anchor: DateKey, period: number, from: DateKey): DateKey {
@@ -38,7 +37,7 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
   const { settings, days } = data;
   const s = h.schedule;
   if (!s) throw new Error(`${h.id} has no schedule`);
-  const start = settings.startDate;
+  const start = maxKey(settings.startDate, h.since ?? settings.startDate);
 
   let nextDue: DateKey;
   let advance: (doneOn: DateKey, due: DateKey) => DateKey;
@@ -47,7 +46,7 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
     advance = (doneOn) => addDays(doneOn, s.every);
   } else {
     const period = 7 * (s.everyWeeks ?? 1);
-    const anchor = weeklyAnchor(h, settings, s.weekday);
+    const anchor = weeklyAnchor(h, settings, s.weekday, start);
     nextDue = occurrenceOnOrAfter(anchor, period, start);
     // Doing it early covers the upcoming one; doing it late covers everything missed.
     advance = (doneOn, due) => occurrenceOnOrAfter(anchor, period, addDays(maxKey(doneOn, due), 1));
@@ -115,11 +114,14 @@ export interface DayEval {
   workoutCount: number;
 }
 
-export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string, ChoreTrack>): DayEval {
+export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string, ChoreTrack>, habits = habitsFor(data.settings)): DayEval {
   const log = data.days[date];
   const dayOff = !!log?.dayOff;
 
-  const items: ItemEval[] = HABITS.map((habit) => {
+  const items: ItemEval[] = habits.map((habit) => {
+    if (habit.since && date < habit.since) {
+      return { habit, visible: false, required: false, done: false, skipped: false, overdueDays: 0, missed: false };
+    }
     if (habit.kind === 'chore') {
       const cd = tracks[habit.id]?.byDate[date];
       const done = !!cd?.done;
@@ -240,6 +242,7 @@ export interface WeekTraining {
 
 export interface Summary {
   today: DateKey;
+  habits: Habit[];
   tracks: Record<string, ChoreTrack>;
   evals: DayEval[];
   evalByDate: Record<DateKey, DayEval>;
@@ -261,18 +264,19 @@ export interface Summary {
 export function summarize(data: AppData, today: DateKey): Summary {
   const start = data.settings.startDate;
   const until = maxKey(today, start);
+  const habits = habitsFor(data.settings);
   const tracks: Record<string, ChoreTrack> = {};
-  for (const c of CHORES) tracks[c.id] = trackChore(c, data, until);
+  for (const c of habits) if (c.kind === 'chore') tracks[c.id] = trackChore(c, data, until);
 
   const evals: DayEval[] = [];
   if (start <= today) {
-    for (let n = toNum(start), end = toNum(today); n <= end; n++) evals.push(evaluateDay(fromNum(n), data, tracks));
+    for (let n = toNum(start), end = toNum(today); n <= end; n++) evals.push(evaluateDay(fromNum(n), data, tracks, habits));
   }
   const evalByDate = Object.fromEntries(evals.map((e) => [e.date, e]));
   const openFlags = evals.map((e) => isOpen(e.date, today));
 
   const habitStreaks: Record<string, Streak> = {};
-  HABITS.forEach((h, idx) => {
+  habits.forEach((h, idx) => {
     habitStreaks[h.id] = runStreak(evals.map((e, i) => habitOutcome(e.items[idx], e, openFlags[i])));
   });
   const logStreak = runStreak(evals.map((e, i) => logOutcome(e, openFlags[i])));
@@ -304,6 +308,7 @@ export function summarize(data: AppData, today: DateKey): Summary {
 
   return {
     today,
+    habits,
     tracks,
     evals,
     evalByDate,
@@ -343,7 +348,7 @@ export interface SlipStats {
 
 export function slipStats(summary: Summary): SlipStats[] {
   const { evals, today } = summary;
-  return AVOIDS.map((habit) => {
+  return summary.habits.filter((h) => h.kind === 'avoid').map((habit) => {
     let slips7 = 0;
     let slips30 = 0;
     let slipsAll = 0;
@@ -365,7 +370,8 @@ export function slipStats(summary: Summary): SlipStats[] {
 
 /** Completion % for a habit over the last `n` days (only days it was required, excluding days off). */
 export function completionRate(summary: Summary, habitId: string, n: number): number | null {
-  const idx = HABITS.findIndex((h) => h.id === habitId);
+  const idx = summary.habits.findIndex((h) => h.id === habitId);
+  if (idx < 0) return null;
   let req = 0;
   let done = 0;
   for (const e of summary.evals.slice(-n)) {
@@ -376,4 +382,74 @@ export function completionRate(summary: Summary, habitId: string, n: number): nu
     if (it.done) done++;
   }
   return req ? Math.round((done / req) * 100) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Weeks
+// ---------------------------------------------------------------------------
+
+export interface HabitRate {
+  habit: Habit;
+  done: number;
+  required: number;
+  rate: number;
+}
+
+export interface WeekStats {
+  start: DateKey;
+  /** Days of this week that have been tracked so far. */
+  days: number;
+  logged: number;
+  perfect: number;
+  daysOff: number;
+  avgPct: number | null;
+  xp: number;
+  sessions: number;
+  slips: Record<string, number>;
+  weightStart: number | null;
+  weightEnd: number | null;
+  moodAvg: number | null;
+  rates: HabitRate[];
+}
+
+/** Completion per habit over a set of days (days off excluded). */
+export function habitRates(summary: Summary, evals: DayEval[]): HabitRate[] {
+  return summary.habits.map((habit, idx) => {
+    let done = 0;
+    let required = 0;
+    for (const e of evals) {
+      if (e.dayOff) continue;
+      const it = e.items[idx];
+      if (!it?.required && !it?.done) continue;
+      required++;
+      if (it.done) done++;
+    }
+    return { habit, done, required, rate: required ? done / required : 0 };
+  });
+}
+
+/** Stats for the Mon–Sun week starting `start`, optionally only up to `until` (for like-for-like comparisons). */
+export function weekStats(summary: Summary, start: DateKey, until?: DateKey): WeekStats {
+  const end = until && until < addDays(start, 6) ? until : addDays(start, 6);
+  const evals = summary.evals.filter((e) => e.date >= start && e.date <= end);
+  const scored = evals.filter((e) => e.pct != null);
+  const weights = evals.filter((e) => e.log?.weight).map((e) => e.log!.weight as number);
+  const moods = evals.filter((e) => e.log?.mood).map((e) => e.log!.mood as number);
+  const slips: Record<string, number> = {};
+  for (const h of summary.habits) if (h.kind === 'avoid') slips[h.id] = evals.filter((e) => e.log?.avoid?.[h.id] === 'slip').length;
+  return {
+    start,
+    days: evals.length,
+    logged: evals.filter((e) => e.onTime).length,
+    perfect: evals.filter((e) => e.perfect).length,
+    daysOff: evals.filter((e) => e.dayOff).length,
+    avgPct: scored.length ? Math.round(scored.reduce((s, e) => s + (e.pct ?? 0), 0) / scored.length) : null,
+    xp: evals.reduce((s, e) => s + e.points, 0),
+    sessions: evals.filter((e) => e.workoutCount > 0).length,
+    slips,
+    weightStart: weights[0] ?? null,
+    weightEnd: weights.at(-1) ?? null,
+    moodAvg: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
+    rates: habitRates(summary, evals),
+  };
 }

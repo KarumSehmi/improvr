@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HABIT_BY_ID, defaultSettings } from './config';
+import { BUILT_IN_BY_ID as HABIT_BY_ID, defaultSettings } from './config';
 import { addDays, logDeadline, startOfDay } from './dates';
 import { dayOffUsedInWeek, levelFor, runStreak, summarize, trackChore } from './engine';
 import type { AppData, DayLog } from './types';

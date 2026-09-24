@@ -86,6 +86,12 @@ export function updateDay(date: DateKey, fn: (log: DayLog) => void) {
   backend?.put('days', date, next);
 }
 
+/** Put a day back exactly as it was (used by Undo). */
+export function setDay(date: DateKey, log: DayLog) {
+  useApp.setState((s) => ({ days: { ...s.days, [date]: log } }));
+  backend?.put('days', date, log);
+}
+
 type Items = { events: CalEvent; birthdays: Birthday; payments: Payment };
 
 export function upsert<C extends keyof Items>(col: C, item: Items[C]) {

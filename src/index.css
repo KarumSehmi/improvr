@@ -1,7 +1,57 @@
+:root {
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-strong: rgba(18, 18, 28, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.07);
+  --ring-track: rgba(255, 255, 255, 0.08);
+  --ring-idle: rgba(255, 255, 255, 0.22);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-mantine-color-scheme='light'] {
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(20, 20, 50, 0.08);
+  --divider: rgba(20, 20, 50, 0.07);
+  --ring-track: rgba(20, 20, 50, 0.08);
+  --ring-idle: rgba(20, 20, 50, 0.2);
+  --shadow: 0 10px 30px rgba(40, 30, 90, 0.12);
+  --mantine-color-body: #f3f2f8;
+}
+
 html,
 body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+
+body {
+  background: var(--mantine-color-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Soft colour glow behind everything */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 10% 0%, rgba(132, 94, 247, 0.22), transparent 70%),
+    radial-gradient(50% 35% at 100% 5%, rgba(240, 101, 149, 0.14), transparent 70%),
+    radial-gradient(60% 40% at 50% 110%, rgba(32, 201, 151, 0.08), transparent 70%);
+}
+
+.mantine-Card-root,
+.glass {
+  background: var(--glass);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(18px);
+}
+
+[data-mantine-color-scheme='light'] .mantine-Card-root {
+  box-shadow: 0 1px 2px rgba(20, 20, 50, 0.04), 0 8px 24px rgba(40, 30, 90, 0.05);
 }
 
 /* iOS zooms into inputs smaller than 16px */
@@ -13,40 +63,117 @@ body {
   }
 }
 
-/* Space for the iPhone notch / status bar when installed to the home screen */
 .safe-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: calc(env(safe-area-inset-top) + 4px);
 }
 
 .mantine-Notifications-root[data-position^='top'] {
   top: calc(env(safe-area-inset-top) + 8px) !important;
 }
 
+.mantine-Notification-root {
+  background: var(--glass-strong);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Floating tab bar ---------- */
 .tabbar {
-  padding-bottom: env(safe-area-inset-bottom);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--mantine-color-body) 94%, transparent);
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
+  height: 64px;
+  z-index: 150;
+  display: flex;
+  padding: 6px;
+  gap: 4px;
+  border-radius: 24px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
 }
 
-.hero {
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(151, 117, 250, 0.35), transparent 55%),
-    radial-gradient(120% 140% at 100% 100%, rgba(240, 101, 149, 0.28), transparent 55%);
+.tab {
+  position: relative;
+  flex: 1;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--mantine-color-dimmed);
 }
 
-.row-done {
-  background: var(--mantine-color-teal-light) !important;
-  border-color: var(--mantine-color-teal-outline) !important;
+.tab[data-active] {
+  color: var(--mantine-color-text);
 }
 
-.row-missed {
-  background: var(--mantine-color-red-light) !important;
-  border-color: var(--mantine-color-red-outline) !important;
+.tab-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(132, 94, 247, 0.28), rgba(240, 101, 149, 0.2));
+  border: 1px solid rgba(151, 117, 250, 0.35);
 }
 
-.row-overdue {
-  border-color: var(--mantine-color-orange-outline) !important;
+.main-pad {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 96px);
+}
+
+@media (min-width: 48em) {
+  .main-pad {
+    padding-bottom: 48px;
+  }
+}
+
+/* ---------- Checklist rows ---------- */
+.hrow {
+  padding: 10px 2px;
+  scroll-margin: 120px;
+}
+
+.hrow + .hrow {
+  border-top: 1px solid var(--divider);
+}
+
+.hrow-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+}
+
+.hrow-label {
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.25;
+  transition: opacity 200ms, color 200ms;
+}
+
+.hrow[data-state='done'] .hrow-label {
+  opacity: 0.55;
+}
+
+.hrow[data-focus] .hrow-label::after {
+  content: ' 🎯';
+}
+
+.flash {
+  animation: flash 1.4s ease-out;
+}
+
+@keyframes flash {
+  0%,
+  30% {
+    background: rgba(151, 117, 250, 0.22);
+  }
+  100% {
+    background: transparent;
+  }
 }
 
 .flame {
@@ -60,11 +187,46 @@ body {
     transform: scale(1) rotate(-2deg);
   }
   50% {
-    transform: scale(1.12) rotate(3deg);
+    transform: scale(1.14) rotate(3deg);
   }
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(132, 94, 247, 0.34), transparent 55%),
+    radial-gradient(120% 120% at 100% 100%, rgba(240, 101, 149, 0.24), transparent 55%),
+    var(--glass) !important;
+}
+
+.pill-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pill-row::-webkit-scrollbar {
+  display: none;
 }
 
 .scroll-x {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+@media (min-width: 48em) {
+  [data-hidden-desktop] {
+    display: none !important;
+  }
 }

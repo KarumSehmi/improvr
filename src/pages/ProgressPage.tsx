@@ -1,6 +1,7 @@
 import { BarChart, Heatmap, LineChart } from '@mantine/charts';
 import {
   Badge,
+  Button,
   Card,
   Group,
   Progress,
@@ -13,13 +14,15 @@ import {
   Title,
   useComputedColorScheme,
 } from '@mantine/core';
-import { useEffect, useRef, useState } from 'react';
-import { AVOIDS, HABITS } from '../lib/config';
-import { addDays, fmt, maxKey, relativeDay } from '../lib/dates';
-import { completionRate, slipStats, type Summary } from '../lib/engine';
-import { useSummary, useToday } from '../lib/hooks';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { achievements } from '../lib/achievements';
+import { addDays, diffDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
+import { completionRate, grade, slipStats, weekStats, type Summary } from '../lib/engine';
+import { useSummary, useToday, useUi } from '../lib/hooks';
+import { insights } from '../lib/insights';
 import { SCORE_COLORS } from '../lib/scoreColors';
 import { useApp } from '../lib/store';
+import { Tile } from '../components/ui';
 
 function StatTile({ emoji, value, label, sub }: { emoji: string; value: string | number; label: string; sub?: string }) {
   return (
@@ -142,7 +145,7 @@ function CleanCard({ summary }: { summary: Summary }) {
 }
 
 function StreakTable({ summary }: { summary: Summary }) {
-  const rows = HABITS.filter((h) => h.kind !== 'avoid').map((h) => ({
+  const rows = summary.habits.filter((h) => h.kind !== 'avoid').map((h) => ({
     h,
     streak: summary.habitStreaks[h.id],
     rate: completionRate(summary, h.id, 30),
@@ -203,12 +206,20 @@ function WeightCard() {
   const [range, setRange] = useState('90');
   const today = useToday();
   const from = range === 'all' ? '0000' : addDays(today, -Number(range));
-  const points = Object.entries(days)
-    .filter(([d, l]) => l.weight && d >= from)
+  const all = Object.entries(days)
+    .filter(([, l]) => l.weight)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([d, l]) => ({ date: fmt(d, 'D MMM'), weight: l.weight as number }));
-  const first = points[0]?.weight;
-  const last = points.at(-1)?.weight;
+    .map(([d, l]) => ({ d, w: l.weight as number }));
+  // 7-day rolling average smooths out daily water-weight noise so you see the real trend.
+  const points = all
+    .map((p) => {
+      const window = all.filter((q) => q.d <= p.d && diffDays(p.d, q.d) < 7);
+      const avg = window.reduce((s, q) => s + q.w, 0) / window.length;
+      return { d: p.d, date: fmt(p.d, 'D MMM'), weight: p.w, avg: Math.round(avg * 10) / 10 };
+    })
+    .filter((p) => p.d >= from);
+  const first = points[0]?.avg;
+  const last = points.at(-1)?.avg;
   const change = first != null && last != null ? last - first : null;
 
   return (
@@ -217,7 +228,7 @@ function WeightCard() {
         <div>
           <Text fw={800}>⚖️ Weight</Text>
           <Text size="xs" c="dimmed">
-            {last != null ? `${last} ${unit}` : 'No weigh-ins yet'}
+            {last != null ? `7-day avg ${last} ${unit}` : 'No weigh-ins yet'}
             {change != null && points.length > 1 && ` · ${change > 0 ? '+' : ''}${change.toFixed(1)} ${unit} in range`}
           </Text>
         </div>
@@ -229,7 +240,12 @@ function WeightCard() {
           h={200}
           data={points}
           dataKey="date"
-          series={[{ name: 'weight', label: `Weight (${unit})`, color: 'violet.5' }]}
+          series={[
+            { name: 'weight', label: 'Daily', color: 'gray.5', strokeDasharray: '3 4' },
+            { name: 'avg', label: '7-day average', color: 'violet.5' },
+          ]}
+          withLegend
+          legendProps={{ verticalAlign: 'bottom', height: 28 }}
           curveType="monotone"
           strokeWidth={2}
           withDots={points.length < 40}
@@ -321,7 +337,7 @@ export default function ProgressPage() {
   const perfectDays = evals.filter((e) => e.perfect).length;
   const scored = evals.filter((e) => e.pct != null && e.closed);
   const avg = scored.length ? Math.round(scored.reduce((s, e) => s + (e.pct ?? 0), 0) / scored.length) : 0;
-  const vape = summary.habitStreaks[AVOIDS[0].id];
+  const vape = summary.habitStreaks.vape ?? { current: 0, best: 0 };
 
   return (
     <Stack>
@@ -361,7 +377,10 @@ export default function ProgressPage() {
         <StatTile emoji="💷" value={`£${summary.fineTotal}`} label="Total fines" sub={summary.owed ? `£${summary.owed} still owed` : 'all paid up'} />
       </SimpleGrid>
 
+      <InsightsCard summary={summary} />
+      <WeekCard summary={summary} />
       <ScoreHeatmap summary={summary} />
+      <AchievementsCard summary={summary} />
       <CleanCard summary={summary} />
       <StreakTable summary={summary} />
       <WeightCard />
@@ -369,5 +388,165 @@ export default function ProgressPage() {
       <BodyCard summary={summary} />
       <NotesCard summary={summary} />
     </Stack>
+  );
+}
+
+function InsightsCard({ summary }: { summary: Summary }) {
+  const list = useMemo(() => insights(summary), [summary]);
+  return (
+    <Card p="sm">
+      <Text fw={800} fz={17} px={4}>
+        🧠 What your data says
+      </Text>
+      {list.length === 0 ? (
+        <Text size="sm" c="dimmed" px={4} mt={4}>
+          Log a couple of weeks and patterns show up here — like how your sleep affects the rest of your day, and when you tend to slip.
+        </Text>
+      ) : (
+        <div style={{ marginTop: 4 }}>
+          {list.slice(0, 6).map((i) => (
+            <div key={i.id} className="hrow">
+              <div className="hrow-main">
+                <Tile emoji={i.emoji} color={i.tone === 'good' ? 'teal' : i.tone === 'bad' ? 'orange' : 'violet'} />
+                <Text size="sm" fw={600} lh={1.35} style={{ flex: 1 }}>
+                  {i.text}
+                </Text>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Change({ now, before, suffix = '', invert }: { now: number | null; before: number | null; suffix?: string; invert?: boolean }) {
+  if (now == null || before == null) return <Text size="xs" c="dimmed">no data last week</Text>;
+  const diff = Math.round((now - before) * 10) / 10;
+  if (diff === 0) return <Text size="xs" c="dimmed">same as last week</Text>;
+  const good = invert ? diff < 0 : diff > 0;
+  return (
+    <Text size="xs" fw={800} c={good ? 'teal.4' : 'red.4'}>
+      {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}
+      {suffix} vs last week
+    </Text>
+  );
+}
+
+function WeekCard({ summary }: { summary: Summary }) {
+  const today = useToday();
+  const ws = weekStart(today);
+  // Like for like: this week so far vs the same days last week. Scores only count finished days.
+  const now = weekStats(summary, ws, today);
+  const before = weekStats(summary, addDays(ws, -7), addDays(today, -7));
+  const finished = weekStats(summary, ws, addDays(today, -1)).avgPct;
+  const finishedBefore = weekStats(summary, addDays(ws, -7), addDays(today, -8)).avgPct;
+  const g = grade(finished);
+  const slipsNow = Object.values(now.slips).reduce((a, b) => a + b, 0);
+  const slipsBefore = Object.values(before.slips).reduce((a, b) => a + b, 0);
+  return (
+    <Card p="sm">
+      <Group justify="space-between" px={4}>
+        <div>
+          <Text fw={800} fz={17}>
+            📆 This week
+          </Text>
+          <Text size="xs" c="dimmed">
+            vs the same point last week
+          </Text>
+        </div>
+        <Button size="compact-sm" variant="light" onClick={() => useUi.setState({ reviewOpen: true })} disabled={before.days < 1}>
+          Review last week
+        </Button>
+      </Group>
+      <SimpleGrid cols={{ base: 2, xs: 4 }} spacing="xs" mt="sm">
+        <Card p="xs" radius="lg">
+          <Text fw={900} fz={22} c={`${g.color}.4`}>
+            {finished ?? '—'}%
+          </Text>
+          <Text size="xs" fw={600}>
+            Avg score
+          </Text>
+          <Change now={finished} before={finishedBefore} suffix="%" />
+        </Card>
+        <Card p="xs" radius="lg">
+          <Text fw={900} fz={22}>
+            {now.sessions}
+          </Text>
+          <Text size="xs" fw={600}>
+            Sessions
+          </Text>
+          <Change now={now.sessions} before={before.days ? before.sessions : null} />
+        </Card>
+        <Card p="xs" radius="lg">
+          <Text fw={900} fz={22}>
+            {slipsNow}
+          </Text>
+          <Text size="xs" fw={600}>
+            Slips
+          </Text>
+          <Change now={slipsNow} before={before.days ? slipsBefore : null} invert />
+        </Card>
+        <Card p="xs" radius="lg">
+          <Text fw={900} fz={22} c="yellow.4">
+            {now.xp.toLocaleString()}
+          </Text>
+          <Text size="xs" fw={600}>
+            XP
+          </Text>
+          <Change now={now.xp} before={before.days ? before.xp : null} />
+        </Card>
+      </SimpleGrid>
+    </Card>
+  );
+}
+
+function AchievementsCard({ summary }: { summary: Summary }) {
+  const list = useMemo(() => achievements(summary), [summary]);
+  const [showAll, setShowAll] = useState(false);
+  const unlocked = list.filter((a) => a.unlocked);
+  // Locked ones closest to unlocking first — something to chase.
+  const locked = list.filter((a) => !a.unlocked).sort((a, b) => b.progress / b.target - a.progress / a.target);
+  const shown = showAll ? [...unlocked, ...locked] : [...unlocked, ...locked].slice(0, 9);
+  return (
+    <Card p="sm">
+      <Group justify="space-between" px={4}>
+        <Text fw={800} fz={17}>
+          🏅 Badges
+        </Text>
+        <Badge variant="light" color="yellow" size="lg">
+          {unlocked.length}/{list.length}
+        </Badge>
+      </Group>
+      <SimpleGrid cols={3} spacing="xs" mt="sm">
+        {shown.map((a) => (
+          <Card key={a.id} p="xs" radius="lg" ta="center" className={a.unlocked ? 'hero' : undefined} style={{ opacity: a.unlocked ? 1 : 0.75 }}>
+            <Text fz={30} style={{ filter: a.unlocked ? undefined : 'grayscale(1)', opacity: a.unlocked ? 1 : 0.45 }}>
+              {a.emoji}
+            </Text>
+            <Text fz={12} fw={800} lh={1.2} mt={2}>
+              {a.title}
+            </Text>
+            {a.unlocked ? (
+              <Text fz={10} c="dimmed" lh={1.2} mt={2}>
+                {a.detail}
+              </Text>
+            ) : (
+              <>
+                <Progress value={(a.progress / a.target) * 100} size={4} mt={6} color="yellow" radius="xl" />
+                <Text fz={10} c="dimmed" mt={2}>
+                  {a.progress.toLocaleString()}/{a.target.toLocaleString()}
+                </Text>
+              </>
+            )}
+          </Card>
+        ))}
+      </SimpleGrid>
+      {list.length > 9 && (
+        <Button variant="subtle" size="xs" fullWidth mt="xs" onClick={() => setShowAll(!showAll)}>
+          {showAll ? 'Show fewer' : `Show all ${list.length}`}
+        </Button>
+      )}
+    </Card>
   );
 }

@@ -1,10 +1,12 @@
-import { Badge, Card, Chip, Group, RingProgress, Stack, Text } from '@mantine/core';
+import { Badge, Card, Chip, Group, Stack, Text } from '@mantine/core';
 import { WORKOUTS } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import { addDays, weekday, weekStart, type DateKey } from '../lib/dates';
 import type { Streak } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
 import type { WorkoutType } from '../lib/types';
+import { floatXp } from '../lib/feedback';
+import { ScoreRing } from './ui';
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -16,29 +18,20 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
   const week = LETTERS.map((_, i) => addDays(ws, i));
   const sessions = week.filter((d) => (days[d]?.workouts?.length ?? 0) > 0).length;
   const hit = sessions >= target;
-  const isMonday = weekday(date) === 1;
 
   return (
-    <Card p="sm" style={hit ? { borderColor: 'var(--mantine-color-teal-outline)' } : undefined}>
+    <Card id="training" p="sm" style={hit ? { borderColor: 'var(--mantine-color-teal-outline)' } : undefined}>
       <Group justify="space-between" wrap="nowrap" px={4}>
         <Group gap="sm" wrap="nowrap">
-          <RingProgress
-            size={52}
-            thickness={5}
-            roundCaps
-            sections={[{ value: Math.min(100, (sessions / target) * 100), color: hit ? 'teal' : 'violet' }]}
-            label={
-              <Text ta="center" fz={18}>
-                {hit ? '💪' : '🏋️'}
-              </Text>
-            }
-          />
+          <ScoreRing value={Math.min(100, (sessions / target) * 100)} size={42} stroke={4} color={hit ? 'teal' : 'violet'}>
+            <Text fz={18}>{hit ? '💪' : '🏋️'}</Text>
+          </ScoreRing>
           <div>
-            <Text fw={800} lh={1.2}>
+            <Text fw={800} fz={17} lh={1.2}>
               Training
             </Text>
             <Text size="xs" c="dimmed">
-              {hit ? 'Weekly target smashed' : `${target - sessions} more this week — gym counts most`}
+              {hit ? 'Weekly target smashed' : `${target - sessions} more this week`}
             </Text>
           </div>
         </Group>
@@ -47,7 +40,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
             {sessions}/{target}
           </Badge>
           {streak.current >= 1 && (
-            <Text size="xs" fw={700} c="orange.4">
+            <Text size="xs" fw={800} c="orange.4">
               <span className="flame">🔥</span> {streak.current} wk
             </Text>
           )}
@@ -58,7 +51,11 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
         multiple
         value={workouts}
         onChange={(v) => {
-          if (v.length > workouts.length) pop();
+          const added = WORKOUTS.find((w) => v.includes(w.id) && !workouts.includes(w.id));
+          if (added) {
+            pop();
+            floatXp(undefined, `+${added.points}`);
+          }
           updateDay(date, (l) => {
             l.workouts = v as WorkoutType[];
           });
@@ -66,31 +63,36 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
       >
         <Group gap={6} mt="sm" px={4}>
           {WORKOUTS.map((w) => (
-            <Chip key={w.id} value={w.id} color="teal" variant="light" radius="md">
-              {w.emoji} {w.label} <Text span size="xs" c="dimmed" ml={4}>+{w.points}</Text>
+            <Chip key={w.id} value={w.id} color="teal" variant="light" radius="xl" size="sm">
+              {w.emoji} {w.label}
+              <Text span size="xs" c="dimmed" ml={4}>
+                +{w.points}
+              </Text>
             </Chip>
           ))}
         </Group>
       </Chip.Group>
 
-      <Group gap={6} mt="sm" px={4} justify="space-between">
+      <Group gap={4} mt="md" px={4} justify="space-between" wrap="nowrap">
         {week.map((d, i) => {
           const trained = (days[d]?.workouts?.length ?? 0) > 0;
           return (
-            <Stack key={d} gap={2} align="center" style={{ flex: 1 }}>
-              <Text size="10px" c="dimmed" fw={d === date ? 800 : 500}>
+            <Stack key={d} gap={3} align="center" style={{ flex: 1 }}>
+              <Text fz={10} c={d === date ? undefined : 'dimmed'} fw={d === date ? 900 : 600}>
                 {LETTERS[i]}
               </Text>
               <div
                 style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 99,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 10,
                   display: 'grid',
                   placeItems: 'center',
                   fontSize: 13,
-                  background: trained ? 'var(--mantine-color-teal-filled)' : 'var(--mantine-color-default)',
+                  color: 'white',
+                  background: trained ? 'linear-gradient(135deg, var(--mantine-color-teal-4), var(--mantine-color-green-6))' : 'var(--ring-track)',
                   outline: d === date ? '2px solid var(--mantine-color-violet-5)' : undefined,
+                  outlineOffset: 2,
                 }}
               >
                 {trained ? '✓' : ''}
@@ -100,9 +102,9 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
         })}
       </Group>
 
-      {isMonday && (
+      {weekday(date) === 1 && (
         <Text size="xs" c="dimmed" mt="sm" px={4}>
-          ⚽ Football Monday — optional. If you go, it counts as a session and no gym needed today.
+          ⚽ Football Monday — optional. If you go, it counts and no gym needed today.
         </Text>
       )}
     </Card>

@@ -7,16 +7,23 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 ## What's in it
 
 - **Today** – your daily checklist, grouped into Morning / Through the day / Room & jobs / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day.
-  - Weigh-in, sleep before 1am and up before 9am (tap ✗ to enter a rough time from your Apple Watch), pills, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
+  - **⚡ Up next** looks at the time and tells you what matters *now*: one tap for the whole morning routine, a countdown to the 2pm caffeine cutoff, water reminders, "need 2 more gym sessions in 3 days", overdue jobs, streaks at risk tonight, time left until 1am, and what's on tomorrow.
+  - **One-tap "All ✓" / "All clean"** per section, with **Undo**.
+  - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
   - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
   - Paula's Choice every 3 days, skip it whenever you like.
   - Stayed clean: vaping, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
   - Training: aim for 3 sessions a week. Gym gives the most XP, home workouts and football count too. Football Mondays are optional.
-  - A "how can I be better tomorrow?" note, which shows up the next morning.
-- **XP, levels, streaks, confetti** – every habit has its own 🔥 streak, and there's a logging streak, a vape-free streak and a weekly gym streak.
+  - **Reflect**: a one-tap mood and a "how can I be better tomorrow?" note, which shows up the next morning.
+  - The score ring has a yellow dot for **yesterday's score**. The goal is always to beat it.
+- **Dopamine** – animated checks, iPhone haptic taps, "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 28 badges to unlock.
+- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", "your best day is Tuesday", and your weight trend.
+- **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
-- **Progress** – score heatmap, slip counts (7 days / 30 days / days since), habit streaks and 30-day %, weight chart, gym sessions per week, sleep, finasteride, your notes.
-- **More** – fines, the rules, settings, sync and backup.
+- **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, weight chart with a 7-day average, gym sessions per week, sleep, finasteride, your notes.
+- **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
+- **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
+- **More** – fines (with a one-tap donate link), reminders, habits, the rules, settings, sync and backup.
 
 ## The rules (lenient but strict)
 
@@ -58,15 +65,15 @@ Open the site in **Safari → Share → Add to Home Screen**. It then opens full
 
 ## Changing things
 
-Everything you track is in **[`src/lib/config.ts`](src/lib/config.ts)**: labels, emojis, points, which section each habit is in, and chore schedules (`{ every: 3 }` = every 3 days after you last did it, `{ weekday: 6 }` = Saturdays). The fine amount, charity, gym target and finasteride settings are in the app under **More → Settings**.
+Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days) and **More → Settings** (fine amount, charity, donate link, gym target, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
 
 ## Running locally
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # logic tests (streaks, carry-over, fines, day off)
+npm test         # logic tests (streaks, carry-over, fines, day off, insights, badges, reminders)
 npm run build
 ```
 
-Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Firebase (login + database), Zustand, dayjs, canvas-confetti and vite-plugin-pwa.
+Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.
