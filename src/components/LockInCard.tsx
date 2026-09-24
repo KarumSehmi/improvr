@@ -3,13 +3,16 @@ import { modals } from '@mantine/modals';
 import { IconBeach, IconLock } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { fmt, formatCountdown, logDeadline, relativeDay, type DateKey } from '../lib/dates';
+import { BONUS } from '../lib/config';
 import { dayOffUsedInWeek, isOpen, type DayEval } from '../lib/engine';
-import { useNow, useToday } from '../lib/hooks';
+import { useNow, useToday, useUi } from '../lib/hooks';
 import { lockDay } from '../lib/lock';
+import { chestReady, chestTier } from '../lib/moments';
 import { updateDay, useApp } from '../lib/store';
 import { Tap } from './ui';
 
-export default function LockInCard({ date, evaluation: e }: { date: DateKey; evaluation: DayEval }) {
+/** `early`: before the evening it's a small card — locking in is for the end of the day. */
+export default function LockInCard({ date, evaluation: e, early }: { date: DateKey; evaluation: DayEval; early?: boolean }) {
   const now = useNow();
   const today = useToday();
   const settings = useApp((s) => s.settings);
@@ -71,6 +74,7 @@ export default function LockInCard({ date, evaluation: e }: { date: DateKey; eva
   }
 
   if (e.closed) {
+    const chest = e.log?.chest;
     return (
       <Card id="lock-card" p="md" style={{ borderColor: `var(--mantine-color-${e.onTime ? 'teal' : 'red'}-outline)` }}>
         <Text fw={800}>{e.onTime ? `✅ Locked in ${label}` : '⚠️ Logged late'}</Text>
@@ -79,6 +83,37 @@ export default function LockInCard({ date, evaluation: e }: { date: DateKey; eva
             ? `at ${dayjs(e.log?.closedAt ?? 0).format('HH:mm ddd')} · you can still edit until ${deadlineText}`
             : `After the deadline — ${fine} to ${settings.charity} for this day.`}
         </Text>
+        {chestReady(e, today) && (
+          <Button mt="sm" fullWidth variant="gradient" gradient={e.perfect ? { from: 'yellow', to: 'orange' } : undefined} onClick={() => useUi.setState({ chestDate: date })}>
+            🎁 Open your {e.perfect ? 'golden ' : ''}reward chest
+          </Button>
+        )}
+        {chest != null && (
+          <Text size="sm" fw={700} mt="xs">
+            🎁 Chest: +{chest} XP ({chestTier(chest).label})
+          </Text>
+        )}
+        {dayOffButton && <Group mt="xs">{dayOffButton}</Group>}
+      </Card>
+    );
+  }
+
+  if (open && early) {
+    return (
+      <Card id="lock-card" p="md">
+        <Group justify="space-between" wrap="nowrap">
+          <div style={{ minWidth: 0 }}>
+            <Text fw={800}>🔒 Lock in tonight</Text>
+            <Text size="xs" c="dimmed">
+              +{BONUS.loggedOnTime} XP and a reward chest 🎁 · by {deadlineText}
+            </Text>
+          </div>
+          <Tap onClick={() => lockDay(date, e, open)}>
+            <Button component="div" size="compact-sm" variant="light">
+              Lock in now
+            </Button>
+          </Tap>
+        </Group>
         {dayOffButton && <Group mt="xs">{dayOffButton}</Group>}
       </Card>
     );
@@ -93,7 +128,8 @@ export default function LockInCard({ date, evaluation: e }: { date: DateKey; eva
               Lock in {label}
             </Text>
             <Text size="xs" c="dimmed">
-              Deadline {deadlineText} · {formatCountdown(deadline - now)} left · miss it and it's {fine} to charity
+              On time = +{BONUS.loggedOnTime} XP and a reward chest 🎁 · deadline {deadlineText} ({formatCountdown(deadline - now)} left) · miss it and
+              it's {fine} to charity
             </Text>
           </div>
         ) : (

@@ -1,4 +1,4 @@
-import { Card, Group, Text, Textarea } from '@mantine/core';
+import { Badge, Card, Collapse, Group, Text, Textarea, UnstyledButton } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { motion } from 'motion/react';
 import { useState } from 'react';
@@ -7,7 +7,10 @@ import type { DateKey } from '../lib/dates';
 import { updateDay } from '../lib/store';
 import { Tap } from './ui';
 
-export default function ReflectionCard({ date, note, mood }: { date: DateKey; note: string; mood: number | undefined }) {
+/** `later`: before the evening it stays folded away (unless you've already written something). */
+export default function ReflectionCard({ date, note, mood, later }: { date: DateKey; note: string; mood: number | undefined; later?: boolean }) {
+  const [unfolded, setUnfolded] = useState(false);
+  const open = !later || unfolded || !!note || !!mood;
   const [value, setValue] = useState(note);
   const [editingDate, setEditingDate] = useState(date);
   if (editingDate !== date) {
@@ -17,13 +20,25 @@ export default function ReflectionCard({ date, note, mood }: { date: DateKey; no
   const save = useDebouncedCallback((v: string) => updateDay(date, (l) => void (l.note = v)), { delay: 600, flushOnUnmount: true });
 
   return (
-    <Card p="sm">
-      <Text fw={800} fz={17} px={4}>
-        📝 Reflect
-      </Text>
-      <Text size="xs" c="dimmed" px={4}>
-        How was today?
-      </Text>
+    <Card p="sm" className={open ? undefined : 'later-card'}>
+      <UnstyledButton onClick={() => setUnfolded(!unfolded)} disabled={!later || !!note || !!mood} style={{ width: '100%' }}>
+        <Group justify="space-between" wrap="nowrap" px={4}>
+          <div>
+            <Text fw={800} fz={17}>
+              📝 Reflect
+            </Text>
+            <Text size="xs" c="dimmed">
+              {open ? 'How was today?' : 'Later · this evening'}
+            </Text>
+          </div>
+          {!open && (
+            <Badge variant="light" color="indigo">
+              Tonight
+            </Badge>
+          )}
+        </Group>
+      </UnstyledButton>
+      <Collapse expanded={open}>
       <Group justify="space-between" mt="xs" px={4} wrap="nowrap">
         {MOODS.map((m) => {
           const active = mood === m.value;
@@ -68,6 +83,7 @@ export default function ReflectionCard({ date, note, mood }: { date: DateKey; no
         }}
         onBlur={() => save.flush()}
       />
+      </Collapse>
     </Card>
   );
 }

@@ -98,7 +98,7 @@ export default function RemindersCard() {
             🔔 Notifications
           </Text>
           <Text size="xs" c="dimmed">
-            Only when something actually needs doing — never "just checking in".
+            When something needs doing, plus your afternoon and evening check-ins (+5 XP each). The app icon shows how many things are due.
           </Text>
         </div>
         {subscribed && (

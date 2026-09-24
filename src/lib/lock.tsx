@@ -5,6 +5,7 @@ import { burst } from './celebrate';
 import { BONUS } from './config';
 import type { DateKey } from './dates';
 import type { DayEval } from './engine';
+import { useUi } from './hooks';
 import { updateDay, useApp } from './store';
 
 /** Lock a day in (checks the honesty questions first, and confirms if things are unticked). */
@@ -20,12 +21,15 @@ export function lockDay(date: DateKey, e: DayEval, open: boolean) {
       title: open ? 'Locked in ✅' : 'Logged (late)',
       message: open ? `+${BONUS.loggedOnTime} XP for logging on time` : `The ${fine} fine still applies for this day.`,
     });
+    // On time → your reward chest
+    if (open && !e.dayOff) setTimeout(() => useUi.setState({ chestDate: date }), 900);
   };
 
   const unanswered = e.items.filter((i) => i.visible && i.habit.kind === 'avoid' && !i.done && !i.missed);
   if (unanswered.length && !e.dayOff) {
     notifications.show({ color: 'orange', title: 'Be honest first', message: `Answer: ${unanswered.map((i) => i.habit.label).join(', ')}` });
-    document.getElementById('section-clean')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    useUi.setState({ openSection: 'clean' }); // it may still be folded away as "later"
+    setTimeout(() => document.getElementById('section-clean')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
     return;
   }
 

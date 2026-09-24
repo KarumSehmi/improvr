@@ -117,6 +117,8 @@ export interface DayEval {
   points: number;
   perfect: boolean;
   workoutCount: number;
+  /** Check-ins done (morning, afternoon, evening). */
+  checkins: number;
 }
 
 export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string, ChoreTrack>, habits = habitsFor(data.settings)): DayEval {
@@ -165,8 +167,12 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
   points += WORKOUTS.reduce((sum, w) => sum + (workouts.has(w.id) ? w.points : 0), 0);
   if (onTime) points += BONUS.loggedOnTime;
   if (perfect) points += BONUS.perfectDay;
+  const checkins = Object.keys(log?.checkins ?? {}).length;
+  points += checkins * BONUS.checkin + (checkins >= 3 ? BONUS.allCheckins : 0);
+  if (log?.quest?.done) points += BONUS.quest;
+  points += log?.chest ?? 0;
 
-  return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size };
+  return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size, checkins };
 }
 
 /** Slip days for a habit from Monday up to and including `date`. */

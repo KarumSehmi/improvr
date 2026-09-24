@@ -7,7 +7,7 @@ self.addEventListener('push', (event) => {
     data = { body: event.data ? event.data.text() : '' };
   }
   // iPhone requires every push to show a notification.
-  event.waitUntil(
+  const jobs = [
     self.registration.showNotification(data.title || 'Improvr', {
       body: data.body || '',
       tag: data.id,
@@ -15,7 +15,12 @@ self.addEventListener('push', (event) => {
       badge: '/pwa-64x64.png',
       data: { url: data.url || '/' },
     }),
-  );
+  ];
+  // The number on the Home Screen icon: things due right now.
+  if (typeof data.badge === 'number' && 'setAppBadge' in self.navigator) {
+    jobs.push((data.badge > 0 ? self.navigator.setAppBadge(data.badge) : self.navigator.clearAppBadge()).catch(() => {}));
+  }
+  event.waitUntil(Promise.all(jobs));
 });
 
 self.addEventListener('notificationclick', (event) => {

@@ -1,9 +1,11 @@
 import { Alert, Button, Card, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef } from 'react';
+import DayRail from '../components/DayRail';
 import HabitRow from '../components/HabitRow';
 import HeroCard from '../components/HeroCard';
 import LockInCard from '../components/LockInCard';
+import QuestCard from '../components/QuestCard';
 import ReflectionCard from '../components/ReflectionCard';
 import SectionCard from '../components/SectionCard';
 import TodoCard from '../components/Todos';
@@ -17,7 +19,10 @@ import { burst, fireworks } from '../lib/celebrate';
 import { addDays, fmt, formatCountdown, logDeadline, weekStart, type DateKey } from '../lib/dates';
 import { isOpen, weekStats, type DayEval, type Streak, type Summary } from '../lib/engine';
 import { goTo, openDay, useNow, useSummary, useToday, useUi } from '../lib/hooks';
+import { logicalNow, sectionLater } from '../lib/moments';
 import { updateDay, useApp } from '../lib/store';
+
+const hourLabel = (h: number) => (h % 12 || 12) + (h % 24 < 12 ? 'am' : 'pm');
 
 function sectionsComplete(e: DayEval): Record<string, boolean> {
   const out: Record<string, boolean> = {};
@@ -81,6 +86,10 @@ export default function TodayPage() {
   const e = summary.evalByDate[date];
   const open = isOpen(date, today);
   const hour = new Date(now).getHours();
+  // Is this day "now"? (Up past midnight still counts as the day before.) Then things not due yet fold away.
+  const moment = logicalNow(new Date(now));
+  const live = date === moment.date;
+  const evening = !live || moment.hour >= 18;
 
   useCelebrations(date, e, summary, open);
 
@@ -125,6 +134,8 @@ export default function TodayPage() {
   const focusId = settings.focus?.week === ws ? settings.focus.habitId : null;
   const focusRate = focusId ? weekStats(summary, ws).rates.find((r) => r.habit.id === focusId) : undefined;
   const focus = focusRate ? { habit: focusRate.habit, done: focusRate.done, required: focusRate.required } : null;
+  const weekOf = weekStart(date);
+  const sessions = [0, 1, 2, 3, 4, 5, 6].filter((i) => (days[addDays(weekOf, i)]?.workouts?.length ?? 0) > 0).length;
 
   return (
     <Stack gap="md">
@@ -163,7 +174,11 @@ export default function TodayPage() {
 
       {date === today && <BirthdayBanner today={today} />}
 
+      {!e.dayOff && <DayRail e={e} hour={moment.hour} live={live} sessions={sessions} target={settings.workoutTarget} />}
+
       {open && <UpNextCard date={date} evaluation={e} summary={summary} onLock={() => lockDay(date, e, open)} />}
+
+      {open && <QuestCard date={date} log={e.log} />}
 
       {date === today && <TodoCard today={today} />}
 
@@ -197,6 +212,7 @@ export default function TodayPage() {
                   ? { label: sec.id === 'clean' ? 'All clean' : 'All ✓', onClick: (ev) => tickAll(date, quickable.map((i) => i.habit), ev) }
                   : null
               }
+              later={live && sectionLater(sec.id, moment.hour) ? `from ${hourLabel(sec.from)}` : null}
             >
               {items.map((item) => {
                 const streak = summary.habitStreaks[item.habit.id];
@@ -219,9 +235,9 @@ export default function TodayPage() {
         );
       })}
 
-      <ReflectionCard date={date} note={e.log?.note ?? ''} mood={e.log?.mood} />
+      <ReflectionCard date={date} note={e.log?.note ?? ''} mood={e.log?.mood} later={!evening} />
 
-      <LockInCard date={date} evaluation={e} />
+      <LockInCard date={date} evaluation={e} early={!evening} />
 
       {date === today && <UpcomingCard today={today} summary={summary} />}
     </Stack>

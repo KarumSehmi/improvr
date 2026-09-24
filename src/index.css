@@ -1,4 +1,12 @@
 :root {
+  /* The sky changes through the day (set by data-daypart on <html>) */
+  --sky-a: rgba(132, 94, 247, 0.34);
+  --sky-b: rgba(240, 101, 149, 0.24);
+  --glow-a: rgba(132, 94, 247, 0.22);
+  --glow-b: rgba(240, 101, 149, 0.14);
+  --glow-c: rgba(32, 201, 151, 0.08);
+  --sun: #ffd43b;
+  --xp: var(--mantine-color-yellow-4);
   --glass: rgba(255, 255, 255, 0.045);
   --glass-strong: rgba(18, 18, 28, 0.95);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -16,7 +24,52 @@
   --ring-track: rgba(20, 20, 50, 0.08);
   --ring-idle: rgba(20, 20, 50, 0.2);
   --shadow: 0 10px 30px rgba(40, 30, 90, 0.12);
+  --xp: var(--mantine-color-orange-6);
   --mantine-color-body: #f3f2f8;
+}
+
+[data-daypart='dawn'] {
+  --sky-a: rgba(255, 146, 43, 0.36);
+  --sky-b: rgba(190, 75, 219, 0.32);
+  --glow-a: rgba(255, 146, 43, 0.2);
+  --glow-b: rgba(190, 75, 219, 0.16);
+  --sun: #ffa94d;
+}
+
+[data-daypart='morning'] {
+  --sky-a: rgba(255, 169, 77, 0.34);
+  --sky-b: rgba(240, 101, 149, 0.26);
+  --glow-a: rgba(255, 169, 77, 0.18);
+  --glow-b: rgba(240, 101, 149, 0.13);
+  --glow-c: rgba(255, 212, 59, 0.07);
+  --sun: #ffd43b;
+}
+
+[data-daypart='day'] {
+  --sky-a: rgba(51, 154, 240, 0.36);
+  --sky-b: rgba(21, 170, 191, 0.26);
+  --glow-a: rgba(51, 154, 240, 0.18);
+  --glow-b: rgba(132, 94, 247, 0.12);
+  --glow-c: rgba(21, 170, 191, 0.08);
+  --sun: #fff3bf;
+}
+
+[data-daypart='evening'] {
+  --sky-a: rgba(247, 103, 7, 0.32);
+  --sky-b: rgba(174, 62, 201, 0.34);
+  --glow-a: rgba(247, 103, 7, 0.16);
+  --glow-b: rgba(174, 62, 201, 0.16);
+  --glow-c: rgba(240, 101, 149, 0.08);
+  --sun: #ff922b;
+}
+
+[data-daypart='night'] {
+  --sky-a: rgba(76, 110, 245, 0.34);
+  --sky-b: rgba(112, 72, 232, 0.28);
+  --glow-a: rgba(76, 110, 245, 0.18);
+  --glow-b: rgba(112, 72, 232, 0.14);
+  --glow-c: rgba(21, 170, 191, 0.06);
+  --sun: #dbe4ff;
 }
 
 html,
@@ -38,9 +91,9 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(60% 40% at 10% 0%, rgba(132, 94, 247, 0.22), transparent 70%),
-    radial-gradient(50% 35% at 100% 5%, rgba(240, 101, 149, 0.14), transparent 70%),
-    radial-gradient(60% 40% at 50% 110%, rgba(32, 201, 151, 0.08), transparent 70%);
+    radial-gradient(60% 40% at 10% 0%, var(--glow-a), transparent 70%),
+    radial-gradient(50% 35% at 100% 5%, var(--glow-b), transparent 70%),
+    radial-gradient(60% 40% at 50% 110%, var(--glow-c), transparent 70%);
 }
 
 .mantine-Card-root,
@@ -194,10 +247,246 @@ body::before {
 .hero {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   background:
-    radial-gradient(120% 120% at 0% 0%, rgba(132, 94, 247, 0.34), transparent 55%),
-    radial-gradient(120% 120% at 100% 100%, rgba(240, 101, 149, 0.24), transparent 55%),
+    radial-gradient(120% 120% at 0% 0%, var(--sky-a), transparent 58%),
+    radial-gradient(120% 120% at 100% 100%, var(--sky-b), transparent 58%),
     var(--glass) !important;
+}
+
+[data-mantine-color-scheme='light'] .hero {
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--sky-a) 55%, transparent), transparent 58%),
+    radial-gradient(120% 120% at 100% 100%, color-mix(in srgb, var(--sky-b) 55%, transparent), transparent 58%),
+    var(--glass) !important;
+}
+
+/* The sun (or moon) drifting across the hero as the day goes on */
+.hero-sun {
+  position: absolute;
+  z-index: -1;
+  width: 170px;
+  height: 170px;
+  margin: -85px 0 0 -85px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sun) 0%, color-mix(in srgb, var(--sun) 35%, transparent) 28%, transparent 66%);
+  opacity: 0.4;
+  pointer-events: none;
+  transition: left 1.2s ease, top 1.2s ease;
+}
+
+.hero-stars {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 22%, #fff 50%, transparent 52%),
+    radial-gradient(1.2px 1.2px at 22% 70%, #fff 50%, transparent 52%),
+    radial-gradient(1.4px 1.4px at 37% 12%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 48% 48%, #fff 50%, transparent 52%),
+    radial-gradient(1.6px 1.6px at 63% 30%, #fff 50%, transparent 52%),
+    radial-gradient(1.1px 1.1px at 71% 82%, #fff 50%, transparent 52%),
+    radial-gradient(1.3px 1.3px at 84% 16%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 93% 55%, #fff 50%, transparent 52%),
+    radial-gradient(1.2px 1.2px at 15% 90%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 56% 92%, #fff 50%, transparent 52%);
+  opacity: 0.55;
+  animation: twinkle 3.5s ease-in-out infinite alternate;
+}
+
+[data-mantine-color-scheme='light'] .hero-stars {
+  display: none;
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 0.75;
+  }
+}
+
+/* ---------- Check-ins ---------- */
+.checkins {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.checkin {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px 7px;
+  border-radius: 14px;
+  background: var(--ring-track);
+  border: 1px solid transparent;
+  transition: background 200ms, border-color 200ms, opacity 200ms;
+}
+
+.checkin[data-state='done'] {
+  background: color-mix(in srgb, var(--mantine-color-teal-6) 22%, transparent);
+  border-color: color-mix(in srgb, var(--mantine-color-teal-5) 45%, transparent);
+}
+
+.checkin[data-state='open'] {
+  background: color-mix(in srgb, var(--mantine-color-yellow-5) 16%, transparent);
+  border-color: color-mix(in srgb, var(--mantine-color-yellow-4) 60%, transparent);
+  animation: glow 2.2s ease-in-out infinite;
+}
+
+.checkin[data-state='later'],
+.checkin[data-state='missed'] {
+  opacity: 0.55;
+}
+
+.checkin-emoji {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.checkin-label {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkin-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--mantine-color-dimmed);
+  white-space: nowrap;
+}
+
+.checkin[data-state='open'] .checkin-sub {
+  color: var(--mantine-color-yellow-4);
+}
+
+[data-mantine-color-scheme='light'] .checkin[data-state='open'] .checkin-sub {
+  color: var(--mantine-color-orange-8);
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mantine-color-yellow-4) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 18px 1px color-mix(in srgb, var(--mantine-color-yellow-4) 35%, transparent);
+  }
+}
+
+.energy {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.energy-btn {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px 0 6px;
+  border-radius: 14px;
+  background: var(--ring-track);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.energy-btn span {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--mantine-color-dimmed);
+}
+
+/* ---------- Racing yesterday ---------- */
+.race {
+  display: grid;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.race-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 20px;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mantine-color-dimmed);
+}
+
+.race-row b {
+  text-align: right;
+  color: var(--mantine-color-text);
+}
+
+.race-track {
+  height: 6px;
+  border-radius: 9px;
+  background: var(--ring-track);
+  overflow: hidden;
+}
+
+.race-fill {
+  height: 100%;
+  border-radius: 9px;
+}
+
+.race-fill[data-who='you'] {
+  background: linear-gradient(90deg, #9775fa, #f06595);
+}
+
+.race-fill[data-who='them'] {
+  background: var(--mantine-color-yellow-4);
+  opacity: 0.8;
+}
+
+/* ---------- Section rail ---------- */
+.rail {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 2px 0;
+}
+
+.rail-item {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 0;
+  transition: opacity 200ms;
+}
+
+.rail-item[data-later] {
+  opacity: 0.45;
+}
+
+/* ---------- Bonus quest ---------- */
+.quest {
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(255, 212, 59, 0.16), transparent 60%),
+    var(--glass) !important;
+  border-color: color-mix(in srgb, var(--mantine-color-yellow-5) 30%, transparent) !important;
+}
+
+.quest[data-done] {
+  border-color: var(--mantine-color-teal-outline) !important;
+}
+
+/* ---------- Later (folded away until its time) ---------- */
+.later-card {
+  opacity: 0.72;
 }
 
 .pill-row {

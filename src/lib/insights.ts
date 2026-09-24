@@ -2,7 +2,7 @@
  * Patterns in your own data, written as plain sentences. Each insight only appears once there's
  * enough data behind it to mean something.
  */
-import { WEEKDAYS } from './config';
+import { CHECKINS, WEEKDAYS } from './config';
 import { addDays, diffDays, weekday, weekStart } from './dates';
 import { habitRates, slipStats, weekStats, type DayEval, type Summary } from './engine';
 
@@ -138,6 +138,30 @@ export function insights(summary: Summary): Insight[] {
     const slept = compare(mood(moodDays.filter((e) => e.log?.done?.sleep === true)), mood(moodDays.filter((e) => e.log?.done?.sleep === false)));
     if (slept && slept.a - slept.b >= 0.4) {
       out.push({ id: 'mood-sleep', emoji: '🛌', tone: 'tip', weight: 77, text: `Your mood is ${slept.a.toFixed(1)}/5 after a proper night, ${slept.b.toFixed(1)} after a late one.` });
+    }
+  }
+
+  // Energy through the day, from your check-ins
+  const energy = CHECKINS.map((c) => {
+    const xs = past.map((e) => e.log?.checkins?.[c.id]?.energy).filter((x): x is number => !!x);
+    return { label: c.label.toLowerCase(), avg: avg(xs) ?? 0, n: xs.length };
+  }).filter((x) => x.n >= 5);
+  if (energy.length >= 2) {
+    const hi = energy.reduce((a, b) => (b.avg > a.avg ? b : a));
+    const lo = energy.reduce((a, b) => (b.avg < a.avg ? b : a));
+    if (hi.avg - lo.avg >= 0.5) {
+      out.push({ id: 'energy-time', emoji: '⚡', tone: 'tip', weight: 74, text: `Your energy peaks in the ${hi.label} (${hi.avg.toFixed(1)}/5) and dips in the ${lo.label} (${lo.avg.toFixed(1)}). Do the hard stuff in the ${hi.label}.` });
+    }
+  }
+  if (has('sleep')) {
+    const dayEnergy = (e: DayEval) => avg(Object.values(e.log?.checkins ?? {}).map((c) => c.energy));
+    const withEnergy = past.filter((e) => dayEnergy(e) != null);
+    const r = compare(
+      withEnergy.filter((e) => e.log?.done?.sleep === true).map((e) => dayEnergy(e)!),
+      withEnergy.filter((e) => e.log?.done?.sleep === false).map((e) => dayEnergy(e)!),
+    );
+    if (r && r.a - r.b >= 0.4) {
+      out.push({ id: 'energy-sleep', emoji: '🔋', tone: 'tip', weight: 79, text: `After a night asleep before 1am your energy is ${r.a.toFixed(1)}/5, vs ${r.b.toFixed(1)} after a late one.` });
     }
   }
 

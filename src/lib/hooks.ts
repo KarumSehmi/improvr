@@ -67,9 +67,13 @@ interface UiState {
   viewDate: DateKey | null;
   /** Weekly review opened by hand (it also opens itself once a week). */
   reviewOpen: boolean;
+  /** Day whose reward chest is being opened. */
+  chestDate: DateKey | null;
+  /** Section to unfold (e.g. tapped in the rail while it's folded away as "later"). */
+  openSection: string | null;
 }
 
-export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null, reviewOpen: false }));
+export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null, reviewOpen: false, chestDate: null, openSection: null }));
 
 export function openDay(date: DateKey | null) {
   useUi.setState({ page: 'today', viewDate: date });

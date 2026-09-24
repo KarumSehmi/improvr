@@ -9,6 +9,7 @@ import webpush from 'web-push';
 import { defaultSettings } from '../src/lib/config.js';
 import { dateKey } from '../src/lib/dates.js';
 import { summarize } from '../src/lib/engine.js';
+import { badgeCount, logicalNow } from '../src/lib/moments.js';
 import { dueNudges, type Nudge } from '../src/lib/nudges.js';
 import type { AppData, Settings } from '../src/lib/types.js';
 
@@ -55,10 +56,14 @@ export async function notifyUser(db: Firestore, uid: string, opts: { via: RunVia
     return due;
   });
 
+  // The number on the app icon: what's due right now (the notification updates it).
+  const moment = logicalNow(now);
+  const badge = badgeCount(summary.evalByDate[moment.date], moment.hour, todos, today);
+
   for (const n of nudges) {
     for (const sub of subs.docs) {
       try {
-        await webpush.sendNotification(sub.data() as webpush.PushSubscription, JSON.stringify({ ...n, url: appUrl }), {
+        await webpush.sendNotification(sub.data() as webpush.PushSubscription, JSON.stringify({ ...n, url: appUrl, badge }), {
           TTL: 60 * 60,
           urgency: 'high',
           vapidDetails: { subject: appUrl, publicKey: priv!.vapidPublic, privateKey: priv!.vapidPrivate },

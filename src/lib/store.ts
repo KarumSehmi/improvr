@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { defaultSettings } from './config';
+import { defaultSettings, habitsFor } from './config';
 import { dateKey, type DateKey } from './dates';
+import { isDone } from './engine';
 import type { AppData, Birthday, CalEvent, DayLog, Payment, Settings, Todo } from './types';
 
 export type Collection = 'days' | 'events' | 'birthdays' | 'payments' | 'todos';
@@ -92,11 +93,24 @@ export function startLocal() {
 // Writes (optimistic: update the UI now, then save)
 // ---------------------------------------------------------------------------
 
+/** Remember when each habit got ticked (and forget it if it's unticked), so today can race yesterday. */
+function stampTicks(prev: DayLog | undefined, next: DayLog, at: number) {
+  const times = { ...next.doneAt };
+  for (const h of habitsFor(useApp.getState().settings)) {
+    const was = isDone(h, prev);
+    const is = isDone(h, next);
+    if (is && !was) times[h.id] = at;
+    else if (!is && was) delete times[h.id];
+  }
+  next.doneAt = times;
+}
+
 export function updateDay(date: DateKey, fn: (log: DayLog) => void) {
   const prev = useApp.getState().days[date];
   const next: DayLog = prev ? structuredClone(prev) : {};
   fn(next);
   next.updatedAt = Date.now();
+  stampTicks(prev, next, next.updatedAt);
   useApp.setState((s) => ({ days: { ...s.days, [date]: next } }));
   backend?.put('days', date, next);
 }

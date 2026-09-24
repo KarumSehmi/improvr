@@ -1,6 +1,7 @@
 import { Button, Card, Collapse, Group, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
-import { useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import { useUi } from '../lib/hooks';
 import { ScoreRing, Tap, Tile } from './ui';
 
 interface Props {
@@ -12,22 +13,37 @@ interface Props {
   done: number;
   total: number;
   quick?: { label: string; onClick: (e: MouseEvent) => void } | null;
+  /** Not its time yet (e.g. "from 8pm"): starts folded away. */
+  later?: string | null;
   children: ReactNode;
 }
 
-/** A checklist section that folds itself away once everything in it is done. */
-export default function SectionCard({ id, emoji, title, subtitle, color, done, total, quick, children }: Props) {
+/** A checklist section that folds itself away once everything in it is done (or until its time comes). */
+export default function SectionCard({ id, emoji, title, subtitle, color, done, total, quick, later, children }: Props) {
   const complete = total > 0 && done >= total;
   const [override, setOverride] = useState<boolean | null>(null);
-  const [wasComplete, setWasComplete] = useState(complete);
-  if (wasComplete !== complete) {
-    setWasComplete(complete);
+  const state = `${complete}|${!!later}`;
+  const [lastState, setLastState] = useState(state);
+  if (lastState !== state) {
+    setLastState(state);
     setOverride(null);
   }
-  const open = override ?? !complete;
+  const open = override ?? (!complete && !later);
+
+  // Tapped in the rail at the top: unfold.
+  const wanted = useUi((s) => s.openSection === id);
+  if (wanted && override !== true) setOverride(true);
+  useEffect(() => {
+    if (wanted) useUi.setState({ openSection: null });
+  }, [wanted]);
 
   return (
-    <Card id={`section-${id}`} p="sm" style={complete ? { borderColor: 'var(--mantine-color-teal-outline)' } : undefined}>
+    <Card
+      id={`section-${id}`}
+      p="sm"
+      className={later && !open ? 'later-card' : undefined}
+      style={complete ? { borderColor: 'var(--mantine-color-teal-outline)' } : undefined}
+    >
       <Group justify="space-between" wrap="nowrap" gap="xs">
         <UnstyledButton onClick={() => setOverride(!open)} style={{ flex: 1, minWidth: 0 }}>
           <Group gap="sm" wrap="nowrap">
@@ -37,7 +53,7 @@ export default function SectionCard({ id, emoji, title, subtitle, color, done, t
                 {title}
               </Text>
               <Text size="xs" c="dimmed" truncate>
-                {complete ? 'All done — nice.' : subtitle}
+                {complete ? 'All done — nice.' : later ? `Later · ${later}` : subtitle}
               </Text>
             </div>
           </Group>

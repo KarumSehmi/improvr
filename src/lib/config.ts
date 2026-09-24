@@ -38,15 +38,19 @@ export interface Habit {
   custom?: boolean;
 }
 
-export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: string; color: string }[] = [
-  { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, face', color: 'orange' },
-  { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water & food', color: 'cyan' },
-  { id: 'room', title: 'Room & jobs', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape' },
-  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Skin routine & finasteride', color: 'indigo' },
-  { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal' },
+/** `from` = the hour a section becomes relevant (before that it's folded away as "later" on Today). */
+export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: string; color: string; from: number }[] = [
+  { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
+  { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water & food', color: 'cyan', from: 10 },
+  { id: 'room', title: 'Room & jobs', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
+  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
+  { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
+
+/** Teeth and haircut were added part-way through, so earlier days don't count them. */
+const ADDED_TEETH = '2026-09-24';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -72,6 +76,7 @@ export const BUILT_IN_HABITS: Habit[] = [
     missPrompt: 'Roughly when did you get up?',
   },
   { id: 'pills', label: 'Took all my pills', emoji: '💊', section: 'morning', kind: 'check', points: 10 },
+  { id: 'teethAm', label: 'Brushed teeth', emoji: '🪥', section: 'morning', kind: 'check', points: 5, hint: 'AM', since: ADDED_TEETH },
   { id: 'faceAm', label: 'Face wash + moisturiser', emoji: '🧴', section: 'morning', kind: 'check', points: 5, hint: 'AM' },
   { id: 'pillRefill', label: 'Refill pill organiser', emoji: '🗓️', section: 'morning', kind: 'chore', points: 15, schedule: { weekday: 0, everyWeeks: 2 } },
 
@@ -89,8 +94,10 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'surfaces', label: 'Wipe surfaces', emoji: '🧽', section: 'room', kind: 'chore', points: 15, schedule: { weekday: 3 } },
   { id: 'bathroom', label: 'Deep clean bathroom', emoji: '🛁', section: 'room', kind: 'chore', points: 25, schedule: { weekday: 4 } },
   { id: 'hoover', label: 'Hoover & mop floor', emoji: '🧹', section: 'room', kind: 'chore', points: 20, schedule: { weekday: 6 } },
+  { id: 'haircut', label: 'Haircut', emoji: '💈', section: 'room', kind: 'chore', points: 15, schedule: { every: 14 }, since: ADDED_TEETH },
 
   // Night
+  { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
   { id: 'facePm', label: 'Face wash + moisturiser', emoji: '🫧', section: 'night', kind: 'check', points: 5, hint: 'PM' },
   { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'night', kind: 'dose', points: 10 },
   {
@@ -137,7 +144,11 @@ export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
 
 export function scheduleLabel(s: ChoreSchedule | undefined): string {
   if (!s) return '';
-  if ('every' in s) return s.every === 1 ? 'daily' : `every ${s.every} days`;
+  if ('every' in s) {
+    if (s.every === 1) return 'daily';
+    if (s.every === 7) return 'weekly';
+    return s.every % 7 === 0 ? `every ${s.every / 7} weeks` : `every ${s.every} days`;
+  }
   const day = WEEKDAYS[s.weekday];
   return (s.everyWeeks ?? 1) > 1 ? `every other ${day}` : `${day}s`;
 }
@@ -156,7 +167,69 @@ export const BONUS = {
   /** Per craving beaten, up to `urgeCap` a day per habit. */
   urge: 5,
   urgeCap: 3,
+  /** Each check-in (morning, afternoon, evening), plus a bonus for all three. */
+  checkin: 5,
+  allCheckins: 15,
+  quest: 15,
 };
+
+// ---------------------------------------------------------------------------
+// Check-ins: three quick taps a day. `to` can pass 24 (evening runs until 4am).
+// ---------------------------------------------------------------------------
+
+export type CheckinId = 'am' | 'pm' | 'eve';
+
+export const CHECKINS: { id: CheckinId; label: string; emoji: string; from: number; to: number }[] = [
+  { id: 'am', label: 'Morning', emoji: '🌅', from: 4, to: 12 },
+  { id: 'pm', label: 'Afternoon', emoji: '☀️', from: 12, to: 18 },
+  { id: 'eve', label: 'Evening', emoji: '🌙', from: 18, to: 28 },
+];
+
+export const ENERGY = [
+  { value: 1, emoji: '🪫', label: 'Drained' },
+  { value: 2, emoji: '😴', label: 'Tired' },
+  { value: 3, emoji: '😐', label: 'Okay' },
+  { value: 4, emoji: '🙂', label: 'Good' },
+  { value: 5, emoji: '⚡', label: 'Buzzing' },
+];
+
+// ---------------------------------------------------------------------------
+// Bonus quests: one small optional challenge a day, for extra XP.
+// ---------------------------------------------------------------------------
+
+export interface Quest {
+  id: string;
+  emoji: string;
+  title: string;
+  detail: string;
+}
+
+export const QUESTS: Quest[] = [
+  { id: 'walk', emoji: '🚶', title: 'Go for a 20-minute walk', detail: 'Music or a podcast is fine — no scrolling.' },
+  { id: 'read', emoji: '📖', title: 'Read 10 pages', detail: 'Any book. Paper beats a screen.' },
+  { id: 'stretch', emoji: '🧘', title: '5 minutes of stretching', detail: 'Hips, hamstrings, shoulders.' },
+  { id: 'friend', emoji: '💬', title: "Message a friend you haven't spoken to in a while", detail: 'Just a "how are you".' },
+  { id: 'veg', emoji: '🥦', title: 'Eat veg with two meals', detail: 'Frozen counts.' },
+  { id: 'cold', emoji: '🧊', title: 'Finish your shower cold', detail: '30 seconds. You can do anything for 30 seconds.' },
+  { id: 'focus', emoji: '🎧', title: 'One 45-minute focus block', detail: 'Phone in another room.' },
+  { id: 'sun', emoji: '🌞', title: 'Get 15 minutes of daylight', detail: 'Outside, not through a window.' },
+  { id: 'tidy', emoji: '🧺', title: '10-minute speed tidy', detail: 'Set a timer and go.' },
+  { id: 'grateful', emoji: '🙏', title: "Write 3 things you're grateful for", detail: "Put them in tonight's note." },
+  { id: 'family', emoji: '📞', title: 'Call your family', detail: 'Five minutes is enough.' },
+  { id: 'nofizzy', emoji: '🥤', title: 'No fizzy drinks today', detail: 'Water or tea instead.' },
+  { id: 'cook', emoji: '🍳', title: 'Cook a meal instead of ordering', detail: 'Something simple counts.' },
+  { id: 'learn', emoji: '🧠', title: 'Learn something for 15 minutes', detail: 'A video, an article, a skill.' },
+  { id: 'pushups', emoji: '💪', title: '50 push-ups through the day', detail: 'Split them up however you like.' },
+  { id: 'plan', emoji: '🗒️', title: "Plan tomorrow's top 3 tonight", detail: 'Write them in your note.' },
+  { id: 'screens', emoji: '📵', title: 'No phone for the last 30 minutes before bed', detail: 'Charge it across the room.' },
+  { id: 'steps', emoji: '👟', title: 'Hit 10,000 steps', detail: 'Check your Apple Watch.' },
+  { id: 'kind', emoji: '🤝', title: 'Do something kind for someone', detail: 'Small counts.' },
+  { id: 'desk', emoji: '🗂️', title: 'Clear your desk', detail: 'Everything off, only what you need back on.' },
+  { id: 'putoff', emoji: '📬', title: "Do one thing you've been putting off", detail: 'An email, a form, a booking.' },
+  { id: 'journal', emoji: '✍️', title: 'Write a proper reflection tonight', detail: 'At least three sentences.' },
+  { id: 'water3', emoji: '🚰', title: 'Drink a third bottle of water', detail: 'Bonus hydration.' },
+  { id: 'breathe', emoji: '🫁', title: '5 minutes of slow breathing', detail: 'In for 4, hold for 4, out for 6.' },
+];
 
 export const MOODS = [
   { value: 1, emoji: '😫', label: 'Awful' },

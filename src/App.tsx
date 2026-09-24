@@ -2,9 +2,11 @@ import { AppShell, Badge, Center, Container, Group, Loader, NavLink, Stack, Text
 import { IconCalendar, IconChartBar, IconChecklist, IconDots } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, type ComponentType } from 'react';
+import ChestModal from './components/ChestModal';
 import Overlays from './components/Overlays';
 import { FloaterLayer, Tap } from './components/ui';
-import { goTo, useSummary, useUi, type Page } from './lib/hooks';
+import { goTo, useNow, useSummary, useUi, type Page } from './lib/hooks';
+import { badgeCount, daypart, logicalNow } from './lib/moments';
 import { updateSettings, useApp } from './lib/store';
 import CalendarPage from './pages/CalendarPage';
 import LoginPage from './pages/LoginPage';
@@ -54,10 +56,33 @@ function useCloudSync() {
   }, [mode, settings.timeZone, settings.appUrl]);
 }
 
+/** The sky's colours follow the time of day, and the app icon shows how many things are due right now. */
+function useSkyAndBadge(): number {
+  const now = useNow();
+  const summary = useSummary();
+  const todos = useApp((s) => s.todos);
+  const part = daypart(new Date(now));
+  const { date, hour } = logicalNow(new Date(now));
+  const count = badgeCount(summary.evalByDate[date], hour, todos, summary.today);
+
+  useEffect(() => {
+    document.documentElement.dataset.daypart = part;
+  }, [part]);
+
+  useEffect(() => {
+    // Home Screen app on iPhone (iOS 16.4+), once notifications are allowed.
+    if (!('setAppBadge' in navigator)) return;
+    (count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(() => {});
+  }, [count]);
+
+  return count;
+}
+
 function Shell() {
   const page = useUi((s) => s.page);
   const summary = useSummary();
   useCloudSync();
+  const dueCount = useSkyAndBadge();
   const alerts = summary.owed > 0 || summary.openUnlogged.some((d) => d !== summary.today);
   const Page = PAGES[page];
 
@@ -112,9 +137,9 @@ function Shell() {
                 <Text fz={10.5} fw={active ? 800 : 600}>
                   {t.label}
                 </Text>
-                {t.id === 'today' && alerts && (
+                {t.id === 'today' && (alerts || (dueCount > 0 && !active)) && (
                   <Badge size="xs" color="red" circle pos="absolute" top={-6} right={-10}>
-                    !
+                    {alerts ? '!' : dueCount}
                   </Badge>
                 )}
               </div>
@@ -125,6 +150,7 @@ function Shell() {
 
       <FloaterLayer />
       <Overlays />
+      <ChestModal />
     </AppShell>
   );
 }

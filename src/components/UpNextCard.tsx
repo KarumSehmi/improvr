@@ -4,7 +4,7 @@ import type { MouseEvent } from 'react';
 import { addWater, scrollToAndFlash, tickAll } from '../lib/actions';
 import type { DateKey } from '../lib/dates';
 import type { DayEval, Summary } from '../lib/engine';
-import { useNow } from '../lib/hooks';
+import { useNow, useUi } from '../lib/hooks';
 import { suggestions, type Suggestion } from '../lib/smart';
 import { useApp } from '../lib/store';
 import { Tap, Tile } from './ui';
@@ -25,6 +25,7 @@ export default function UpNextCard({ date, evaluation, summary, onLock }: { date
     if (a.kind === 'tick') tickAll(date, summary.habits.filter((h) => a.habitIds.includes(h.id)), e);
     if (a.kind === 'water') addWater(date);
     if (a.kind === 'lock') onLock();
+    if (a.kind === 'chest') useUi.setState({ chestDate: date });
     if (a.kind === 'scroll') scrollToAndFlash(a.target);
   };
 

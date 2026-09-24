@@ -1,4 +1,4 @@
-import type { ChoreSchedule, Habit } from './config.js';
+import type { CheckinId, ChoreSchedule, Habit } from './config.js';
 import type { DateKey } from './dates.js';
 
 export type AvoidAnswer = 'clean' | 'slip';
@@ -25,6 +25,14 @@ export interface DayLog {
   urges?: Record<string, number>;
   /** Sleep times sent from your Apple Watch via the iPhone Shortcut. */
   sleepAuto?: { asleep: string; awake: string; at: number };
+  /** When each habit was ticked off — used to race yesterday's pace. */
+  doneAt?: Record<string, number>;
+  /** Morning / afternoon / evening check-ins, with how your energy was. */
+  checkins?: Partial<Record<CheckinId, { at: number; energy: number }>>;
+  /** Today's bonus quest: how many times you swapped it, and whether it's done. */
+  quest?: { swap?: number; done?: boolean };
+  /** XP won from the reward chest after locking the day in on time. */
+  chest?: number;
   /** When the day was locked in. Must be before the deadline to avoid a fine. */
   closedAt?: number | null;
   dayOff?: boolean;
@@ -103,6 +111,8 @@ export interface Settings {
   timeZone?: string;
   /** Web address the app was last opened on, for links in notifications. */
   appUrl?: string;
+  /** Little sounds when you tick things off (missing = on; the iPhone's silent switch mutes them). */
+  sounds?: boolean;
   /** Smart notifications you've switched off (missing = on). */
   notify?: Record<string, boolean>;
   /** What each stay-clean habit used to cost you per week, in £. */

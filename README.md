@@ -6,17 +6,23 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 
 ## What's in it
 
-- **Today** – your daily checklist, grouped into Morning / Through the day / Room & jobs / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day.
+- **Today** – your daily checklist, grouped into Morning / Through the day / Room & jobs / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day. It follows the clock: the sky changes from dawn to night, and sections that aren't due yet (Night in the morning, say) fold away as "later" until their time.
+  - **☀️ Three check-ins a day** – morning, afternoon and evening. Open the app in each window and tap how your energy is: +5 XP each, +15 bonus for all three (a *hat-trick*). Miss the window and it's gone.
+  - **🏁 Race yesterday-you** – "2 ahead of yesterday" means you've ticked off more than you had by this exact time yesterday. The yellow dot on the ring is yesterday-you, moving through the day.
+  - **🎲 Bonus quest** – one small optional challenge a day (a walk, 10 pages, a cold finish to your shower…) for +15 XP. You can swap it once.
+  - **🎁 Reward chest** – lock the day in on time and you open a chest: 10, 20, 40 or (rarely) 75 XP. A perfect day gets a golden chest with better odds.
+  - **Rings at the top** show every section at a glance. Tap one to jump to it.
+  - **App icon badge** – the Home Screen icon shows how many things are due right now (with notifications switched on).
   - **⚡ Up next** looks at the time and tells you what matters *now*: one tap for the whole morning routine, a countdown to the 2pm caffeine cutoff, water reminders, "need 2 more gym sessions in 3 days", overdue jobs, streaks at risk tonight, time left until 1am, and what's on tomorrow.
   - **One-tap "All ✓" / "All clean"** per section, with **Undo**.
-  - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
-  - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
+  - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, teeth morning and night, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
+  - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat), haircut (every 2 weeks). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
   - Paula's Choice every 3 days, skip it whenever you like.
   - Stayed clean: vaping, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
   - Training: aim for 3 sessions a week. Gym gives the most XP, home workouts and football count too. Football Mondays are optional.
   - **Reflect**: a one-tap mood and a "how can I be better tomorrow?" note, which shows up the next morning.
   - The score ring has a yellow dot for **yesterday's score**. The goal is always to beat it.
-- **Dopamine** – animated checks, iPhone haptic taps, "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 28 badges to unlock.
+- **Dopamine** – animated checks, iPhone haptic taps, little sounds (the silent switch mutes them; turn them off in Settings), "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 36 badges to unlock.
 - **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
@@ -24,7 +30,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
-- **🔔 Smart notifications** – only when something needs doing: morning routine not done, to-dos still open at midday, caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
+- **🔔 Smart notifications** – when something needs doing: morning routine not done, to-dos still open at midday, afternoon and evening check-ins (with what's left right now), caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
 - **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what vaping etc. cost you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
 - **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.
@@ -34,7 +40,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 
 1. **Log every day.** Hit *Lock in* by **midnight at the end of the next day** (a 24h grace period). If you miss it, you owe **£5 to charity** for that day. The app tells you what you owe, and you mark it paid once you've donated. That's the only punishment.
 2. **One day off per week** (Mon–Sun). Streaks freeze, nothing counts against you, and it counts as logged.
-3. **Tick everything and the day locks itself**, plus you get a perfect-day bonus.
+3. **Tick everything and the day locks itself**, plus you get a perfect-day bonus. Locking in on time opens a reward chest.
 4. Chores carry over until done. Slips never cost money; they just reset that streak.
 
 ---

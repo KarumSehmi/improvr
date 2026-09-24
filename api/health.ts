@@ -99,11 +99,12 @@ export function readNight(asleep: unknown, awake: unknown): { asleep: string; aw
   const samples = starts.map((s, i) => ({ s, e: Math.max(s, ends[i]) })).sort((a, b) => a.s - b.s);
   const blocks: { s: number; e: number }[] = [];
   for (const x of samples) {
-    const last = blocks.at(-1);
+    const last = blocks[blocks.length - 1];
     if (last && x.s <= last.e + GAP_MIN) last.e = Math.max(last.e, x.e);
     else blocks.push({ ...x });
   }
-  const night = blocks.filter((b) => b.e - b.s >= MIN_NIGHT).at(-1) ?? blocks.reduce((a, b) => (b.e - b.s > a.e - a.s ? b : a));
+  const nights = blocks.filter((b) => b.e - b.s >= MIN_NIGHT);
+  const night = nights[nights.length - 1] ?? blocks.reduce((a, b) => (b.e - b.s > a.e - a.s ? b : a));
   return { asleep: toClock(night.s), awake: toClock(night.e) };
 }
 
@@ -120,10 +121,17 @@ export function judgeSleep(asleep: string, awake: string): { sleepOk: boolean; w
  */
 export function mergeSleep(day: Record<string, unknown>, asleep: string, awake: string, at: number): Record<string, unknown> {
   const { sleepOk, wakeOk } = judgeSleep(asleep, awake);
+  // Tick times let the app race yesterday's pace.
+  const doneAt = { ...(day.doneAt as Record<string, number>) };
+  for (const [id, ok] of [['sleep', sleepOk], ['wake', wakeOk]] as const) {
+    if (!ok) delete doneAt[id];
+    else doneAt[id] ??= at;
+  }
   return {
     ...day,
     done: { ...(day.done as object), sleep: sleepOk, wake: wakeOk },
     times: { ...(day.times as object), sleep: asleep, wake: awake },
+    doneAt,
     sleepAuto: { asleep, awake, at },
     updatedAt: at,
   };

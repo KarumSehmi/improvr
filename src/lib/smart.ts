@@ -6,12 +6,14 @@ import { birthdaysOn, eventsOn } from './calendar';
 import { WATER_TARGET, scheduleLabel } from './config';
 import { addDays, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
+import { chestReady } from './moments';
 import type { AppData } from './types';
 
 export type SuggestionAction =
   | { kind: 'tick'; label: string; habitIds: string[] }
   | { kind: 'water'; label: string }
   | { kind: 'lock'; label: string }
+  | { kind: 'chest'; label: string }
   | { kind: 'scroll'; label: string; target: string };
 
 export interface Suggestion {
@@ -47,6 +49,10 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
 
   if (e.dayOff) {
     return [{ id: 'dayoff', emoji: '🏖️', title: 'Day off — enjoy it', detail: 'Streaks are frozen. Back at it tomorrow.', tone: 'good', priority: 100 }];
+  }
+
+  if (chestReady(e, summary.today)) {
+    out.push({ id: 'chest', emoji: '🎁', title: `${e.perfect ? 'Golden chest' : 'Reward chest'} ready`, detail: 'Locked in on time — open it for bonus XP.', tone: 'good', priority: 105, action: { kind: 'chest', label: 'Open' } });
   }
 
   if (e.perfect) {

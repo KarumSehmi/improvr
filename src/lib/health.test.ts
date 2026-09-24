@@ -77,11 +77,12 @@ describe('Apple Watch sleep endpoint', () => {
   });
 
   it('fills in both answers and the actual times, even over a manual answer', () => {
-    const day = { done: { sleep: true, pills: true }, times: {}, note: 'hi' };
-    const out = mergeSleep(day, '01:25', '08:40', 123) as { done: Record<string, boolean>; times: Record<string, string>; note: string };
+    const day = { done: { sleep: true, pills: true }, times: {}, note: 'hi', doneAt: { sleep: 50, pills: 60 } };
+    const out = mergeSleep(day, '01:25', '08:40', 123) as { done: Record<string, boolean>; times: Record<string, string>; note: string; doneAt: Record<string, number> };
     expect(out.done).toEqual({ sleep: false, wake: true, pills: true });
     expect(out.times).toEqual({ sleep: '01:25', wake: '08:40' });
     expect(out.note).toBe('hi');
+    expect(out.doneAt).toEqual({ pills: 60, wake: 123 }); // tick times for racing yesterday
   });
 
   it('works out time asleep and averages', () => {

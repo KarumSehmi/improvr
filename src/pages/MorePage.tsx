@@ -10,6 +10,7 @@ import {
   NumberInput,
   SegmentedControl,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -22,7 +23,7 @@ import { notifications } from '@mantine/notifications';
 import { IconDownload, IconTrash, IconUpload } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { fireworks } from '../lib/celebrate';
+import { fireworks, pop } from '../lib/celebrate';
 import HabitsEditor from '../components/HabitsEditor';
 import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
@@ -167,7 +168,12 @@ function RulesCard() {
                 still count.
               </List.Item>
               <List.Item>
-                <b>Tick everything → the day locks itself</b> and you get a perfect-day bonus.
+                <b>Tick everything → the day locks itself</b> and you get a perfect-day bonus. Locking in on time opens a{' '}
+                <b>reward chest</b> (a perfect day's is golden).
+              </List.Item>
+              <List.Item>
+                <b>Check in three times a day</b> — morning, afternoon, evening — for XP, with a bonus for all three. Plus one optional{' '}
+                <b>bonus quest</b> a day.
               </List.Item>
               <List.Item>
                 <b>Chores carry over.</b> Room stuff, bin, weekly cleans — if you don't do it, it's back tomorrow (in orange) until you do.
@@ -268,6 +274,17 @@ function SettingsCard() {
             ]}
           />
         </div>
+        <Switch
+          color="teal"
+          label="Sounds"
+          description="A little pop when you tick things off. Your iPhone's silent switch mutes them."
+          checked={settings.sounds !== false}
+          onChange={(e) => {
+            const on = e.currentTarget.checked;
+            updateSettings({ sounds: on });
+            if (on) pop();
+          }}
+        />
       </Stack>
     </Card>
   );
