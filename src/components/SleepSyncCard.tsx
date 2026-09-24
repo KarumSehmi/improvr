@@ -1,23 +1,8 @@
-import { Button, Card, CopyButton, Group, List, Stack, Table, Text, TextInput } from '@mantine/core';
-import { IconCopy } from '@tabler/icons-react';
+import { Button, Card, List, Stack, Table, Text } from '@mantine/core';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useApp } from '../lib/store';
-
-function CopyField({ label, value }: { label: string; value: string }) {
-  return (
-    <Group gap="xs" wrap="nowrap" align="flex-end">
-      <TextInput label={label} value={value} readOnly size="sm" style={{ flex: 1 }} onFocus={(e) => e.currentTarget.select()} />
-      <CopyButton value={value}>
-        {({ copied, copy }) => (
-          <Button size="sm" variant="light" color={copied ? 'teal' : 'violet'} leftSection={<IconCopy size={14} />} onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
-        )}
-      </CopyButton>
-    </Group>
-  );
-}
+import { CopyField } from './ui';
 
 /** Set-up for the iPhone Shortcut that sends Apple Watch sleep times each morning. */
 export default function SleepSyncCard() {

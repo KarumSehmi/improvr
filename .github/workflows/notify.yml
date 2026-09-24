@@ -1,9 +1,10 @@
 name: Notify
 
-# Every 15 minutes: smart notifications (only sent when something needs doing).
+# Backup timer for smart notifications. GitHub often runs this late or skips it, so the main timer
+# is cron-job.org calling /api/notify (see README). Off the hour, when GitHub is least busy.
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
     inputs:
       test:

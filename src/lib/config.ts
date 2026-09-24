@@ -2,8 +2,8 @@
  * The built-in habits. You can also hide these, change chore days and add your own
  * from the app (More → Your habits). Points are what make the XP bar move — bigger = more important.
  */
-import type { DateKey } from './dates';
-import type { ReminderSettings, Settings, WorkoutType } from './types';
+import type { DateKey } from './dates.js';
+import type { ReminderSettings, Settings, WorkoutType } from './types.js';
 
 export type SectionId = 'morning' | 'day' | 'room' | 'night' | 'clean';
 

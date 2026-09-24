@@ -1,9 +1,10 @@
 /**
  * Pure logic: what's due, scores, streaks, fines, XP. No React, no storage — easy to test.
  */
-import { BONUS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, habitsFor, type Habit } from './config';
-import { addDays, diffDays, fromNum, logDeadline, maxKey, toNum, weekday, weekStart, type DateKey } from './dates';
-import type { AppData, DayLog, Settings } from './types';
+// .js endings because this file also runs on the server (server/notify.ts).
+import { BONUS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, habitsFor, type Habit } from './config.js';
+import { addDays, diffDays, fromNum, logDeadline, maxKey, toNum, weekday, weekStart, type DateKey } from './dates.js';
+import type { AppData, DayLog, Settings } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Chores: carry over every day until done

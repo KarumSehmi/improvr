@@ -1,11 +1,12 @@
 /**
- * Smart notifications: the server checks every 15 minutes and asks this file what (if anything)
+ * Smart notifications: the server checks every few minutes and asks this file what (if anything)
  * is worth a buzz right now. Each nudge only fires when there's actually something to do,
  * and at most once per day.
  */
-import { DEFAULT_REMINDERS } from './config';
-import { addDays, weekday, weekStart, type DateKey } from './dates';
-import { weekStats, type Summary } from './engine';
+// .js endings because this file also runs on the server (server/notify.ts).
+import { DEFAULT_REMINDERS } from './config.js';
+import { addDays, weekday, weekStart, type DateKey } from './dates.js';
+import { weekStats, type Summary } from './engine.js';
 
 export type NudgeId = 'morning' | 'caffeine' | 'deadline' | 'lockin' | 'lastcall' | 'bedtime' | 'fines' | 'review';
 

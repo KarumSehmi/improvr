@@ -87,16 +87,15 @@ These need one "server key" from Firebase. Get it once and paste it in two place
 
 **Get the key:** Firebase console → ⚙️ **Project settings** → **Service accounts** → **Generate new private key**. A `.json` file downloads. Open it and copy everything. ⚠️ Keep it secret: never commit it or post it anywhere.
 
-### 🔔 Smart notifications (GitHub)
+### 🔔 Smart notifications
 
-1. GitHub → the `improvr` repo → **Settings → Secrets and variables → Actions → New repository secret**.
-   - Name: `FIREBASE_SERVICE_ACCOUNT`
-   - Value: paste the whole JSON.
-2. **Actions** tab. If GitHub asks, click **"I understand my workflows, go ahead and enable them"**. The **Notify** job then runs every 15 minutes, for free since the repo is public.
-3. On your iPhone, open Improvr **from the Home Screen icon** → More → Notifications → **Turn on notifications** → Allow.
-4. Test it: GitHub → Actions → **Notify** → **Run workflow** → tick *Send a test notification* → Run. Your phone should buzz within a minute.
+1. Vercel → your project → **Settings → Environment Variables** → add `FIREBASE_SERVICE_ACCOUNT` with the whole JSON (skip if you've done it for Apple Watch sleep) → **Redeploy**.
+2. On your iPhone, open Improvr **from the Home Screen icon** → More → Notifications → **Turn on notifications** → Allow.
+3. Same card → **Set up the timer** → copy your timer link. At [cron-job.org](https://cron-job.org) (free) → **Create cronjob** → paste it as the URL → every **5 minutes** → Create. The card turns green within 5 minutes.
 
-> GitHub pauses scheduled jobs on public repos after 60 days with no commits. If notifications stop, go to Actions → Notify → **Enable workflow**.
+Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secrets and variables → Actions** → `FIREBASE_SERVICE_ACCOUNT`) and the **Notify** workflow also checks every 15 minutes — GitHub often runs it hours late, which is why cron-job.org is the main one. Both at once is fine; nothing gets sent twice. To test: Actions → **Notify** → **Run workflow** → tick *Send a test notification*.
+
+> GitHub pauses scheduled jobs on public repos after 60 days with no commits (Actions → Notify → **Enable workflow**). cron-job.org pauses a job after lots of failures — the card tells you if the timer stops.
 
 ### ⌚ Apple Watch sleep (Vercel)
 
@@ -123,4 +122,4 @@ npm test         # logic tests (streaks, fines, day off, insights, badges, notif
 npm run build
 ```
 
-Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), web-push + GitHub Actions (notifications), a Vercel function (Apple Watch sleep), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.
+Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), web-push + Vercel functions + cron-job.org (notifications, Apple Watch sleep), GitHub Actions (backup timer), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.

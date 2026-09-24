@@ -1,5 +1,6 @@
 /** Small shared building blocks: haptic taps, animated check, emoji tiles, the score ring and "+XP" pop-ups. */
-import { Box, Text, type BoxProps, type ElementProps } from '@mantine/core';
+import { Box, Button, CopyButton, Group, Text, TextInput, type BoxProps, type ElementProps } from '@mantine/core';
+import { IconCopy } from '@tabler/icons-react';
 import { hapticTrigger } from 'ios-haptics';
 import { AnimatePresence, motion } from 'motion/react';
 import { useId, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
@@ -176,3 +177,18 @@ export function FloaterLayer() {
   );
 }
 
+/** A read-only field with a Copy button (keys and links for set-up steps). */
+export function CopyField({ label, value }: { label: string; value: string }) {
+  return (
+    <Group gap="xs" wrap="nowrap" align="flex-end">
+      <TextInput label={label} value={value} readOnly size="sm" style={{ flex: 1 }} onFocus={(e) => e.currentTarget.select()} />
+      <CopyButton value={value}>
+        {({ copied, copy }) => (
+          <Button size="sm" variant="light" color={copied ? 'teal' : 'violet'} leftSection={<IconCopy size={14} />} onClick={copy}>
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+        )}
+      </CopyButton>
+    </Group>
+  );
+}

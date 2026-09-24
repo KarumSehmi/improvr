@@ -1,4 +1,4 @@
-import { Accordion, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
+import { Accordion, Alert, Anchor, Badge, Button, Card, Group, List, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBell, IconBellOff, IconCalendarPlus } from '@tabler/icons-react';
@@ -11,6 +11,7 @@ import { currentSubscription, pushEnvironment, subscribe } from '../lib/push';
 import { buildReminders, downloadReminders } from '../lib/reminders';
 import { updateSettings, useApp } from '../lib/store';
 import type { ReminderSettings } from '../lib/types';
+import { CopyField } from './ui';
 
 /** Smart notifications (primary) plus the old Calendar alerts as a fallback. */
 export default function RemindersCard() {
@@ -26,12 +27,19 @@ export default function RemindersCard() {
   const env = pushEnvironment();
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [timerUrl, setTimerUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void currentSubscription().then((s) => setSubscribed(!!s));
   }, [devices]);
 
-  const serverOk = !!server?.lastRun && now - server.lastRun < 60 * 60 * 1000;
+  // The cron-job.org timer runs every 5 minutes; GitHub's backup timer can go hours without running.
+  const timerOk = !!server?.lastCron && now - server.lastCron < 30 * 60 * 1000;
+
+  async function showTimer() {
+    const cloud = await import('../lib/cloud');
+    setTimerUrl(`${window.location.origin}/api/notify?key=${await cloud.shortcutKey()}`);
+  }
 
   async function turnOn() {
     // Must be the very first thing: iPhone only shows the prompt if it's asked for straight from the tap.
@@ -123,15 +131,42 @@ export default function RemindersCard() {
           </Button>
         )}
 
-        {mode === 'cloud' && (
-          <Text size="xs" c={serverOk ? 'teal.4' : 'orange.4'} fw={600}>
-            {serverOk
-              ? `✓ Notification server running · last check ${dayjs(server!.lastRun).format('HH:mm')} · ${devices} device${devices === 1 ? '' : 's'}`
-              : server?.lastRun
-                ? `⚠️ Server hasn't checked in since ${dayjs(server.lastRun).format('ddd HH:mm')} — see GitHub → Actions → Notify.`
-                : "⚠️ Notification server isn't running yet — add the FIREBASE_SERVICE_ACCOUNT secret on GitHub (README → Smart notifications)."}
-          </Text>
-        )}
+        {mode === 'cloud' &&
+          (timerOk ? (
+            <Text size="xs" c="teal.4" fw={600}>
+              ✓ Timer running · last check {dayjs(server!.lastCron).format('HH:mm')} · {devices} device{devices === 1 ? '' : 's'}
+            </Text>
+          ) : (
+            <Alert color="orange" variant="light" p="sm" title={server?.lastCron ? `Timer hasn't run since ${dayjs(server.lastCron).format('ddd HH:mm')}` : 'One more step: give it a timer'}>
+              <Text size="xs">
+                {server?.lastCron
+                  ? 'Check the job on cron-job.org is still switched on (it pauses a job after lots of failures).'
+                  : "GitHub's free timer only runs every few hours, so notifications come late or not at all. A free timer on cron-job.org fixes it — 2 minutes, once."}
+              </Text>
+              {!timerUrl ? (
+                <Button mt="sm" size="xs" variant="light" color="orange" onClick={() => void showTimer()}>
+                  Set up the timer
+                </Button>
+              ) : (
+                <Stack gap="xs" mt="sm">
+                  <CopyField label="Your timer link (keep it private)" value={timerUrl} />
+                  <List type="ordered" size="xs" spacing={4}>
+                    <List.Item>
+                      Go to{' '}
+                      <Anchor href="https://cron-job.org" target="_blank" fz="xs">
+                        cron-job.org
+                      </Anchor>{' '}
+                      and sign up (free).
+                    </List.Item>
+                    <List.Item>
+                      <b>Create cronjob</b> → paste the link into <i>URL</i> → set <i>Execution schedule</i> to <b>every 5 minutes</b> → <b>Create</b>.
+                    </List.Item>
+                    <List.Item>That's it — this turns green within 5 minutes.</List.Item>
+                  </List>
+                </Stack>
+              )}
+            </Alert>
+          ))}
       </Stack>
 
       <Stack gap={6} mt="md">

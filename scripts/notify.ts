@@ -1,21 +1,17 @@
 /**
- * Runs every 15 minutes on GitHub Actions (.github/workflows/notify.yml) and sends any smart
- * notifications that are due — only when there's actually something to do.
+ * Backup timer on GitHub Actions (.github/workflows/notify.yml): sends any smart notifications that
+ * are due for every user. GitHub often runs this late or skips it, so the main timer is cron-job.org
+ * calling api/notify.ts — both are safe to run at once.
  *
  * Secret: FIREBASE_SERVICE_ACCOUNT.
  */
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import webpush from 'web-push';
-import { defaultSettings } from '../src/lib/config';
-import { dateKey } from '../src/lib/dates';
-import { summarize } from '../src/lib/engine';
-import { dueNudges, type Nudge } from '../src/lib/nudges';
-import type { AppData, Settings } from '../src/lib/types';
+import { notifyUser } from '../server/notify.js';
 
 // Fallback only — the app records the address it's really opened on (settings.appUrl).
-const DEFAULT_URL = (process.env.APP_URL || 'https://improvr.karum.co.uk').replace(/\/$/, '');
-const TEST = process.env.TEST === 'true';
+const fallbackUrl = process.env.APP_URL || 'https://improvr.karum.co.uk';
+const test = process.env.TEST === 'true';
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (!serviceAccount) {
@@ -25,68 +21,10 @@ if (!serviceAccount) {
 initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
 const db = getFirestore();
 
-async function load<T>(uid: string, name: string): Promise<Record<string, T>> {
-  const snap = await db.collection(`users/${uid}/${name}`).get();
-  return Object.fromEntries(snap.docs.map((d) => [d.id, d.data() as T]));
-}
-
-async function runFor(uid: string) {
-  const settingsSnap = await db.doc(`users/${uid}/meta/settings`).get();
-  if (!settingsSnap.exists) return;
-  const stored = settingsSnap.data() as Partial<Settings>;
-  // Work in the user's own time zone (dates, deadlines, "8:30am" all mean local time).
-  process.env.TZ = stored.timeZone || 'Europe/London';
-  const now = new Date();
-  const today = dateKey(now);
-  const minutes = now.getHours() * 60 + now.getMinutes();
-  const settings: Settings = { ...defaultSettings(today), ...stored };
-  const APP_URL = (settings.appUrl || DEFAULT_URL).replace(/\/$/, '');
-
-  const [days, payments, serverSnap, privSnap, subs] = await Promise.all([
-    load<AppData['days'][string]>(uid, 'days'),
-    load<AppData['payments'][string]>(uid, 'payments'),
-    db.doc(`users/${uid}/meta/server`).get(),
-    db.doc(`users/${uid}/meta/private`).get(),
-    db.collection(`users/${uid}/push`).get(),
-  ]);
-  const summary = summarize({ days, payments, events: {}, birthdays: {}, settings }, today);
-  const server = serverSnap.data() ?? {};
-  const sent: Record<string, string> = { ...(server.sent ?? {}) };
-  const update: Record<string, unknown> = { lastRun: Date.now() };
-
-  // 1. Notifications
-  const nudges: Nudge[] = TEST
-    ? [{ id: 'lockin', title: '✅ Notifications work', body: 'This one came from the Improvr server. You are all set.' }]
-    : dueNudges({ summary, date: today, minutes, sent });
-  const priv = privSnap.data();
-  if (nudges.length && priv?.vapidPublic && priv.vapidPrivate && !subs.empty) {
-    for (const n of nudges) {
-      for (const sub of subs.docs) {
-        try {
-          await webpush.sendNotification(sub.data() as webpush.PushSubscription, JSON.stringify({ ...n, url: APP_URL }), {
-            TTL: 60 * 60,
-            urgency: 'high',
-            vapidDetails: { subject: APP_URL, publicKey: priv.vapidPublic, privateKey: priv.vapidPrivate },
-          });
-        } catch (err) {
-          const code = (err as { statusCode?: number }).statusCode;
-          if (code === 404 || code === 410) await sub.ref.delete(); // phone unsubscribed
-          else console.error(`push ${n.id} failed (${code})`, (err as Error).message);
-        }
-      }
-      if (!TEST) sent[n.id] = today;
-      console.log(`${uid}: sent "${n.id}"`);
-    }
-  }
-  update.sent = sent;
-
-  await db.doc(`users/${uid}/meta/server`).set(update, { merge: true });
-}
-
 const users = await db.collection('users').listDocuments();
 for (const user of users) {
   try {
-    await runFor(user.id);
+    await notifyUser(db, user.id, { via: 'github', test, fallbackUrl });
   } catch (err) {
     console.error(`user ${user.id} failed`, err);
     process.exitCode = 1;

@@ -9,6 +9,8 @@ export const COLLECTIONS: Collection[] = ['days', 'events', 'birthdays', 'paymen
 /** What the background server last reported (notifications, Apple Watch sleep). */
 export interface ServerStatus {
   lastRun?: number;
+  /** Last run from the cron-job.org timer (GitHub's backup timer only sets lastRun). */
+  lastCron?: number;
   lastSleep?: { date: string; asleep: string; awake: string; at: number };
 }
 

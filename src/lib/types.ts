@@ -1,5 +1,5 @@
-import type { ChoreSchedule, Habit } from './config';
-import type { DateKey } from './dates';
+import type { ChoreSchedule, Habit } from './config.js';
+import type { DateKey } from './dates.js';
 
 export type AvoidAnswer = 'clean' | 'slip';
 export type WorkoutType = 'gym' | 'home' | 'football';
