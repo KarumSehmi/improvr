@@ -20,10 +20,11 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
+- **📝 To-dos** – one-off jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. Add them from Today or the Calendar.
 - **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
-- **🔔 Smart notifications** – only when something needs doing: morning routine not done, caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
+- **🔔 Smart notifications** – only when something needs doing: morning routine not done, to-dos still open at midday, caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
 - **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what vaping etc. cost you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
 - **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.

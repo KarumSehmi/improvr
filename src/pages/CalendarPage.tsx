@@ -5,7 +5,6 @@ import {
   Card,
   ColorSwatch,
   Group,
-  Indicator,
   Modal,
   NumberInput,
   Select,
@@ -20,15 +19,17 @@ import {
 import { Calendar, DatePickerInput, TimeInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { IconCake, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
+import { IconCake, IconChecklist, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
+import { Fragment, useState } from 'react';
+import { TodoModal, TodoRow } from '../components/Todos';
 import { EVENT_COLORS, birthdaysOn, eventsOn, upcomingBirthdays } from '../lib/calendar';
-import { fmt, relativeDay, type DateKey } from '../lib/dates';
+import { fmt, maxKey, relativeDay, type DateKey } from '../lib/dates';
 import { grade, isOpen } from '../lib/engine';
 import { scoreColor } from '../lib/scoreColors';
 import { openDay, useSummary, useToday } from '../lib/hooks';
 import { newId, removeItem, upsert, useApp } from '../lib/store';
-import type { Birthday, CalEvent } from '../lib/types';
+import { openTodos, todosOn, upcomingTodos } from '../lib/todos';
+import type { Birthday, CalEvent, Todo } from '../lib/types';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -147,21 +148,31 @@ export default function CalendarPage() {
   const summary = useSummary();
   const events = useApp((s) => s.events);
   const birthdays = useApp((s) => s.birthdays);
+  const todos = useApp((s) => s.todos);
   const [selected, setSelected] = useState<DateKey>(today);
   const [eventOpen, eventModal] = useDisclosure(false);
   const [bdayOpen, bdayModal] = useDisclosure(false);
   const [eventDraft, setEventDraft] = useState<Partial<CalEvent>>({});
   const [bdayDraft, setBdayDraft] = useState<Partial<Birthday>>({});
+  const [todoOpen, todoModal] = useDisclosure(false);
+  const [todoDraft, setTodoDraft] = useState<Partial<Todo>>({});
   const scheme = useComputedColorScheme('dark');
 
   const dayEvents = eventsOn(events, selected);
   const dayBirthdays = birthdaysOn(birthdays, selected);
+  const dayTodos = todosOn(todos, selected, today);
+  const nowTodos = openTodos(todos, today);
+  const laterTodos = upcomingTodos(todos, today, 3650);
   const e = summary.evalByDate[selected];
   const g = grade(e?.pct ?? null);
 
   const editEvent = (ev: Partial<CalEvent>) => {
     setEventDraft(ev);
     eventModal.open();
+  };
+  const editTodo = (t: Partial<Todo>) => {
+    setTodoDraft(t);
+    todoModal.open();
   };
   const editBirthday = (b: Partial<Birthday>) => {
     setBdayDraft(b);
@@ -173,8 +184,15 @@ export default function CalendarPage() {
       <Title order={2}>Calendar</Title>
       <Tabs defaultValue="calendar" variant="pills" radius="xl">
         <Tabs.List grow>
-          <Tabs.Tab value="calendar">📅 Calendar</Tabs.Tab>
-          <Tabs.Tab value="birthdays">🎂 Birthdays ({Object.keys(birthdays).length})</Tabs.Tab>
+          <Tabs.Tab value="calendar" px={8} fz="sm">
+            📅 Calendar
+          </Tabs.Tab>
+          <Tabs.Tab value="todos" px={8} fz="sm">
+            📝 To-dos{nowTodos.length ? ` (${nowTodos.length})` : ''}
+          </Tabs.Tab>
+          <Tabs.Tab value="birthdays" px={8} fz="sm">
+            🎂 Birthdays
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="calendar" pt="md">
@@ -188,33 +206,36 @@ export default function CalendarPage() {
                 getDayProps={(d) => ({ selected: d === selected, onClick: () => setSelected(d) })}
                 renderDay={(d) => {
                   const pct = summary.evalByDate[d]?.pct;
-                  const hasEvent = eventsOn(events, d).length > 0;
-                  const hasBday = birthdaysOn(birthdays, d).length > 0;
                   const dayNum = Number(d.slice(8));
                   const colors = pct == null || d === selected ? null : scoreColor(pct, scheme);
+                  const dots = [
+                    eventsOn(events, d).length > 0 && 'blue',
+                    todosOn(todos, d, today).some((t) => !t.doneOn) && 'orange',
+                    birthdaysOn(birthdays, d).length > 0 && 'pink',
+                  ].filter(Boolean);
                   return (
-                    <Indicator
-                      size={6}
-                      color={hasBday ? 'pink' : 'blue'}
-                      offset={-2}
-                      disabled={!hasEvent && !hasBday}
-                      position="bottom-center"
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: colors?.bg,
+                        color: colors?.fg,
+                        fontWeight: colors ? 700 : undefined,
+                      }}
                     >
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          display: 'grid',
-                          placeItems: 'center',
-                          background: colors?.bg,
-                          color: colors?.fg,
-                          fontWeight: colors ? 700 : undefined,
-                        }}
-                      >
-                        {dayNum}
-                      </div>
-                    </Indicator>
+                      {dayNum}
+                      {dots.length > 0 && (
+                        <div style={{ position: 'absolute', bottom: -5, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 2 }}>
+                          {dots.map((c) => (
+                            <span key={c as string} style={{ width: 5, height: 5, borderRadius: 5, background: `var(--mantine-color-${c}-5)` }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 }}
               />
@@ -267,24 +288,74 @@ export default function CalendarPage() {
                     </Group>
                   </Group>
                 ))}
-                {!dayEvents.length && !dayBirthdays.length && (
+                {dayTodos.length > 0 && (
+                  <div>
+                    {dayTodos.map((t) => (
+                      <TodoRow key={t.id} todo={t} today={today} onEdit={editTodo} />
+                    ))}
+                  </div>
+                )}
+                {!dayEvents.length && !dayBirthdays.length && !dayTodos.length && (
                   <Text size="sm" c="dimmed">
                     Nothing planned.
                   </Text>
                 )}
               </Stack>
 
-              <Group mt="md" grow>
-                <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => editEvent({ date: selected, color: 'violet' })}>
-                  Add event
+              <Group mt="md" grow gap="xs">
+                <Button leftSection={<IconPlus size={16} />} variant="light" px="xs" onClick={() => editEvent({ date: selected, color: 'violet' })}>
+                  Event
+                </Button>
+                <Button leftSection={<IconChecklist size={16} />} variant="light" color="orange" px="xs" onClick={() => editTodo({ date: maxKey(selected, today) })}>
+                  To-do
                 </Button>
                 {selected <= today && selected >= summary.evals[0]?.date && (
-                  <Button variant="default" onClick={() => openDay(selected === today ? null : selected)}>
-                    Open day log
+                  <Button variant="default" px="xs" onClick={() => openDay(selected === today ? null : selected)}>
+                    Day log
                   </Button>
                 )}
               </Group>
             </Card>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="todos" pt="md">
+          <Stack>
+            <Button leftSection={<IconChecklist size={18} />} variant="gradient" onClick={() => editTodo({ date: today })}>
+              Add a to-do
+            </Button>
+            <Card p="sm">
+              <Text fw={800} fz={17} px={4}>
+                Now
+              </Text>
+              {nowTodos.length ? (
+                nowTodos.map((t) => <TodoRow key={t.id} todo={t} today={today} onEdit={editTodo} />)
+              ) : (
+                <Text size="sm" c="dimmed" px={4} py="xs">
+                  Nothing due — you're on top of it. 🙌
+                </Text>
+              )}
+            </Card>
+            {laterTodos.length > 0 && (
+              <Card p="sm">
+                <Text fw={800} fz={17} px={4}>
+                  Planned
+                </Text>
+                {laterTodos.map((t, i) => (
+                  <Fragment key={t.id}>
+                    {laterTodos[i - 1]?.date !== t.date && (
+                      <Text size="xs" c="dimmed" fw={700} px={4} mt={6}>
+                        {relativeDay(t.date, today)}
+                      </Text>
+                    )}
+                    <TodoRow todo={t} today={today} onEdit={editTodo} />
+                  </Fragment>
+                ))}
+              </Card>
+            )}
+            <Text size="xs" c="dimmed" ta="center">
+              Anything not done on its day carries over to today until you tick it off.
+            </Text>
           </Stack>
         </Tabs.Panel>
 
@@ -337,6 +408,7 @@ export default function CalendarPage() {
 
       <EventModal opened={eventOpen} onClose={eventModal.close} initial={eventDraft} />
       <BirthdayModal opened={bdayOpen} onClose={bdayModal.close} initial={bdayDraft} />
+      <TodoModal opened={todoOpen} onClose={todoModal.close} initial={todoDraft} />
     </Stack>
   );
 }

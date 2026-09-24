@@ -42,7 +42,7 @@ let cache: { key: unknown[]; value: Summary } | null = null;
 function memoSummary(today: DateKey, days: AppData['days'], payments: AppData['payments'], settings: AppData['settings']): Summary {
   const key = [today, days, payments, settings];
   if (!cache || cache.key.some((k, i) => k !== key[i])) {
-    cache = { key, value: summarize({ days, payments, settings, events: {}, birthdays: {} }, today) };
+    cache = { key, value: summarize({ days, payments, settings, events: {}, birthdays: {}, todos: {} }, today) };
   }
   return cache.value;
 }

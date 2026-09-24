@@ -3,12 +3,22 @@ import { Box, Button, CopyButton, Group, Text, TextInput, type BoxProps, type El
 import { IconCopy } from '@tabler/icons-react';
 import { hapticTrigger } from 'ios-haptics';
 import { AnimatePresence, motion } from 'motion/react';
-import { useId, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useId, useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { useFloaters } from '../lib/feedback';
+
+// Scrolling on a phone often ends on a row. Anything that moved, or landed during or just after a
+// scroll (e.g. the tap that stops a flick), isn't a real tap.
+const MOVE_PX = 10;
+const SETTLE_MS = 300;
+let lastScroll = 0;
+if (typeof window !== 'undefined') {
+  window.addEventListener('scroll', () => (lastScroll = performance.now()), { capture: true, passive: true });
+}
 
 /**
  * A tap target that buzzes on iPhone. Put the click handler here, not on children:
  * on iOS the tap lands on an invisible switch (that's what makes the haptic) and bubbles up to this box.
+ * Taps that were really part of a scroll are ignored.
  */
 export function Tap({
   onClick,
@@ -16,10 +26,30 @@ export function Tap({
   style,
   ...rest
 }: BoxProps & ElementProps<'div', 'onClick'> & { onClick: (e: MouseEvent) => void; children: ReactNode; style?: CSSProperties }) {
+  const press = useRef<{ x: number; y: number; at: number; moved: boolean } | null>(null);
   return (
     <Box
       ref={hapticTrigger}
-      onClick={onClick}
+      onPointerDown={(e) => {
+        press.current = { x: e.clientX, y: e.clientY, at: performance.now(), moved: false };
+      }}
+      onPointerMove={(e) => {
+        const p = press.current;
+        if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > MOVE_PX) p.moved = true;
+      }}
+      onPointerCancel={() => {
+        if (press.current) press.current.moved = true;
+      }}
+      onClick={(e) => {
+        const p = press.current;
+        press.current = null;
+        if (p && (p.moved || lastScroll > p.at - SETTLE_MS)) {
+          e.preventDefault(); // also flips the hidden switch back, so no buzz
+          e.stopPropagation();
+          return;
+        }
+        onClick(e);
+      }}
       role="button"
       style={{ position: 'relative', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', ...style }}
       {...rest}

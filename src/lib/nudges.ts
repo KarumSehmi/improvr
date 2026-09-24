@@ -7,11 +7,14 @@
 import { DEFAULT_REMINDERS } from './config.js';
 import { addDays, weekday, weekStart, type DateKey } from './dates.js';
 import { weekStats, type Summary } from './engine.js';
+import { carriedDays, openTodos } from './todos.js';
+import type { Todo } from './types.js';
 
-export type NudgeId = 'morning' | 'caffeine' | 'deadline' | 'lockin' | 'lastcall' | 'bedtime' | 'fines' | 'review';
+export type NudgeId = 'morning' | 'todos' | 'caffeine' | 'deadline' | 'lockin' | 'lastcall' | 'bedtime' | 'fines' | 'review';
 
 export const NUDGES: { id: NudgeId; label: string; when: string }[] = [
   { id: 'morning', label: 'Morning routine not done', when: 'morning' },
+  { id: 'todos', label: 'To-dos still open', when: '12:00' },
   { id: 'caffeine', label: 'Caffeine cutoff coming up', when: 'caffeine' },
   { id: 'deadline', label: "Yesterday isn't logged yet", when: '20:00' },
   { id: 'lockin', label: "Today isn't locked in (with streaks at risk)", when: 'lockIn' },
@@ -44,6 +47,7 @@ export function dueNudges(args: {
   minutes: number;
   /** Nudge id → local date it last went out. */
   sent: Record<string, string>;
+  todos?: Record<string, Todo>;
 }): Nudge[] {
   const { summary, date, minutes, sent } = args;
   const s = summary.settings;
@@ -77,6 +81,17 @@ export function dueNudges(args: {
       const risk = atRisk.length ? ` 🔥 ${atRisk.length} streak${atRisk.length === 1 ? '' : 's'} at risk: ${names(atRisk.map((i) => `${i.habit.label} (${summary.habitStreaks[i.habit.id].current})`), 2)}.` : '';
       out.push({ id: 'lockin', title: '🔒 Lock in today', body: `${today.completed}/${today.required} done.${risk}` });
     }
+  }
+
+  // To-dos don't take days off.
+  const todos = openTodos(args.todos ?? {}, date);
+  if (todos.length && due('todos', '12:00')) {
+    const late = todos.filter((t) => carriedDays(t, date) > 0).length;
+    out.push({
+      id: 'todos',
+      title: `📝 ${todos.length} to-do${todos.length === 1 ? '' : 's'} still open`,
+      body: `${names(todos.map((t) => t.title))}${late ? ` (${late} carried over)` : ''}.`,
+    });
   }
 
   if (yesterday && !yesterday.closed) {

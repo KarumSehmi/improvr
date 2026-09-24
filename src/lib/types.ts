@@ -41,6 +41,18 @@ export interface CalEvent {
   createdAt: number;
 }
 
+/** A one-off job on the calendar. If it isn't done by its day it carries over to today until it is. */
+export interface Todo {
+  id: string;
+  title: string;
+  /** The day it's planned for. */
+  date: DateKey;
+  /** The day you ticked it off (missing = still to do). */
+  doneOn?: DateKey | null;
+  notes?: string;
+  createdAt: number;
+}
+
 export interface Birthday {
   id: string;
   name: string;
@@ -113,5 +125,6 @@ export interface AppData {
   events: Record<string, CalEvent>;
   birthdays: Record<string, Birthday>;
   payments: Record<string, Payment>;
+  todos: Record<string, Todo>;
   settings: Settings;
 }

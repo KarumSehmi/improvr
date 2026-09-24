@@ -3,6 +3,7 @@ import { birthdaysOn, eventsBetween, upcomingBirthdays } from '../lib/calendar';
 import { addDays, diffDays, relativeDay, type DateKey } from '../lib/dates';
 import type { Summary } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
+import { upcomingTodos } from '../lib/todos';
 
 /** Today's birthdays, shown at the top. */
 export function BirthdayBanner({ today }: { today: DateKey }) {
@@ -19,10 +20,12 @@ export function BirthdayBanner({ today }: { today: DateKey }) {
 export default function UpcomingCard({ today, summary }: { today: DateKey; summary: Summary }) {
   const events = useApp((s) => s.events);
   const birthdays = useApp((s) => s.birthdays);
+  const todos = useApp((s) => s.todos);
   const todayEval = summary.evalByDate[today];
 
   const evs = eventsBetween(events, today, addDays(today, 7));
   const bdays = upcomingBirthdays(birthdays, today, 14).filter((b) => b.daysAway > 0);
+  const plans = upcomingTodos(todos, today);
   const doneToday = new Set(todayEval?.items.filter((i) => i.done || i.skipped).map((i) => i.habit.id));
   // Bigger jobs due in the next few days (daily room chores would just be noise here).
   const chores = summary.habits.filter((h) => h.kind === 'chore' && !(h.schedule && 'every' in h.schedule && h.schedule.every === 1) && !doneToday.has(h.id))
@@ -30,7 +33,7 @@ export default function UpcomingCard({ today, summary }: { today: DateKey; summa
     .filter((c) => c.next > today && diffDays(c.next, today) <= 4)
     .sort((a, b) => a.next.localeCompare(b.next));
 
-  if (!evs.length && !bdays.length && !chores.length) return null;
+  if (!evs.length && !bdays.length && !chores.length && !plans.length) return null;
 
   return (
     <Card p="sm">
@@ -53,6 +56,16 @@ export default function UpcomingCard({ today, summary }: { today: DateKey; summa
                 {e.time}
               </Text>
             )}
+          </Group>
+        ))}
+        {plans.map((t) => (
+          <Group key={t.id} justify="space-between" wrap="nowrap" px={4}>
+            <Text size="sm" truncate>
+              📝 {t.title}
+            </Text>
+            <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+              {relativeDay(t.date, today)}
+            </Text>
           </Group>
         ))}
         {bdays.map((b) => (

@@ -32,22 +32,23 @@ export async function notifyUser(db: Firestore, uid: string, opts: { via: RunVia
     const snap = await db.collection(`users/${uid}/${name}`).get();
     return Object.fromEntries(snap.docs.map((d) => [d.id, d.data() as T]));
   };
-  const [days, payments, privSnap, subs] = await Promise.all([
+  const [days, payments, todos, privSnap, subs] = await Promise.all([
     load<AppData['days'][string]>('days'),
     load<AppData['payments'][string]>('payments'),
+    load<AppData['todos'][string]>('todos'),
     db.doc(`users/${uid}/meta/private`).get(),
     db.collection(`users/${uid}/push`).get(),
   ]);
   const priv = privSnap.data();
   const canSend = !!priv?.vapidPublic && !!priv.vapidPrivate && !subs.empty;
-  const summary = summarize({ days, payments, events: {}, birthdays: {}, settings }, today);
+  const summary = summarize({ days, payments, events: {}, birthdays: {}, todos, settings }, today);
 
   // Claim what's due inside a transaction, so two runs at once (cron + GitHub) never send the same thing twice.
   const serverRef = db.doc(`users/${uid}/meta/server`);
   const nudges = await db.runTransaction(async (t) => {
     const server = (await t.get(serverRef)).data() ?? {};
     const sent: Record<string, string> = { ...(server.sent ?? {}) };
-    const due = !canSend ? [] : opts.test ? [TEST_NUDGE] : dueNudges({ summary, date: today, minutes, sent });
+    const due = !canSend ? [] : opts.test ? [TEST_NUDGE] : dueNudges({ summary, date: today, minutes, sent, todos });
     if (!opts.test) for (const n of due) sent[n.id] = today;
     const at = Date.now();
     t.set(serverRef, { lastRun: at, ...(opts.via === 'cron' && { lastCron: at }), sent }, { merge: true });

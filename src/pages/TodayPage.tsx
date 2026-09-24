@@ -6,6 +6,7 @@ import HeroCard from '../components/HeroCard';
 import LockInCard from '../components/LockInCard';
 import ReflectionCard from '../components/ReflectionCard';
 import SectionCard from '../components/SectionCard';
+import TodoCard from '../components/Todos';
 import TrainingCard from '../components/TrainingCard';
 import UpNextCard from '../components/UpNextCard';
 import UpcomingCard, { BirthdayBanner } from '../components/UpcomingCard';
@@ -163,6 +164,8 @@ export default function TodayPage() {
       {date === today && <BirthdayBanner today={today} />}
 
       {open && <UpNextCard date={date} evaluation={e} summary={summary} onLock={() => lockDay(date, e, open)} />}
+
+      {date === today && <TodoCard today={today} />}
 
       {prevNote && (
         <Card p="sm" style={{ borderStyle: 'dashed' }}>

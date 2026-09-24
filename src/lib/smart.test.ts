@@ -11,7 +11,7 @@ import type { AppData, DayLog } from './types';
 const START = '2026-08-03'; // Monday
 
 function data(days: Record<string, DayLog> = {}, extra: Partial<AppData['settings']> = {}): AppData {
-  return { days, events: {}, birthdays: {}, payments: {}, settings: { ...defaultSettings(START), ...extra } };
+  return { days, events: {}, birthdays: {}, payments: {}, todos: {}, settings: { ...defaultSettings(START), ...extra } };
 }
 
 describe('your own habits', () => {

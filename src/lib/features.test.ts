@@ -9,7 +9,7 @@ import type { AppData, DayLog, Settings } from './types';
 const START = '2026-09-21'; // Monday
 
 function data(days: Record<string, DayLog> = {}, extra: Partial<Settings> = {}): AppData {
-  return { days, events: {}, birthdays: {}, payments: {}, settings: { ...defaultSettings(START), ...extra } };
+  return { days, events: {}, birthdays: {}, payments: {}, todos: {}, settings: { ...defaultSettings(START), ...extra } };
 }
 const item = (d: AppData, date: string, id: string, today = date) => summarize(d, today).evalByDate[date].items.find((i) => i.habit.id === id)!;
 
