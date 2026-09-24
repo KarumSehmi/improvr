@@ -89,7 +89,7 @@ export interface Settings {
 
   /** IANA time zone of your phone, so the notification server knows your local time. */
   timeZone?: string;
-  /** Web address the app was last opened on, for links in notifications and the buddy email. */
+  /** Web address the app was last opened on, for links in notifications. */
   appUrl?: string;
   /** Smart notifications you've switched off (missing = on). */
   notify?: Record<string, boolean>;
@@ -97,15 +97,6 @@ export interface Settings {
   costPerWeek?: Record<string, number>;
   /** Weekly allowance for stay-clean habits (e.g. 1 drinking night a week). */
   weeklyLimits?: Record<string, number>;
-  buddy?: BuddySettings | null;
-}
-
-export interface BuddySettings {
-  name: string;
-  email?: string;
-  /** Secret part of the share link. */
-  token: string;
-  showSlips: boolean;
 }
 
 export interface ReminderSettings {

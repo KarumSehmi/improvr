@@ -17,18 +17,12 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { cloudEnabled } from './firebaseConfig';
 import { startLocal } from './lib/store';
-import BuddyPage from './pages/BuddyPage';
 import { theme } from './theme';
 
 dayjs.locale('en-gb');
 registerSW({ immediate: true });
 
-// A buddy opening your shared link sees a read-only page — no login, none of your app.
-const buddyToken = new URLSearchParams(window.location.search).get('buddy');
-
-if (buddyToken) {
-  // nothing to start
-} else if (cloudEnabled) {
+if (cloudEnabled) {
   void import('./lib/cloud').then((m) => m.startCloud());
 } else {
   startLocal();
@@ -40,7 +34,7 @@ createRoot(document.getElementById('root')!).render(
       <DatesProvider settings={{ locale: 'en-gb', firstDayOfWeek: 1 }}>
         <ModalsProvider>
           <Notifications position="top-center" limit={3} autoClose={2500} />
-          {buddyToken ? <BuddyPage token={buddyToken} /> : <App />}
+          <App />
         </ModalsProvider>
       </DatesProvider>
     </MantineProvider>

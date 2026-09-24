@@ -6,11 +6,9 @@ import type { AppData, Birthday, CalEvent, DayLog, Payment, Settings } from './t
 export type Collection = 'days' | 'events' | 'birthdays' | 'payments';
 export const COLLECTIONS: Collection[] = ['days', 'events', 'birthdays', 'payments'];
 
-/** What the background server last reported (notifications, buddy email, Apple Watch sleep). */
+/** What the background server last reported (notifications, Apple Watch sleep). */
 export interface ServerStatus {
   lastRun?: number;
-  emailReady?: boolean;
-  lastEmail?: number;
   lastSleep?: { date: string; asleep: string; awake: string; at: number };
 }
 

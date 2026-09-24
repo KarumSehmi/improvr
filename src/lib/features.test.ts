@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { achievements } from './achievements';
-import { buddyReport, buddySnapshot } from './buddy';
 import { defaultSettings } from './config';
 import { addDays, startOfDay } from './dates';
 import { slipStats, summarize, totalSaved } from './engine';
@@ -86,18 +85,5 @@ describe('smart notifications', () => {
     expect(at(20, 5, {}, sum)).not.toContain('deadline');
     const off = summarize(data({}, { notify: { lockin: false } }), '2026-09-22');
     expect(at(22, 40, {}, off)).not.toContain('lockin');
-  });
-});
-
-describe('buddy', () => {
-  it('builds a snapshot and a readable report, hiding slips if you want', () => {
-    const d = data({ '2026-09-21': { avoid: { vape: 'slip' }, closedAt: startOfDay('2026-09-21') + 3600e3 } }, { name: 'Karum', buddy: { name: 'Sam', token: 't', showSlips: false } });
-    const b = buddySnapshot(summarize(d, '2026-09-23'), 'uid1');
-    expect(b.name).toBe('Karum');
-    expect(b.clean.find((c) => c.label === 'No vaping')?.slipsThisWeek).toBeNull();
-    const text = buddyReport(b, 'https://x/?buddy=t');
-    expect(text).toContain("Karum's week");
-    expect(text).toContain('https://x/?buddy=t');
-    expect(text).not.toContain('slip');
   });
 });

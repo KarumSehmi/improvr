@@ -21,7 +21,6 @@ import {
 import { firebaseConfig } from '../firebaseConfig';
 import { defaultSettings } from './config';
 import { dateKey } from './dates';
-import type { BuddySnapshot } from './buddy';
 import { generateVapid } from './push';
 import { COLLECTIONS, emptyData, setBackend, useApp, type ServerStatus } from './store';
 import type { Settings } from './types';
@@ -161,20 +160,6 @@ export async function removePushSubscription(endpoint: string) {
 export async function shortcutKey(): Promise<string> {
   const keys = await ensurePrivate();
   return `${uid()}.${keys.shortcutSecret}`;
-}
-
-export async function writeBuddy(token: string, snapshot: Omit<BuddySnapshot, 'uid'>) {
-  await setDoc(doc(db, 'buddy', token), { ...snapshot, uid: uid() });
-}
-
-export async function deleteBuddy(token: string) {
-  await deleteDoc(doc(db, 'buddy', token));
-}
-
-/** Public read of a buddy page (no login needed). */
-export async function fetchBuddy(token: string): Promise<BuddySnapshot | null> {
-  const snap = await getDoc(doc(db, 'buddy', token));
-  return snap.exists() ? (snap.data() as BuddySnapshot) : null;
 }
 
 export async function signIn(email: string, password: string) {

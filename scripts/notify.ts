@@ -1,18 +1,14 @@
 /**
- * Runs every 15 minutes on GitHub Actions (.github/workflows/notify.yml). For each user it:
- *  1. sends any smart notifications that are due (only when there's something to do),
- *  2. refreshes the buddy page, so your buddy sees the truth even if you stop opening the app,
- *  3. on Sunday evening, emails your buddy the weekly report (if Gmail is set up).
+ * Runs every 15 minutes on GitHub Actions (.github/workflows/notify.yml) and sends any smart
+ * notifications that are due — only when there's actually something to do.
  *
- * Secrets: FIREBASE_SERVICE_ACCOUNT (required), GMAIL_USER + GMAIL_APP_PASSWORD (optional, for the email).
+ * Secret: FIREBASE_SERVICE_ACCOUNT.
  */
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import nodemailer from 'nodemailer';
 import webpush from 'web-push';
-import { buddyLink, buddyReport, buddySnapshot } from '../src/lib/buddy';
 import { defaultSettings } from '../src/lib/config';
-import { dateKey, weekStart } from '../src/lib/dates';
+import { dateKey } from '../src/lib/dates';
 import { summarize } from '../src/lib/engine';
 import { dueNudges, type Nudge } from '../src/lib/nudges';
 import type { AppData, Settings } from '../src/lib/types';
@@ -28,12 +24,6 @@ if (!serviceAccount) {
 }
 initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
 const db = getFirestore();
-
-const gmailUser = process.env.GMAIL_USER;
-const mailer =
-  gmailUser && process.env.GMAIL_APP_PASSWORD
-    ? nodemailer.createTransport({ service: 'gmail', auth: { user: gmailUser, pass: process.env.GMAIL_APP_PASSWORD } })
-    : null;
 
 async function load<T>(uid: string, name: string): Promise<Record<string, T>> {
   const snap = await db.collection(`users/${uid}/${name}`).get();
@@ -62,7 +52,7 @@ async function runFor(uid: string) {
   const summary = summarize({ days, payments, events: {}, birthdays: {}, settings }, today);
   const server = serverSnap.data() ?? {};
   const sent: Record<string, string> = { ...(server.sent ?? {}) };
-  const update: Record<string, unknown> = { lastRun: Date.now(), emailReady: !!mailer };
+  const update: Record<string, unknown> = { lastRun: Date.now() };
 
   // 1. Notifications
   const nudges: Nudge[] = TEST
@@ -89,26 +79,6 @@ async function runFor(uid: string) {
     }
   }
   update.sent = sent;
-
-  // 2 + 3. Buddy page and weekly email
-  const buddy = settings.buddy;
-  if (buddy?.token) {
-    const snapshot = buddySnapshot(summary, uid);
-    await db.doc(`buddy/${buddy.token}`).set(snapshot);
-    const ws = weekStart(today);
-    if (mailer && buddy.email && now.getDay() === 0 && minutes >= 19 * 60 && server.emailWeek !== ws) {
-      const link = buddyLink(APP_URL, buddy.token);
-      await mailer.sendMail({
-        from: `Improvr <${gmailUser}>`,
-        to: buddy.email,
-        subject: `${snapshot.name}'s week: grade ${snapshot.week.grade}${snapshot.fines.owed ? ` · owes £${snapshot.fines.owed}` : ''}`,
-        text: `Hi ${buddy.name || 'there'},\n\nYou're ${snapshot.name}'s accountability buddy. Here's how the week went:\n\n${buddyReport(snapshot, link)}\n\nIf they're slacking, tell them. That's the deal.\n`,
-      });
-      update.emailWeek = ws;
-      update.lastEmail = Date.now();
-      console.log(`${uid}: emailed buddy`);
-    }
-  }
 
   await db.doc(`users/${uid}/meta/server`).set(update, { merge: true });
 }

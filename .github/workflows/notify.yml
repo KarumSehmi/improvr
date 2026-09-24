@@ -1,6 +1,6 @@
 name: Notify
 
-# Every 15 minutes: smart notifications, buddy page refresh, Sunday buddy email.
+# Every 15 minutes: smart notifications (only sent when something needs doing).
 on:
   schedule:
     - cron: '*/15 * * * *'
@@ -29,7 +29,5 @@ jobs:
       - run: npx tsx scripts/notify.ts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           APP_URL: ${{ vars.APP_URL }}
           TEST: ${{ inputs.test || false }}

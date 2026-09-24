@@ -24,7 +24,6 @@ import dayjs from 'dayjs';
 import { useState } from 'react';
 import { fireworks } from '../lib/celebrate';
 import HabitsEditor from '../components/HabitsEditor';
-import BuddyCard from '../components/BuddyCard';
 import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
 import { BUILT_IN_BY_ID } from '../lib/config';
@@ -357,7 +356,6 @@ export default function MorePage() {
       <Title order={2}>More</Title>
       <FinesCard />
       <RemindersCard />
-      <BuddyCard />
       <SleepSyncCard />
       <HabitsEditor />
       <RulesCard />

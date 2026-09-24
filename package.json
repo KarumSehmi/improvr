@@ -26,7 +26,6 @@
     "ics": "^3.12.0",
     "ios-haptics": "^3.2.0",
     "motion": "^13.4.2",
-    "nodemailer": "^10.0.10",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.10.1",
@@ -36,7 +35,6 @@
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.13.3",
-    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@types/web-push": "^3.6.4",
