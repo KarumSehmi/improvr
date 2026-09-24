@@ -11,7 +11,6 @@ export type HabitKind =
   | 'check' // simple tick
   | 'time' // yes/no with a rough time if you missed it (sleep / wake)
   | 'water' // tap bottles
-  | 'weight' // morning weigh-in
   | 'dose' // finasteride ml
   | 'avoid' // stayed clean / slipped
   | 'chore'; // recurring, carries over every day until done
@@ -49,7 +48,7 @@ export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) 
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
-  { id: 'weigh', label: 'Weigh in', emoji: '⚖️', section: 'morning', kind: 'weight', points: 10 },
+  { id: 'weigh', label: 'Weighed in', emoji: '⚖️', section: 'morning', kind: 'check', points: 10 },
   {
     id: 'sleep',
     label: 'Asleep before 1am',
@@ -195,7 +194,6 @@ export function defaultSettings(today: string): Settings {
     startDate: today,
     fineAmount: 5,
     charity: 'a charity of your choice',
-    weightUnit: 'kg',
     workoutTarget: 3,
     finTargetMl: 1,
     finConcentration: 0.025,

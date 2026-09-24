@@ -17,15 +17,6 @@ import { addDays, fmt, formatCountdown, logDeadline, weekStart, type DateKey } f
 import { isOpen, weekStats, type DayEval, type Streak, type Summary } from '../lib/engine';
 import { goTo, openDay, useNow, useSummary, useToday, useUi } from '../lib/hooks';
 import { updateDay, useApp } from '../lib/store';
-import type { DayLog } from '../lib/types';
-
-function lastWeightBefore(days: Record<DateKey, DayLog>, date: DateKey): number | null {
-  let best: DateKey | null = null;
-  for (const [d, log] of Object.entries(days)) {
-    if (d < date && log.weight && (!best || d > best)) best = d;
-  }
-  return best ? (days[best].weight ?? null) : null;
-}
 
 function sectionsComplete(e: DayEval): Record<string, boolean> {
   const out: Record<string, boolean> = {};
@@ -126,7 +117,6 @@ export default function TodayPage() {
   }
 
   const prevNote = days[addDays(date, -1)]?.note?.trim();
-  const lastWeight = lastWeightBefore(days, date);
   const otherPending = summary.openUnlogged.filter((d) => d !== date);
   const yesterdayPct = summary.evalByDate[addDays(date, -1)]?.pct ?? null;
 
@@ -214,7 +204,6 @@ export default function TodayPage() {
                     date={date}
                     log={e.log}
                     streak={streak}
-                    lastWeight={lastWeight}
                     color={sec.color}
                     focus={item.habit.id === focusId}
                     atRisk={date === today && hour >= 18 && streak.current >= 3 && !item.done && !item.missed && item.required}

@@ -237,20 +237,6 @@ function SettingsCard() {
             onChange={(v) => Number(v) > 0 && updateSettings({ finConcentration: Number(v) })}
           />
         </Group>
-        <div>
-          <Text size="sm" fw={500} mb={4}>
-            Weight unit
-          </Text>
-          <SegmentedControl
-            fullWidth
-            value={settings.weightUnit}
-            onChange={(v) => updateSettings({ weightUnit: v as 'kg' | 'lb' })}
-            data={[
-              { value: 'kg', label: 'kg' },
-              { value: 'lb', label: 'lb' },
-            ]}
-          />
-        </div>
         <DatePickerInput
           label="Next pill organiser refill"
           description="Pick the Sunday you'll next refill — it repeats every 2 weeks from there"

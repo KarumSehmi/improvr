@@ -129,6 +129,29 @@ describe('streaks', () => {
     expect(s.habitStreaks.vape).toEqual({ current: 1, best: 1 });
   });
 
+  it('unticking something today does not break its streak', () => {
+    const d = data({
+      '2026-09-21': { done: { pills: true } },
+      '2026-09-22': { done: { pills: true } },
+      '2026-09-23': { done: { pills: false } }, // ticked then unticked
+    });
+    const s = summarize(d, '2026-09-23');
+    expect(s.evalByDate['2026-09-23'].items.find((i) => i.habit.id === 'pills')?.missed).toBe(false);
+    expect(s.habitStreaks.pills.current).toBe(2);
+  });
+
+  it('weigh-in is a tick, and days logged with an old weight number still count', () => {
+    const d = data({
+      '2026-09-21': { weight: 80.2 },
+      '2026-09-22': { done: { weigh: true } },
+      '2026-09-23': { weight: 80.1, done: { weigh: false } }, // unticked on purpose
+    });
+    const s = summarize(d, '2026-09-24');
+    const weighed = (date: string) => s.evalByDate[date].items.find((i) => i.habit.id === 'weigh')?.done;
+    expect(HABIT_BY_ID.weigh.kind).toBe('check');
+    expect([weighed('2026-09-21'), weighed('2026-09-22'), weighed('2026-09-23')]).toEqual([true, true, false]);
+  });
+
   it('only one day off per week', () => {
     const d = data({ '2026-09-22': { dayOff: true } });
     expect(dayOffUsedInWeek(d.days, '2026-09-24')).toBe('2026-09-22');

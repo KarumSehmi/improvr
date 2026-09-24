@@ -72,16 +72,18 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
 export function isDone(h: Habit, log: DayLog | undefined): boolean {
   if (!log) return false;
   switch (h.kind) {
-    case 'weight':
-      return log.weight != null && log.weight > 0;
     case 'water':
       return (log.water ?? 0) >= WATER_TARGET;
     case 'dose':
       return (log.finMl ?? 0) > 0;
     case 'avoid':
       return log.avoid?.[h.id] === 'clean';
-    default:
-      return log.done?.[h.id] === true;
+    default: {
+      const ticked = log.done?.[h.id];
+      if (ticked != null) return ticked === true;
+      // Weigh-in used to be a number; those days still count.
+      return h.id === 'weigh' && (log.weight ?? 0) > 0;
+    }
   }
 }
 
@@ -130,7 +132,8 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed: false };
     }
     const done = isDone(habit, log);
-    const missed = habit.kind === 'avoid' ? log?.avoid?.[habit.id] === 'slip' : log?.done?.[habit.id] === false;
+    // Only an honest "no" is a miss (slipped, or late night / late up). Unticking something isn't.
+    const missed = habit.kind === 'avoid' ? log?.avoid?.[habit.id] === 'slip' : habit.kind === 'time' && log?.done?.[habit.id] === false;
     return { habit, visible: true, required: true, done, skipped: false, overdueDays: 0, missed };
   });
 
@@ -406,8 +409,6 @@ export interface WeekStats {
   xp: number;
   sessions: number;
   slips: Record<string, number>;
-  weightStart: number | null;
-  weightEnd: number | null;
   moodAvg: number | null;
   rates: HabitRate[];
 }
@@ -433,7 +434,6 @@ export function weekStats(summary: Summary, start: DateKey, until?: DateKey): We
   const end = until && until < addDays(start, 6) ? until : addDays(start, 6);
   const evals = summary.evals.filter((e) => e.date >= start && e.date <= end);
   const scored = evals.filter((e) => e.pct != null);
-  const weights = evals.filter((e) => e.log?.weight).map((e) => e.log!.weight as number);
   const moods = evals.filter((e) => e.log?.mood).map((e) => e.log!.mood as number);
   const slips: Record<string, number> = {};
   for (const h of summary.habits) if (h.kind === 'avoid') slips[h.id] = evals.filter((e) => e.log?.avoid?.[h.id] === 'slip').length;
@@ -447,8 +447,6 @@ export function weekStats(summary: Summary, start: DateKey, until?: DateKey): We
     xp: evals.reduce((s, e) => s + e.points, 0),
     sessions: evals.filter((e) => e.workoutCount > 0).length,
     slips,
-    weightStart: weights[0] ?? null,
-    weightEnd: weights.at(-1) ?? null,
     moodAvg: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
     rates: habitRates(summary, evals),
   };

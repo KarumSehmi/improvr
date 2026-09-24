@@ -2,7 +2,7 @@ import { ActionIcon, Badge, Button, Group, NumberInput, Text } from '@mantine/co
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBottle, IconBottleFilled } from '@tabler/icons-react';
-import { useRef, type MouseEvent, type ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { WATER_TARGET, scheduleLabel } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
@@ -17,7 +17,6 @@ interface Props {
   date: DateKey;
   log: DayLog | undefined;
   streak: Streak;
-  lastWeight: number | null;
   color: string;
   atRisk: boolean;
   focus: boolean;
@@ -77,9 +76,8 @@ function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
   );
 }
 
-export default function HabitRow({ item, date, log, streak, lastWeight, color, atRisk, focus }: Props) {
+export default function HabitRow({ item, date, log, streak, color, atRisk, focus }: Props) {
   const settings = useApp((s) => s.settings);
-  const weightAtFocus = useRef<number | null>(null);
   const { habit, done, missed, overdueDays, skipped } = item;
   const id = habit.id;
   const set = (fn: (l: DayLog) => void) => updateDay(date, fn);
@@ -274,64 +272,6 @@ export default function HabitRow({ item, date, log, streak, lastWeight, color, a
                 );
               })}
             </Group>
-          }
-        />
-      );
-    }
-
-    case 'weight': {
-      const delta = log?.weight && lastWeight ? log.weight - lastWeight : null;
-      return (
-        <Row
-          id={id}
-          emoji={habit.emoji}
-          color={color}
-          label={habit.label}
-          focus={focus}
-          state={done ? 'done' : undefined}
-          meta={
-            <>
-              {lastWeight != null && (
-                <Meta>
-                  last {lastWeight}
-                  {delta != null && delta !== 0 && (
-                    <Text span size="xs" fw={700} c={delta < 0 ? 'teal.4' : 'orange.4'}>
-                      {' '}
-                      {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}
-                    </Text>
-                  )}
-                </Meta>
-              )}
-              <StreakTag streak={streak} atRisk={atRisk} />
-            </>
-          }
-          right={
-            <NumberInput
-              w={104}
-              size="sm"
-              radius="md"
-              inputMode="decimal"
-              placeholder={lastWeight ? String(lastWeight) : settings.weightUnit}
-              suffix={` ${settings.weightUnit}`}
-              decimalScale={1}
-              min={0}
-              max={400}
-              hideControls
-              value={log?.weight ?? ''}
-              onChange={(v) =>
-                set((l) => {
-                  l.weight = typeof v === 'number' ? v : null;
-                })
-              }
-              onFocus={() => (weightAtFocus.current = log?.weight ?? null)}
-              onBlur={(e) => {
-                // First weigh-in of the day earns the pop, not every edit.
-                if (weightAtFocus.current == null && log?.weight) {
-                  const r = e.currentTarget.getBoundingClientRect();
-                  reward({ clientX: r.left + r.width / 2, clientY: r.top });
-                }
-              }}
-            />
           }
         />
       );

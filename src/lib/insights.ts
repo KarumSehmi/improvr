@@ -160,19 +160,5 @@ export function insights(summary: Summary): Insight[] {
     }
   }
 
-  // Weight trend (7-day averages smooth out daily water weight)
-  const weights = summary.evals.filter((e) => e.log?.weight).map((e) => ({ date: e.date, w: e.log!.weight as number }));
-  if (weights.length >= 6 && diffDays(weights.at(-1)!.date, weights[0].date) >= 10) {
-    const latest = weights.at(-1)!.date;
-    const recentAvg = avg(weights.filter((x) => diffDays(latest, x.date) < 7).map((x) => x.w))!;
-    const older = weights.filter((x) => diffDays(latest, x.date) >= 7 && diffDays(latest, x.date) < 21);
-    if (older.length >= 2) {
-      const olderAvg = avg(older.map((x) => x.w))!;
-      const perWeek = (recentAvg - olderAvg) / 1.5;
-      const unitless = Math.abs(perWeek) < 0.05 ? 'holding steady' : `trending ${perWeek > 0 ? '+' : '−'}${Math.abs(perWeek).toFixed(1)} per week`;
-      out.push({ id: 'weight', emoji: '⚖️', tone: 'tip', weight: 60, text: `Weight is ${unitless} (7-day average ${recentAvg.toFixed(1)}).` });
-    }
-  }
-
   return out.sort((a, b) => b.weight - a.weight);
 }

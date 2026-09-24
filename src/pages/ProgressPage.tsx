@@ -1,11 +1,10 @@
-import { BarChart, Heatmap, LineChart } from '@mantine/charts';
+import { BarChart, Heatmap } from '@mantine/charts';
 import {
   Badge,
   Button,
   Card,
   Group,
   Progress,
-  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
@@ -16,7 +15,7 @@ import {
 } from '@mantine/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { achievements } from '../lib/achievements';
-import { addDays, diffDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
+import { addDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
 import { completionRate, grade, slipStats, weekStats, type Summary } from '../lib/engine';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { insights } from '../lib/insights';
@@ -200,69 +199,6 @@ function StreakTable({ summary }: { summary: Summary }) {
   );
 }
 
-function WeightCard() {
-  const days = useApp((s) => s.days);
-  const unit = useApp((s) => s.settings.weightUnit);
-  const [range, setRange] = useState('90');
-  const today = useToday();
-  const from = range === 'all' ? '0000' : addDays(today, -Number(range));
-  const all = Object.entries(days)
-    .filter(([, l]) => l.weight)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([d, l]) => ({ d, w: l.weight as number }));
-  // 7-day rolling average smooths out daily water-weight noise so you see the real trend.
-  const points = all
-    .map((p) => {
-      const window = all.filter((q) => q.d <= p.d && diffDays(p.d, q.d) < 7);
-      const avg = window.reduce((s, q) => s + q.w, 0) / window.length;
-      return { d: p.d, date: fmt(p.d, 'D MMM'), weight: p.w, avg: Math.round(avg * 10) / 10 };
-    })
-    .filter((p) => p.d >= from);
-  const first = points[0]?.avg;
-  const last = points.at(-1)?.avg;
-  const change = first != null && last != null ? last - first : null;
-
-  return (
-    <Card p="sm">
-      <Group justify="space-between" px={4}>
-        <div>
-          <Text fw={800}>⚖️ Weight</Text>
-          <Text size="xs" c="dimmed">
-            {last != null ? `7-day avg ${last} ${unit}` : 'No weigh-ins yet'}
-            {change != null && points.length > 1 && ` · ${change > 0 ? '+' : ''}${change.toFixed(1)} ${unit} in range`}
-          </Text>
-        </div>
-        <SegmentedControl size="xs" value={range} onChange={setRange} data={[{ value: '30', label: '30d' }, { value: '90', label: '90d' }, { value: 'all', label: 'All' }]} />
-      </Group>
-      {points.length > 1 ? (
-        <LineChart
-          mt="md"
-          h={200}
-          data={points}
-          dataKey="date"
-          series={[
-            { name: 'weight', label: 'Daily', color: 'gray.5', strokeDasharray: '3 4' },
-            { name: 'avg', label: '7-day average', color: 'violet.5' },
-          ]}
-          withLegend
-          legendProps={{ verticalAlign: 'bottom', height: 28 }}
-          curveType="monotone"
-          strokeWidth={2}
-          withDots={points.length < 40}
-          yAxisProps={{ domain: ['dataMin - 1', 'dataMax + 1'], width: 36, tickFormatter: (v: number) => String(Math.round(v)) }}
-          gridAxis="x"
-          tickLine="none"
-          valueFormatter={(v) => `${v} ${unit}`}
-        />
-      ) : (
-        <Text size="sm" c="dimmed" px={4} mt="sm">
-          Weigh in a couple of mornings and your trend shows up here.
-        </Text>
-      )}
-    </Card>
-  );
-}
-
 function TrainingChart({ summary }: { summary: Summary }) {
   const target = useApp((s) => s.settings.workoutTarget);
   const data = summary.weeks.slice(-12).map((w) => ({ week: fmt(w.start, 'D MMM'), sessions: w.sessions }));
@@ -383,7 +319,6 @@ export default function ProgressPage() {
       <AchievementsCard summary={summary} />
       <CleanCard summary={summary} />
       <StreakTable summary={summary} />
-      <WeightCard />
       <TrainingChart summary={summary} />
       <BodyCard summary={summary} />
       <NotesCard summary={summary} />

@@ -247,9 +247,6 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
           <Stat label="Gym sessions" value={`${stats.sessions}/${settings.workoutTarget}`} delta={<Delta now={stats.sessions} before={before.sessions} />} />
           <Stat label="XP earned" value={stats.xp.toLocaleString()} delta={<Delta now={stats.xp} before={before.xp} />} />
           <Stat label="Perfect days" value={String(stats.perfect)} />
-          {stats.weightStart != null && stats.weightEnd != null && (
-            <Stat label={`Weight (${settings.weightUnit})`} value={`${stats.weightEnd - stats.weightStart > 0 ? '+' : ''}${(stats.weightEnd - stats.weightStart).toFixed(1)}`} />
-          )}
           {stats.moodAvg != null && <Stat label="Mood" value={`${stats.moodAvg.toFixed(1)}/5`} delta={<Delta now={stats.moodAvg} before={before.moodAvg} />} />}
           <Stat label="Slips" value={String(slips.reduce((s, [, n]) => s + n, 0))} delta={<Delta now={slips.reduce((s, [, n]) => s + n, 0)} before={Object.values(before.slips).reduce((a, b) => a + b, 0)} invert />} />
         </SimpleGrid>

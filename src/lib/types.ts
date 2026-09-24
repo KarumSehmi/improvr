@@ -14,6 +14,7 @@ export interface DayLog {
   /** Rough time (HH:mm) for sleep / wake when the target was missed. */
   times?: Record<string, string>;
   water?: number;
+  /** Older versions logged a number here; it still counts as "weighed in". */
   weight?: number | null;
   finMl?: number | null;
   workouts?: WorkoutType[];
@@ -56,7 +57,6 @@ export interface Settings {
   startDate: DateKey;
   fineAmount: number;
   charity: string;
-  weightUnit: 'kg' | 'lb';
   workoutTarget: number;
   finTargetMl: number;
   /** Finasteride strength in % w/v (0.025% = 0.25 mg per ml). */

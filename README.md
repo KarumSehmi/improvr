@@ -17,10 +17,10 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
   - **Reflect**: a one-tap mood and a "how can I be better tomorrow?" note, which shows up the next morning.
   - The score ring has a yellow dot for **yesterday's score**. The goal is always to beat it.
 - **Dopamine** – animated checks, iPhone haptic taps, "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 28 badges to unlock.
-- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", "your best day is Tuesday", and your weight trend.
+- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
-- **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, weight chart with a 7-day average, gym sessions per week, sleep, finasteride, your notes.
+- **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
 - **More** – fines (with a one-tap donate link), reminders, habits, the rules, settings, sync and backup.
