@@ -113,7 +113,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   },
 
   // Stayed clean
-  { id: 'vape', label: 'No vaping', emoji: '🚭', section: 'clean', kind: 'avoid', points: 25, important: true },
+  { id: 'vape', label: 'No nicotine', emoji: '🚭', section: 'clean', kind: 'avoid', points: 25, important: true },
   { id: 'porn', label: 'No porn', emoji: '🔞', section: 'clean', kind: 'avoid', points: 20 },
   { id: 'alcohol', label: 'No alcohol', emoji: '🍺', section: 'clean', kind: 'avoid', points: 10, weeklyLimit: 1 },
   { id: 'caffeine', label: 'No caffeine after 2pm', emoji: '☕', section: 'clean', kind: 'avoid', points: 10 },

@@ -18,12 +18,12 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
   - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, teeth morning and night, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
   - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat), haircut (every 2 weeks). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
   - Paula's Choice every 3 days, skip it whenever you like.
-  - Stayed clean: vaping, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
+  - Stayed clean: nicotine, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
   - Training: aim for 3 sessions a week. Gym gives the most XP, home workouts and football count too. Football Mondays are optional.
   - **Reflect**: a one-tap mood and a "how can I be better tomorrow?" note, which shows up the next morning.
   - The score ring has a yellow dot for **yesterday's score**. The goal is always to beat it.
 - **Dopamine** – animated checks, iPhone haptic taps, little sounds (the silent switch mutes them; turn them off in Settings), "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 36 badges to unlock.
-- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "vaping slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
+- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "nicotine slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
 - **📝 To-dos** – one-off jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. Add them from Today or the Calendar.
@@ -31,7 +31,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
 - **🔔 Smart notifications** – when something needs doing: morning routine not done, to-dos still open at midday, afternoon and evening check-ins (with what's left right now), caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
-- **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what vaping etc. cost you per week and see £ saved.
+- **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what nicotine etc. costs you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
 - **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.
 - **More** – fines (with a one-tap donate link), notifications, Apple Watch, habits, the rules, settings, sync and backup.

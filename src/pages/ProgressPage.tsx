@@ -335,7 +335,7 @@ export default function ProgressPage() {
 
       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
         <StatTile emoji="🔥" value={logStreak.current} label="Days logged in a row" sub={`best ${logStreak.best}`} />
-        <StatTile emoji="🚭" value={vape.current} label="Days vape-free" sub={`best ${vape.best}`} />
+        <StatTile emoji="🚭" value={vape.current} label="Days nicotine-free" sub={`best ${vape.best}`} />
         <StatTile emoji="🏆" value={perfectDays} label="Perfect days" />
         <StatTile emoji="📊" value={`${avg}%`} label="Average score" sub={`${scored.length} days logged`} />
         <StatTile emoji="💪" value={summary.trainingStreak.current} label="Weeks hitting gym target" sub={`best ${summary.trainingStreak.best}`} />

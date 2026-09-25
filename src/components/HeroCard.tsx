@@ -179,7 +179,7 @@ export default function HeroCard({ date, isToday, evaluation: e, yesterdayPct, s
           </Pill>
           {vape && (
             <Pill emoji="🚭" color="teal">
-              {vape.current} vape-free
+              {vape.current} nicotine-free
             </Pill>
           )}
           {saved != null && saved > 0 && (

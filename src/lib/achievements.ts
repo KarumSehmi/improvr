@@ -32,9 +32,9 @@ const DEFS: Def[] = [
     const weeks = new Set(s.evals.map((e) => weekStart(e.date)));
     return [...weeks].filter((w) => { const st = weekStats(s, w); return st.days === 7 && (st.avgPct ?? 0) >= 85; }).length;
   } },
-  { id: 'vape-7', emoji: '🚭', title: 'Vape-Free Week', detail: '7 days without vaping', target: 7, value: best('vape') },
-  { id: 'vape-30', emoji: '🫁', title: 'Lungs Say Thanks', detail: '30 days without vaping', target: 30, value: best('vape') },
-  { id: 'vape-100', emoji: '🏔️', title: 'Vape-Free 100', detail: '100 days without vaping', target: 100, value: best('vape') },
+  { id: 'vape-7', emoji: '🚭', title: 'Nicotine-Free Week', detail: '7 days without nicotine', target: 7, value: best('vape') },
+  { id: 'vape-30', emoji: '🫁', title: 'Lungs Say Thanks', detail: '30 days without nicotine', target: 30, value: best('vape') },
+  { id: 'vape-100', emoji: '🏔️', title: 'Nicotine-Free 100', detail: '100 days without nicotine', target: 100, value: best('vape') },
   { id: 'porn-7', emoji: '🧠', title: 'Clear Head', detail: '7 days porn-free', target: 7, value: best('porn') },
   { id: 'porn-30', emoji: '🔋', title: 'Rewired', detail: '30 days porn-free', target: 30, value: best('porn') },
   { id: 'porn-90', emoji: '🧘', title: 'Reboot Complete', detail: '90 days porn-free', target: 90, value: best('porn') },
