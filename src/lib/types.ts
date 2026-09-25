@@ -60,6 +60,10 @@ export interface Todo {
   /** The day you ticked it off (missing = still to do). */
   doneOn?: DateKey | null;
   notes?: string;
+  /** Repeats every N days after you do it (e.g. a haircut every 14). */
+  repeat?: number | null;
+  /** The next one, created when this was ticked off (removed again if you untick it). */
+  next?: string | null;
   createdAt: number;
 }
 
@@ -96,6 +100,13 @@ export interface Settings {
   hiddenHabits?: string[];
   /** Changed schedules for built-in chores (e.g. hoover on Sundays instead). */
   scheduleOverrides?: Record<string, ChoreSchedule>;
+  /**
+   * How often a daily habit is due, e.g. finasteride every 3 days. Each change applies from its date,
+   * so earlier days keep the old rule. Missing = every day.
+   */
+  frequency?: Record<string, { from: DateKey; every: number }[]>;
+  /** One-off data updates already applied. */
+  migrations?: string[];
 
   /** Link to your charity's donation page. */
   donateUrl?: string;

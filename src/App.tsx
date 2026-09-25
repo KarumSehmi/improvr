@@ -6,6 +6,7 @@ import ChestModal from './components/ChestModal';
 import Overlays from './components/Overlays';
 import { FloaterLayer, Tap } from './components/ui';
 import { goTo, useNow, useSummary, useUi, type Page } from './lib/hooks';
+import { runMigrations } from './lib/migrations';
 import { badgeCount, daypart, logicalNow } from './lib/moments';
 import { updateSettings, useApp } from './lib/store';
 import CalendarPage from './pages/CalendarPage';
@@ -83,6 +84,7 @@ function Shell() {
   const summary = useSummary();
   useCloudSync();
   const dueCount = useSkyAndBadge();
+  useEffect(runMigrations, []);
   const alerts = summary.owed > 0 || summary.openUnlogged.some((d) => d !== summary.today);
   const Page = PAGES[page];
 

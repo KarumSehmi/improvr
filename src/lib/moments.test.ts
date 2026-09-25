@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BUILT_IN_BY_ID, CHECKINS, QUESTS, defaultSettings, scheduleLabel } from './config';
+import { BUILT_IN_BY_ID, CHECKINS, QUESTS, SECTIONS, defaultSettings } from './config';
 import { startOfDay } from './dates';
 import { summarize } from './engine';
-import { markNotDone } from './actions';
+import { markNotDone, setFrequency, toggleTodo } from './actions';
+import { runMigrations } from './migrations';
 import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, rollChest, sectionLater, sectionStatus } from './moments';
 import { dueNudges } from './nudges';
 import { updateDay, useApp } from './store';
-import type { AppData, DayLog, Settings } from './types';
+import type { AppData, DayLog, Settings, Todo } from './types';
 
 const START = '2026-09-21'; // Monday
 const at = (date: string, hh: number, mm = 0) => new Date(startOfDay(date) + (hh * 60 + mm) * 60_000);
@@ -24,16 +25,71 @@ describe('toothbrush and haircut', () => {
     expect(BUILT_IN_BY_ID.teethPm.section).toBe('night');
   });
 
-  it('a haircut is due every 2 weeks and carries over until done', () => {
-    expect(scheduleLabel(BUILT_IN_BY_ID.haircut.schedule)).toBe('every 2 weeks');
-    const d = data({ '2026-09-26': { done: { haircut: true } } });
-    const s = summarize(d, '2026-10-12');
-    const hc = (date: string) => s.evalByDate[date].items.find((i) => i.habit.id === 'haircut')!;
-    expect(hc('2026-09-24')).toMatchObject({ visible: true, overdueDays: 0 });
-    expect(hc('2026-09-25')).toMatchObject({ visible: true, overdueDays: 1 });
-    expect(hc('2026-10-05').visible).toBe(false); // done on the 26th → next one due 10 Oct
-    expect(hc('2026-10-10')).toMatchObject({ visible: true, overdueDays: 0 });
-    expect(hc('2026-10-12')).toMatchObject({ visible: true, overdueDays: 2 });
+  it('a haircut is a to-do that repeats every 2 weeks, not a room job', () => {
+    expect(BUILT_IN_BY_ID.haircut).toBeUndefined();
+    expect(SECTIONS.find((x) => x.id === 'room')?.title).toBe('Room');
+    useApp.setState({ days: { '2026-09-20': { done: { haircut: true } } }, todos: {}, settings: defaultSettings(START) });
+    runMigrations();
+    expect(useApp.getState().todos.haircut).toMatchObject({ title: 'Haircut 💈', date: '2026-10-04', repeat: 14 });
+    runMigrations(); // only once
+    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut']);
+  });
+});
+
+describe('repeating to-dos', () => {
+  beforeEach(() => useApp.setState({ todos: {}, settings: defaultSettings(START) }));
+  const haircut: Todo = { id: 'h', title: 'Haircut', date: '2026-09-24', repeat: 14, createdAt: 0 };
+
+  it('ticking one off brings the next one up N days later, and unticking takes it back', () => {
+    useApp.setState({ todos: { h: haircut } });
+    expect(toggleTodo(haircut, '2026-09-25')).toBe(true);
+    const done = useApp.getState().todos.h;
+    const next = useApp.getState().todos[done.next!];
+    expect(done.doneOn).toBe('2026-09-25');
+    expect(next).toMatchObject({ title: 'Haircut', date: '2026-10-09', repeat: 14, doneOn: null });
+    expect(toggleTodo(done, '2026-09-25')).toBe(false);
+    expect(Object.keys(useApp.getState().todos)).toEqual(['h']);
+    expect(useApp.getState().todos.h).toMatchObject({ doneOn: null, next: null });
+  });
+
+  it('a one-off to-do just gets ticked', () => {
+    const t: Todo = { id: 'a', title: 'Call the bank', date: '2026-09-25', createdAt: 0 };
+    useApp.setState({ todos: { a: t } });
+    toggleTodo(t, '2026-09-25');
+    expect(Object.keys(useApp.getState().todos)).toEqual(['a']);
+  });
+});
+
+describe('how often (finasteride every 3 days)', () => {
+  const fin = (d: AppData, date: string, today = date) => summarize(d, today).evalByDate[date].items.find((i) => i.habit.id === 'fin')!;
+  const every3 = { frequency: { fin: [{ from: '2026-09-24', every: 3 }] } };
+
+  it('only shows up when it is due, and carries over if you miss it', () => {
+    const d = data({ '2026-09-23': { finMl: 1 }, '2026-09-28': { finMl: 1 } }, every3);
+    expect(fin(d, '2026-09-24', '2026-10-01').visible).toBe(false); // applied on the 23rd
+    expect(fin(d, '2026-09-25', '2026-10-01').visible).toBe(false);
+    expect(fin(d, '2026-09-26', '2026-10-01')).toMatchObject({ visible: true, required: true, overdueDays: 0 });
+    expect(fin(d, '2026-09-27', '2026-10-01')).toMatchObject({ visible: true, overdueDays: 1 }); // missed → still due
+    expect(fin(d, '2026-09-28', '2026-10-01')).toMatchObject({ visible: true, done: true });
+    expect(fin(d, '2026-09-29', '2026-10-01').visible).toBe(false);
+    expect(fin(d, '2026-10-01', '2026-10-01').visible).toBe(true);
+  });
+
+  it("days not due don't break the streak, and days before the change keep the old rule", () => {
+    const d = data({ '2026-09-21': { finMl: 1 }, '2026-09-23': { finMl: 1 }, '2026-09-26': { finMl: 1 } }, every3);
+    const s = summarize(d, '2026-09-27');
+    expect(s.evalByDate['2026-09-22'].items.find((i) => i.habit.id === 'fin')).toMatchObject({ visible: true, required: true, done: false }); // still daily then
+    expect(s.habitStreaks.fin.current).toBe(2); // 23rd and 26th; the days in between weren't due
+  });
+
+  it('you can change it from today without touching the past', () => {
+    useApp.setState({ settings: defaultSettings(START) });
+    setFrequency('fin', 3);
+    const periods = useApp.getState().settings.frequency?.fin ?? [];
+    expect(periods).toHaveLength(1);
+    expect(periods[0].every).toBe(3);
+    setFrequency('fin', 3); // no change
+    expect(useApp.getState().settings.frequency?.fin).toHaveLength(1);
   });
 });
 
@@ -162,9 +218,9 @@ describe('sections close once everything is answered, done or not', () => {
   });
 
   it('a chore marked not done carries over to tomorrow', () => {
-    const s = summarize(data({ '2026-09-24': { missed: { haircut: true } } }), t);
-    expect(s.evalByDate['2026-09-24'].items.find((i) => i.habit.id === 'haircut')).toMatchObject({ missed: true, done: false });
-    expect(s.evalByDate[t].items.find((i) => i.habit.id === 'haircut')).toMatchObject({ visible: true, overdueDays: 1, missed: false });
+    const s = summarize(data({ '2026-09-24': { missed: { bin: true } } }), t);
+    expect(s.evalByDate['2026-09-24'].items.find((i) => i.habit.id === 'bin')).toMatchObject({ missed: true, done: false });
+    expect(s.evalByDate[t].items.find((i) => i.habit.id === 'bin')).toMatchObject({ visible: true, overdueDays: 4, missed: false });
   });
 
   it('"close it" marks the rest not done (sleep gets its own "no")', () => {

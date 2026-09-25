@@ -6,7 +6,7 @@ import { useUi } from '../lib/hooks';
 import { sectionLater, sectionStatus } from '../lib/moments';
 import { ScoreRing, Tap } from './ui';
 
-const SHORT: Record<string, string> = { morning: 'Morning', day: 'Day', room: 'Jobs', night: 'Night', clean: 'Clean' };
+const SHORT: Record<string, string> = { morning: 'Morning', day: 'Day', room: 'Room', night: 'Night', clean: 'Clean' };
 
 /** The whole day at a glance: one ring per section (plus training). Tap one to jump to it. */
 export default function DayRail({ e, hour, live, sessions, target }: { e: DayEval; hour: number; live: boolean; sessions: number; target: number }) {

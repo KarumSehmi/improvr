@@ -42,14 +42,14 @@ export interface Habit {
 export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: string; color: string; from: number }[] = [
   { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
   { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water & food', color: 'cyan', from: 10 },
-  { id: 'room', title: 'Room & jobs', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
+  { id: 'room', title: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
   { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
   { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
 
-/** Teeth and haircut were added part-way through, so earlier days don't count them. */
+/** Teeth were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 
 export const BUILT_IN_HABITS: Habit[] = [
@@ -94,7 +94,6 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'surfaces', label: 'Wipe surfaces', emoji: '🧽', section: 'room', kind: 'chore', points: 15, schedule: { weekday: 3 } },
   { id: 'bathroom', label: 'Deep clean bathroom', emoji: '🛁', section: 'room', kind: 'chore', points: 25, schedule: { weekday: 4 } },
   { id: 'hoover', label: 'Hoover & mop floor', emoji: '🧹', section: 'room', kind: 'chore', points: 20, schedule: { weekday: 6 } },
-  { id: 'haircut', label: 'Haircut', emoji: '💈', section: 'room', kind: 'chore', points: 15, schedule: { every: 14 }, since: ADDED_TEETH },
 
   // Night
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
@@ -152,6 +151,9 @@ export function scheduleLabel(s: ChoreSchedule | undefined): string {
   const day = WEEKDAYS[s.weekday];
   return (s.everyWeeks ?? 1) > 1 ? `every other ${day}` : `${day}s`;
 }
+
+/** Choices for "how often" on daily habits. */
+export const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 7].map((n) => ({ value: String(n), label: n === 1 ? 'Every day' : n === 7 ? 'Weekly' : `Every ${n} days` }));
 
 export const WATER_TARGET = 2;
 

@@ -9,6 +9,7 @@ import {
   List,
   NumberInput,
   SegmentedControl,
+  Select,
   Stack,
   Switch,
   Text,
@@ -27,7 +28,9 @@ import { fireworks, pop } from '../lib/celebrate';
 import HabitsEditor from '../components/HabitsEditor';
 import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
-import { BUILT_IN_BY_ID } from '../lib/config';
+import { setFrequency } from '../lib/actions';
+import { BUILT_IN_BY_ID, FREQUENCY_OPTIONS } from '../lib/config';
+import { everyOn } from '../lib/engine';
 import { dateKey, fmt, weekday } from '../lib/dates';
 import { useSummary } from '../lib/hooks';
 import { getData, importData, newId, removeItem, updateSettings, upsert, useApp } from '../lib/store';
@@ -244,6 +247,14 @@ function SettingsCard() {
             onChange={(v) => Number(v) > 0 && updateSettings({ finConcentration: Number(v) })}
           />
         </Group>
+        <Select
+          label="Apply finasteride"
+          description="Only shows on Night when it's due, and carries over if you miss it. Changing it doesn't touch past days."
+          data={FREQUENCY_OPTIONS}
+          value={String(everyOn(settings, 'fin', dateKey()))}
+          onChange={(v) => v && setFrequency('fin', Number(v))}
+          allowDeselect={false}
+        />
         <DatePickerInput
           label="Next pill organiser refill"
           description="Pick the Sunday you'll next refill — it repeats every 2 weeks from there"

@@ -2,8 +2,11 @@
 import { floatXp, notifyUndo } from './feedback';
 import { pop } from './celebrate';
 import type { Habit } from './config';
+import type { Todo } from './types';
 import type { DateKey } from './dates';
-import { setDay, updateDay, useApp } from './store';
+import { addDays, dateKey } from './dates';
+import { everyOn } from './engine';
+import { newId, removeItem, setDay, updateDay, updateSettings, upsert, useApp } from './store';
 
 export function tickAll(date: DateKey, habits: Habit[], e?: { clientX: number; clientY: number }) {
   if (!habits.length) return;
@@ -36,6 +39,35 @@ export function markNotDone(date: DateKey, habits: Habit[]) {
     }
   });
   notifyUndo(`${habits.length} marked not done`, () => setDay(date, before));
+}
+
+/**
+ * Tick a to-do off, or back on. A repeating one schedules its next one (N days after today),
+ * and unticking takes that back. Returns true if it's now done.
+ */
+export function toggleTodo(todo: Todo, today: DateKey): boolean {
+  if (todo.doneOn) {
+    const next = todo.next ? useApp.getState().todos[todo.next] : undefined;
+    if (next && !next.doneOn) removeItem('todos', next.id);
+    upsert('todos', { ...todo, doneOn: null, next: null });
+    return false;
+  }
+  let next: string | null = null;
+  if (todo.repeat) {
+    next = newId();
+    upsert('todos', { id: next, title: todo.title, notes: todo.notes, repeat: todo.repeat, date: addDays(today, todo.repeat), doneOn: null, createdAt: Date.now() });
+  }
+  upsert('todos', { ...todo, doneOn: today, next });
+  return true;
+}
+
+/** How often a habit is due from today on (earlier days keep the old rule). 1 = every day. */
+export function setFrequency(habitId: string, every: number) {
+  const { settings } = useApp.getState();
+  const today = dateKey();
+  if (every < 1 || everyOn(settings, habitId, today) === every) return;
+  const periods = (settings.frequency?.[habitId] ?? []).filter((p) => p.from < today);
+  updateSettings({ frequency: { ...settings.frequency, [habitId]: [...periods, { from: today, every }] } });
 }
 
 export function addWater(date: DateKey) {

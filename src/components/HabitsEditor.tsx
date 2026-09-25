@@ -2,8 +2,10 @@ import { ActionIcon, Button, Card, Group, Modal, NumberInput, SegmentedControl, 
 import { modals } from '@mantine/modals';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
-import { BUILT_IN_HABITS, SECTIONS, WEEKDAYS, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
+import { setFrequency } from '../lib/actions';
+import { BUILT_IN_HABITS, FREQUENCY_OPTIONS, SECTIONS, WEEKDAYS, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
 import { dateKey } from '../lib/dates';
+import { FLEXIBLE_KINDS, everyOn } from '../lib/engine';
 import { newId, updateSettings, useApp } from '../lib/store';
 import { Tile } from './ui';
 
@@ -84,7 +86,11 @@ function AddHabitModal({ opened, onClose }: { opened: boolean; onClose: () => vo
           ]}
         />
         <Text size="xs" c="dimmed" mt={-8}>
-          {type === 'check' ? 'Something to do every day.' : type === 'avoid' ? "Something you're cutting out — answered Clean / Slipped." : 'Comes round on a schedule and carries over until done.'}
+          {type === 'check'
+            ? 'Something to do every day (or every few days — change it after adding).'
+            : type === 'avoid'
+              ? "Something you're cutting out — answered Clean / Slipped."
+              : 'A room job on a schedule that carries over until done. For errands like a haircut, add a repeating to-do instead.'}
         </Text>
         {type === 'chore' && (
           <Group grow align="flex-end">
@@ -120,6 +126,7 @@ export default function HabitsEditor() {
   const settings = useApp((s) => s.settings);
   const [adding, setAdding] = useState(false);
   const hidden = new Set(settings.hiddenHabits ?? []);
+  const today = dateKey();
   const overrides = settings.scheduleOverrides ?? {};
   const custom = settings.customHabits ?? [];
   const all: Habit[] = [...BUILT_IN_HABITS.map((h) => (overrides[h.id] ? { ...h, schedule: overrides[h.id] } : h)), ...custom.map((h) => ({ ...h, custom: true }))];
@@ -151,7 +158,7 @@ export default function HabitsEditor() {
             ✏️ Your habits
           </Text>
           <Text size="xs" c="dimmed">
-            Switch things off, move chore days, add your own
+            Switch things off, change how often, add your own
           </Text>
         </div>
         <Button size="compact-sm" variant="light" leftSection={<IconPlus size={14} />} onClick={() => setAdding(true)}>
@@ -190,6 +197,17 @@ export default function HabitsEditor() {
                       )}
                     </div>
                     {h.schedule && on && <ScheduleControl schedule={h.schedule} onChange={(s) => reschedule(h, s)} />}
+                    {!h.schedule && on && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind) && (
+                      <Select
+                        w={132}
+                        size="xs"
+                        data={FREQUENCY_OPTIONS}
+                        value={String(everyOn(settings, h.id, today))}
+                        onChange={(v) => v && setFrequency(h.id, Number(v))}
+                        allowDeselect={false}
+                        aria-label={`How often: ${h.label}`}
+                      />
+                    )}
                     {h.custom && (
                       <ActionIcon variant="subtle" color="red" onClick={() => remove(h)} aria-label="Delete">
                         <IconTrash size={16} />

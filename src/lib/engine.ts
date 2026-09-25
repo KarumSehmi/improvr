@@ -67,6 +67,40 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
 }
 
 // ---------------------------------------------------------------------------
+// How often: daily habits can be set to every N days (e.g. finasteride every 3)
+// ---------------------------------------------------------------------------
+
+/** Kinds that can be set to "every N days". */
+export const FLEXIBLE_KINDS = ['check', 'water', 'dose'] as const;
+
+/** Every how many days a habit is due on `date` (1 = daily). */
+export function everyOn(settings: Settings, habitId: string, date: DateKey): number {
+  let every = 1;
+  for (const p of settings.frequency?.[habitId] ?? []) if (p.from <= date) every = p.every;
+  return every;
+}
+
+/** Due again once it's been `every` days since you last did it, and carries over until you do. */
+function trackFrequency(h: Habit, data: AppData, until: DateKey): ChoreTrack {
+  const start = maxKey(data.settings.startDate, h.since ?? data.settings.startDate);
+  const byDate: Record<DateKey, ChoreDay> = {};
+  let last: DateKey | null = null;
+  for (let n = toNum(start), end = toNum(until); n <= end; n++) {
+    const d = fromNum(n);
+    const every = everyOn(data.settings, h.id, d);
+    const done = isDone(h, data.days[d]);
+    if (every > 1) {
+      const gap = last ? diffDays(d, last) : null;
+      const due = gap == null || gap >= every;
+      byDate[d] = { due, overdueDays: due && gap != null ? gap - every : 0, done, skipped: false };
+    }
+    if (done) last = d;
+  }
+  const every = everyOn(data.settings, h.id, until);
+  return { byDate, nextDue: last && every > 1 ? addDays(last, every) : until };
+}
+
+// ---------------------------------------------------------------------------
 // Single day
 // ---------------------------------------------------------------------------
 
@@ -139,6 +173,13 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed };
     }
     const done = isDone(habit, log);
+    // Set to every few days: only shows when it's due (or done).
+    const fd = tracks[habit.id]?.byDate[date];
+    if (fd) {
+      const visible = done || fd.due;
+      const missed = visible && !done && log?.missed?.[habit.id] === true;
+      return { habit, visible, required: visible, done, skipped: false, overdueDays: done ? 0 : fd.overdueDays, missed };
+    }
     if (habit.kind === 'avoid') {
       const slipped = log?.avoid?.[habit.id] === 'slip';
       if (habit.weeklyLimit != null) {
@@ -300,7 +341,10 @@ export function summarize(data: AppData, today: DateKey): Summary {
   const until = maxKey(today, start);
   const habits = habitsFor(data.settings);
   const tracks: Record<string, ChoreTrack> = {};
-  for (const c of habits) if (c.kind === 'chore') tracks[c.id] = trackChore(c, data, until);
+  for (const h of habits) {
+    if (h.kind === 'chore') tracks[h.id] = trackChore(h, data, until);
+    else if (data.settings.frequency?.[h.id]?.length && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind)) tracks[h.id] = trackFrequency(h, data, until);
+  }
 
   const evals: DayEval[] = [];
   if (start <= today) {

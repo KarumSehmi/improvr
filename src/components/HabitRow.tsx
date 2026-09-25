@@ -6,7 +6,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { BONUS, WATER_TARGET, scheduleLabel } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
-import type { ItemEval, Streak } from '../lib/engine';
+import { everyOn, type ItemEval, type Streak } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
 import { formatDuration, sleepMinutes } from '../lib/sleep';
 import type { DayLog } from '../lib/types';
@@ -91,6 +91,15 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
   const { habit, done, missed, overdueDays, skipped } = item;
   const id = habit.id;
   const set = (fn: (l: DayLog) => void) => updateDay(date, fn);
+  // Set to every few days in Your habits / Settings
+  const every = everyOn(settings, id, date);
+  const often = every > 1 ? <Meta>{scheduleLabel({ every })}</Meta> : null;
+  const overdue =
+    overdueDays > 0 && !done && !missed ? (
+      <Badge size="xs" color="orange" variant="filled">
+        {overdueDays}d overdue
+      </Badge>
+    ) : null;
   const reward = (e: { clientX: number; clientY: number } | undefined) => {
     pop(e);
     floatXp(e, `+${habit.points}`);
@@ -137,11 +146,8 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           meta={
             <>
               {missed && <NotDone chore={habit.kind === 'chore'} />}
-              {overdueDays > 0 && !done && !missed && (
-                <Badge size="xs" color="orange" variant="filled">
-                  {overdueDays}d overdue
-                </Badge>
-              )}
+              {overdue}
+              {often}
               {skipped && (
                 <Badge size="xs" color="gray" variant="light">
                   skipped
@@ -264,9 +270,11 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           meta={
             <>
               {missed ? <NotDone /> : null}
+              {overdue}
               <Meta>
                 {water}/{WATER_TARGET} bottles
               </Meta>
+              {often}
               {meta}
             </>
           }
@@ -324,7 +332,9 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           meta={
             <>
               {missed && <NotDone />}
+              {overdue}
               <Meta>{ml ? `${ml} ml · ${(ml * mgPerMl).toFixed(3)} mg` : `${settings.finTargetMl} ml · ${settings.finConcentration}%`}</Meta>
+              {often}
               <StreakTag streak={streak} atRisk={atRisk} />
             </>
           }

@@ -6,7 +6,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 
 ## What's in it
 
-- **Today** – your daily checklist, grouped into Morning / Through the day / Room & jobs / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day. It follows the clock: the sky changes from dawn to night, and sections that aren't due yet (Night in the morning, say) fold away as "later" until their time.
+- **Today** – your daily checklist, grouped into Morning / Through the day / Room / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day. It follows the clock: the sky changes from dawn to night, and sections that aren't due yet (Night in the morning, say) fold away as "later" until their time.
   - **☀️ Three check-ins a day** – morning, afternoon and evening. Open the app in each window and tap how your energy is: +5 XP each, +15 bonus for all three (a *hat-trick*). Miss the window and it's gone.
   - **🏁 Race yesterday-you** – "2 ahead of yesterday" means you've ticked off more than you had by this exact time yesterday. The yellow dot on the ring is yesterday-you, moving through the day.
   - **🎲 Bonus quest** – one small optional challenge a day (a walk, 10 pages, a cold finish to your shower…) for +15 XP. You can swap it once.
@@ -15,8 +15,8 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
   - **App icon badge** – the Home Screen icon shows how many things are due right now (with notifications switched on).
   - **⚡ Up next** looks at the time and tells you what matters *now*: one tap for the whole morning routine, a countdown to the 2pm caffeine cutoff, water reminders, "need 2 more gym sessions in 3 days", overdue jobs, streaks at risk tonight, time left until 1am, and what's on tomorrow.
   - **One-tap "All ✓" / "All clean"** per section, with **Undo**.
-  - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, teeth morning and night, AM/PM face routine, finasteride (ml → mg worked out for you), 2 water bottles, MacroFactor, protein.
-  - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat), haircut (every 2 weeks). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
+  - Weigh-in, sleep before 1am and up before 9am (tap ✕ to enter a rough time from your Apple Watch), pills, teeth morning and night, AM/PM face routine, finasteride every 3 days (ml → mg worked out for you; change how often in More → Settings), 2 water bottles, MacroFactor, protein.
+  - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
   - Paula's Choice every 3 days, skip it whenever you like.
   - Stayed clean: nicotine, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
   - Training: aim for 3 sessions a week. Gym gives the most XP, home workouts and football count too. Football Mondays are optional.
@@ -26,10 +26,10 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "nicotine slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
-- **📝 To-dos** – one-off jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. Add them from Today or the Calendar.
+- **📝 To-dos** – jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. They can **repeat** (e.g. the haircut every 2 weeks: tick it off and the next one comes up 14 days later). Add them from Today or the Calendar.
 - **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
-- **✏️ Your habits** – add your own habits, switch any off, and move chore days, all inside the app (More → Your habits).
+- **✏️ Your habits** – add your own habits, switch any off, move chore days, and set how often daily ones are due (every day, every 3 days, weekly…), all inside the app (More → Your habits). Changing how often never rewrites past days.
 - **🔔 Smart notifications** – when something needs doing: morning routine not done, to-dos still open at midday, afternoon and evening check-ins (with what's left right now), caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off.
 - **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what nicotine etc. costs you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
@@ -116,7 +116,7 @@ Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secr
 
 ## Changing things
 
-Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days) and **More → Settings** (fine amount, charity, donate link, gym target, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
+Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days, how often) and **More → Settings** (fine amount, charity, donate link, gym target, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
 
 ## Running locally
 

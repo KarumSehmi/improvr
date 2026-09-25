@@ -1,9 +1,11 @@
-import { ActionIcon, Badge, Button, Card, Group, Modal, Stack, Text, Textarea, TextInput } from '@mantine/core';
+import { ActionIcon, Badge, Button, Card, Group, Modal, NumberInput, Select, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPencil, IconPlus } from '@tabler/icons-react';
 import { useState, type MouseEvent } from 'react';
+import { toggleTodo as toggle } from '../lib/actions';
 import { burst, pop } from '../lib/celebrate';
+import { scheduleLabel } from '../lib/config';
 import { fmt, type DateKey } from '../lib/dates';
 import { floatXp, notifyUndo } from '../lib/feedback';
 import { newId, removeItem, upsert, useApp } from '../lib/store';
@@ -12,12 +14,21 @@ import type { Todo } from '../lib/types';
 import { CheckCircle, Tap } from './ui';
 
 function toggleTodo(todo: Todo, today: DateKey, e: MouseEvent) {
-  if (todo.doneOn) return upsert('todos', { ...todo, doneOn: null });
-  upsert('todos', { ...todo, doneOn: today });
+  if (!toggle(todo, today)) return;
   pop(e);
   floatXp(e, 'Done ✓');
   if (!openTodos(useApp.getState().todos, today).length) burst();
 }
+
+const REPEATS = [
+  { value: '0', label: "Doesn't repeat" },
+  { value: '1', label: 'Every day' },
+  { value: '3', label: 'Every 3 days' },
+  { value: '7', label: 'Every week' },
+  { value: '14', label: 'Every 2 weeks' },
+  { value: '28', label: 'Every 4 weeks' },
+  { value: 'custom', label: 'Every … days' },
+];
 
 /** One to-do: tap anywhere on it to tick it off, pencil to change it. */
 export function TodoRow({ todo, today, onEdit }: { todo: Todo; today: DateKey; onEdit: (t: Todo) => void }) {
@@ -36,6 +47,11 @@ export function TodoRow({ todo, today, onEdit }: { todo: Todo; today: DateKey; o
               {late > 0 && (
                 <Text size="xs" c="orange.4" fw={600}>
                   ↪ Carried over from {fmt(todo.date, 'ddd D MMM')} · {late} day{late === 1 ? '' : 's'}
+                </Text>
+              )}
+              {!!todo.repeat && !done && (
+                <Text size="xs" c="dimmed">
+                  ↻ {scheduleLabel({ every: todo.repeat })}
                 </Text>
               )}
               {todo.notes && (
@@ -63,6 +79,8 @@ export function TodoModal({ opened, onClose, initial }: { opened: boolean; onClo
     setDraft(initial);
   }
   const valid = !!draft.title?.trim() && !!draft.date;
+  const repeat = draft.repeat ?? 0;
+  const preset = REPEATS.some((r) => r.value === String(repeat)) ? String(repeat) : 'custom';
 
   const remove = () => {
     const old = initial as Todo;
@@ -88,6 +106,23 @@ export function TodoModal({ opened, onClose, initial }: { opened: boolean; onClo
           value={draft.date ?? null}
           onChange={(d) => setDraft({ ...draft, date: d ?? undefined })}
         />
+        <Group grow align="flex-end">
+          <Select
+            label="Repeat"
+            data={REPEATS}
+            value={preset}
+            onChange={(v) => setDraft({ ...draft, repeat: v === 'custom' ? 10 : Number(v) || null })}
+            allowDeselect={false}
+          />
+          {preset === 'custom' && (
+            <NumberInput min={1} max={365} suffix=" days" value={repeat} onChange={(v) => setDraft({ ...draft, repeat: Math.max(1, Number(v) || 1) })} aria-label="Every how many days" />
+          )}
+        </Group>
+        {repeat > 0 && (
+          <Text size="xs" c="dimmed" mt={-8}>
+            When you tick it off, the next one comes up {scheduleLabel({ every: repeat }) === 'daily' ? 'tomorrow' : `${repeat} days later`}.
+          </Text>
+        )}
         <Textarea label="Notes" autosize minRows={2} value={draft.notes ?? ''} onChange={(e) => setDraft({ ...draft, notes: e.currentTarget.value })} />
         <Group grow>
           {draft.id && (
@@ -104,6 +139,8 @@ export function TodoModal({ opened, onClose, initial }: { opened: boolean; onClo
                 date: draft.date!,
                 doneOn: draft.doneOn ?? null,
                 notes: draft.notes?.trim() || undefined,
+                repeat: draft.repeat || null,
+                next: draft.next ?? null,
                 createdAt: draft.createdAt ?? Date.now(),
               });
               onClose();
