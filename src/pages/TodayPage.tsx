@@ -1,6 +1,7 @@
 import { Alert, Button, Card, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef } from 'react';
+import BudgetCard from '../components/BudgetCard';
 import DayRail from '../components/DayRail';
 import HabitRow from '../components/HabitRow';
 import HeroCard from '../components/HeroCard';
@@ -240,6 +241,8 @@ export default function TodayPage() {
       <ReflectionCard date={date} note={e.log?.note ?? ''} mood={e.log?.mood} later={!evening} />
 
       <LockInCard date={date} evaluation={e} early={!evening} />
+
+      {date === today && <BudgetCard today={today} />}
 
       {date === today && <UpcomingCard today={today} summary={summary} />}
     </Stack>

@@ -16,7 +16,8 @@ export default function UpNextCard({ date, evaluation, summary, onLock }: { date
   const events = useApp((s) => s.events);
   const birthdays = useApp((s) => s.birthdays);
   const settings = useApp((s) => s.settings);
-  const list = suggestions(new Date(now), date, evaluation, summary, { events, birthdays, settings });
+  const spending = useApp((s) => s.spending);
+  const list = suggestions(new Date(now), date, evaluation, summary, { events, birthdays, settings, spending });
   if (!list.length) return null;
 
   const run = (s: Suggestion, e: MouseEvent) => {

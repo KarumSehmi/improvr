@@ -67,6 +67,14 @@ export interface Todo {
   createdAt: number;
 }
 
+/** A weekly check of the credit card: what you'd spent so far this month (id = the date). */
+export interface SpendEntry {
+  id: DateKey;
+  date: DateKey;
+  spent: number;
+  at: number;
+}
+
 export interface Birthday {
   id: string;
   name: string;
@@ -105,6 +113,8 @@ export interface Settings {
    * so earlier days keep the old rule. Missing = every day.
    */
   frequency?: Record<string, { from: DateKey; every: number }[]>;
+  /** Credit card: monthly limit (£), the hard ceiling to stay well under, and the day the card's month starts. */
+  budget?: { limit?: number; ceiling?: number; startDay?: number };
   /** One-off data updates already applied. */
   migrations?: string[];
 
@@ -149,5 +159,6 @@ export interface AppData {
   birthdays: Record<string, Birthday>;
   payments: Record<string, Payment>;
   todos: Record<string, Todo>;
+  spending: Record<string, SpendEntry>;
   settings: Settings;
 }

@@ -6,6 +6,7 @@ import { birthdaysOn, eventsOn } from './calendar';
 import { WATER_TARGET, scheduleLabel } from './config';
 import { addDays, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
+import { budgetStatus, money } from './budget';
 import { chestReady } from './moments';
 import type { AppData } from './types';
 
@@ -41,7 +42,7 @@ function dur(ms: number): string {
 
 const list = (xs: string[], max = 3) => (xs.length <= max ? xs.join(', ') : `${xs.slice(0, max).join(', ')} +${xs.length - max} more`);
 
-export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summary, data: Pick<AppData, 'events' | 'birthdays' | 'settings'>): Suggestion[] {
+export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summary, data: Pick<AppData, 'events' | 'birthdays' | 'settings'> & Partial<Pick<AppData, 'spending'>>): Suggestion[] {
   const out: Suggestion[] = [];
   const h = now.getHours();
   const item = (id: string) => e.items.find((i) => i.habit.id === id && i.visible);
@@ -162,6 +163,18 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
 
   if (!e.closed && (h >= 21 || h < 4)) {
     out.push({ id: 'lock', emoji: '🔒', title: 'Lock in before bed', detail: `Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'lock', label: 'Lock in' } });
+  }
+
+  // Credit card: weekly update, or a warning if you're over pace
+  if (date === summary.today && data.spending) {
+    const card = budgetStatus(data.spending, data.settings, date);
+    if (card.needsUpdate) {
+      out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'scroll', label: 'Update', target: 'budget' } });
+    } else if (card.state === 'over-limit') {
+      out.push({ id: 'card', emoji: '💳', title: `${money(card.spent - card.limit)} over your ${money(card.limit)} card limit`, detail: 'Try not to use the card again this month.', tone: 'warn', priority: 62, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+    } else if (card.state === 'over-pace' && card.daysLeft) {
+      out.push({ id: 'card', emoji: '💳', title: `Card: ${money(card.perDay)} a day max`, detail: `${money(card.vsPace)} ahead of pace — that finishes under ${money(card.limit)}.`, tone: 'warn', priority: 52, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+    }
   }
 
   // Tomorrow heads-up

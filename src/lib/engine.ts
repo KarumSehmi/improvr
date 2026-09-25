@@ -213,6 +213,7 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
   const checkins = Object.keys(log?.checkins ?? {}).length;
   points += checkins * BONUS.checkin + (checkins >= 3 ? BONUS.allCheckins : 0);
   if (log?.quest?.done) points += BONUS.quest;
+  if (data.spending?.[date]) points += BONUS.budget;
   points += log?.chest ?? 0;
 
   return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size, checkins };

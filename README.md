@@ -26,6 +26,7 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "nicotine slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
 - **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today.
 - **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
+- **💳 Card spending** – once a week, type in what you've spent on your credit card so far this month (+10 XP). It shows a bar against your **£800 limit** (well under £1,000) with a pace marker, and tells you straight: on track and what you can spend a day/week, or how far ahead of pace you are, what to keep it to, and how much a week to cut to make it to the end of the month. Sunday evening reminder if you haven't updated it. Change the limit or the day your card's month starts in More → Settings.
 - **📝 To-dos** – jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. They can **repeat** (e.g. the haircut every 2 weeks: tick it off and the next one comes up 14 days later). Add them from Today or the Calendar.
 - **Progress** – insights, this week vs last week, score heatmap, badges, slip counts, habit streaks, gym sessions per week, sleep, finasteride, your notes.
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
@@ -116,7 +117,7 @@ Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secr
 
 ## Changing things
 
-Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days, how often) and **More → Settings** (fine amount, charity, donate link, gym target, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
+Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days, how often) and **More → Settings** (fine amount, charity, donate link, gym target, card limit, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
 
 ## Running locally
 

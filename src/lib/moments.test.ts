@@ -12,7 +12,7 @@ import type { AppData, DayLog, Settings, Todo } from './types';
 const START = '2026-09-21'; // Monday
 const at = (date: string, hh: number, mm = 0) => new Date(startOfDay(date) + (hh * 60 + mm) * 60_000);
 function data(days: Record<string, DayLog> = {}, extra: Partial<Settings> = {}): AppData {
-  return { days, events: {}, birthdays: {}, payments: {}, todos: {}, settings: { ...defaultSettings(START), ...extra } };
+  return { days, events: {}, birthdays: {}, payments: {}, todos: {}, spending: {}, settings: { ...defaultSettings(START), ...extra } };
 }
 
 describe('toothbrush and haircut', () => {
@@ -28,7 +28,7 @@ describe('toothbrush and haircut', () => {
   it('a haircut is a to-do that repeats every 2 weeks, not a room job', () => {
     expect(BUILT_IN_BY_ID.haircut).toBeUndefined();
     expect(SECTIONS.find((x) => x.id === 'room')?.title).toBe('Room');
-    useApp.setState({ days: { '2026-09-20': { done: { haircut: true } } }, todos: {}, settings: defaultSettings(START) });
+    useApp.setState({ days: { '2026-09-20': { done: { haircut: true } } }, todos: {}, spending: {}, settings: defaultSettings(START) });
     runMigrations();
     expect(useApp.getState().todos.haircut).toMatchObject({ title: 'Haircut 💈', date: '2026-10-04', repeat: 14 });
     runMigrations(); // only once
@@ -37,7 +37,7 @@ describe('toothbrush and haircut', () => {
 });
 
 describe('repeating to-dos', () => {
-  beforeEach(() => useApp.setState({ todos: {}, settings: defaultSettings(START) }));
+  beforeEach(() => useApp.setState({ todos: {}, spending: {}, settings: defaultSettings(START) }));
   const haircut: Todo = { id: 'h', title: 'Haircut', date: '2026-09-24', repeat: 14, createdAt: 0 };
 
   it('ticking one off brings the next one up N days later, and unticking takes it back', () => {

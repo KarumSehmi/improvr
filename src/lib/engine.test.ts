@@ -12,6 +12,7 @@ function data(days: Record<string, DayLog> = {}, extra: Partial<AppData['setting
     events: {},
     birthdays: {},
     todos: {},
+    spending: {},
     payments: {},
     settings: { ...defaultSettings(START), ...extra },
   };

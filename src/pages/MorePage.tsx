@@ -29,6 +29,7 @@ import HabitsEditor from '../components/HabitsEditor';
 import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
 import { setFrequency } from '../lib/actions';
+import { budgetSettings } from '../lib/budget';
 import { BUILT_IN_BY_ID, FREQUENCY_OPTIONS } from '../lib/config';
 import { everyOn } from '../lib/engine';
 import { dateKey, fmt, weekday } from '../lib/dates';
@@ -245,6 +246,26 @@ function SettingsCard() {
             decimalScale={3}
             value={settings.finConcentration}
             onChange={(v) => Number(v) > 0 && updateSettings({ finConcentration: Number(v) })}
+          />
+        </Group>
+        <Group grow>
+          <NumberInput
+            label="Card limit / month"
+            description={`Stay well under £${budgetSettings(settings).ceiling.toLocaleString('en-GB')}`}
+            prefix="£"
+            min={50}
+            step={50}
+            thousandSeparator=","
+            value={budgetSettings(settings).limit}
+            onChange={(v) => Number(v) > 0 && updateSettings({ budget: { ...settings.budget, limit: Number(v) } })}
+          />
+          <NumberInput
+            label="Card month starts"
+            description="Day of the month"
+            min={1}
+            max={28}
+            value={budgetSettings(settings).startDay}
+            onChange={(v) => Number(v) >= 1 && updateSettings({ budget: { ...settings.budget, startDay: Math.min(28, Number(v)) } })}
           />
         </Group>
         <Select

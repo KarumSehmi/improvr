@@ -6,12 +6,13 @@
 // .js endings because this file also runs on the server (server/notify.ts).
 import { DEFAULT_REMINDERS } from './config.js';
 import { addDays, weekday, weekStart, type DateKey } from './dates.js';
+import { budgetStatus, money } from './budget.js';
 import { weekStats, type Summary } from './engine.js';
 import { dueNow } from './moments.js';
 import { carriedDays, openTodos } from './todos.js';
-import type { Todo } from './types.js';
+import type { SpendEntry, Todo } from './types.js';
 
-export type NudgeId = 'morning' | 'todos' | 'caffeine' | 'afternoon' | 'evening' | 'deadline' | 'lockin' | 'lastcall' | 'bedtime' | 'fines' | 'review';
+export type NudgeId = 'morning' | 'todos' | 'caffeine' | 'afternoon' | 'evening' | 'deadline' | 'lockin' | 'lastcall' | 'bedtime' | 'fines' | 'review' | 'spending';
 
 export const NUDGES: { id: NudgeId; label: string; when: string }[] = [
   { id: 'morning', label: 'Morning routine not done', when: 'morning' },
@@ -25,6 +26,7 @@ export const NUDGES: { id: NudgeId; label: string; when: string }[] = [
   { id: 'bedtime', label: 'Bed by 1am countdown', when: 'bedtime' },
   { id: 'fines', label: 'Fines you still owe', when: 'Sun 12:00' },
   { id: 'review', label: 'Weekly review is ready', when: 'Mon 09:00' },
+  { id: 'spending', label: 'Update your card spending (weekly)', when: 'Sun 18:00' },
 ];
 
 export interface Nudge {
@@ -51,6 +53,7 @@ export function dueNudges(args: {
   /** Nudge id → local date it last went out. */
   sent: Record<string, string>;
   todos?: Record<string, Todo>;
+  spending?: Record<string, SpendEntry>;
 }): Nudge[] {
   const { summary, date, minutes, sent } = args;
   const s = summary.settings;
@@ -127,6 +130,18 @@ export function dueNudges(args: {
 
   if (summary.owed > 0 && due('fines', '12:00', 0)) {
     out.push({ id: 'fines', title: `💷 You owe £${summary.owed}`, body: `Donate to ${s.charity}, then tap "I've paid" in the app.` });
+  }
+
+  // Credit card: a weekly check-in, only if you haven't updated it this week
+  const card = budgetStatus(args.spending ?? {}, s, date);
+  if (card.needsUpdate && due('spending', '18:00', 0)) {
+    const last =
+      card.state === 'over-limit'
+        ? ` Last time you were ${money(card.spent - card.limit)} over ${money(card.limit)}.`
+        : card.state === 'over-pace'
+          ? ` Last time you were ${money(card.vsPace)} ahead of pace.`
+          : '';
+    out.push({ id: 'spending', title: '💳 Card check', body: `What have you spent this month so far? 10 seconds, +10 XP.${last}` });
   }
 
   const ws = weekStart(date);

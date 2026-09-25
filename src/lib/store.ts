@@ -2,10 +2,10 @@ import { create } from 'zustand';
 import { defaultSettings, habitsFor } from './config';
 import { dateKey, type DateKey } from './dates';
 import { isDone } from './engine';
-import type { AppData, Birthday, CalEvent, DayLog, Payment, Settings, Todo } from './types';
+import type { AppData, Birthday, CalEvent, DayLog, Payment, Settings, SpendEntry, Todo } from './types';
 
-export type Collection = 'days' | 'events' | 'birthdays' | 'payments' | 'todos';
-export const COLLECTIONS: Collection[] = ['days', 'events', 'birthdays', 'payments', 'todos'];
+export type Collection = 'days' | 'events' | 'birthdays' | 'payments' | 'todos' | 'spending';
+export const COLLECTIONS: Collection[] = ['days', 'events', 'birthdays', 'payments', 'todos', 'spending'];
 
 /** What the background server last reported (notifications, Apple Watch sleep). */
 export interface ServerStatus {
@@ -34,7 +34,7 @@ export interface Backend {
 }
 
 export function emptyData(): AppData {
-  return { days: {}, events: {}, birthdays: {}, payments: {}, todos: {}, settings: defaultSettings(dateKey()) };
+  return { days: {}, events: {}, birthdays: {}, payments: {}, todos: {}, spending: {}, settings: defaultSettings(dateKey()) };
 }
 
 export const useApp = create<AppState>()(() => ({
@@ -54,8 +54,8 @@ export function setBackend(b: Backend | null) {
 }
 
 export function getData(): AppData {
-  const { days, events, birthdays, payments, todos, settings } = useApp.getState();
-  return { days, events, birthdays, payments, todos, settings };
+  const { days, events, birthdays, payments, todos, spending, settings } = useApp.getState();
+  return { days, events, birthdays, payments, todos, spending, settings };
 }
 
 // ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ export function setDay(date: DateKey, log: DayLog) {
   backend?.put('days', date, log);
 }
 
-type Items = { events: CalEvent; birthdays: Birthday; payments: Payment; todos: Todo };
+type Items = { events: CalEvent; birthdays: Birthday; payments: Payment; todos: Todo; spending: SpendEntry };
 
 export function upsert<C extends keyof Items>(col: C, item: Items[C]) {
   useApp.setState((s) => ({ [col]: { ...s[col], [item.id]: item } }) as Partial<AppState>);

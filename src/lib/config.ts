@@ -173,7 +173,12 @@ export const BONUS = {
   checkin: 5,
   allCheckins: 15,
   quest: 15,
+  /** Updating your card spending (once a week is the idea). */
+  budget: 10,
 };
+
+/** Credit card: the monthly limit to stay under, and the hard ceiling it keeps you well clear of. */
+export const DEFAULT_BUDGET = { limit: 800, ceiling: 1000, startDay: 1 };
 
 // ---------------------------------------------------------------------------
 // Check-ins: three quick taps a day. `to` can pass 24 (evening runs until 4am).

@@ -39,10 +39,10 @@ export function useToday(): DateKey {
 let cache: { key: unknown[]; value: Summary } | null = null;
 
 /** Shared memo so every component using the summary reuses one computation. */
-function memoSummary(today: DateKey, days: AppData['days'], payments: AppData['payments'], settings: AppData['settings']): Summary {
-  const key = [today, days, payments, settings];
+function memoSummary(today: DateKey, days: AppData['days'], payments: AppData['payments'], spending: AppData['spending'], settings: AppData['settings']): Summary {
+  const key = [today, days, payments, spending, settings];
   if (!cache || cache.key.some((k, i) => k !== key[i])) {
-    cache = { key, value: summarize({ days, payments, settings, events: {}, birthdays: {}, todos: {} }, today) };
+    cache = { key, value: summarize({ days, payments, spending, settings, events: {}, birthdays: {}, todos: {} }, today) };
   }
   return cache.value;
 }
@@ -51,8 +51,9 @@ export function useSummary(): Summary {
   const today = useToday();
   const days = useApp((s) => s.days);
   const payments = useApp((s) => s.payments);
+  const spending = useApp((s) => s.spending);
   const settings = useApp((s) => s.settings);
-  return memoSummary(today, days, payments, settings);
+  return memoSummary(today, days, payments, spending, settings);
 }
 
 // ---------------------------------------------------------------------------

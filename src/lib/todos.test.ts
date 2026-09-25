@@ -37,7 +37,7 @@ describe('to-dos', () => {
   });
 
   it('sends one midday reminder when to-dos are still open', () => {
-    const summary = summarize({ days: {}, events: {}, birthdays: {}, payments: {}, todos: {}, settings: defaultSettings('2026-09-21') }, TODAY);
+    const summary = summarize({ days: {}, events: {}, birthdays: {}, payments: {}, todos: {}, spending: {}, settings: defaultSettings('2026-09-21') }, TODAY);
     const todos = list(todo('Book dentist', '2026-09-22'), todo('Send form', TODAY), todo('Later', '2026-09-30'));
     const at = (minutes: number, sent: Record<string, string> = {}) => dueNudges({ summary, date: TODAY, minutes, sent, todos }).find((n) => n.id === 'todos');
 
