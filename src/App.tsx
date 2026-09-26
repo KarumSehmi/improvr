@@ -3,6 +3,7 @@ import { IconCalendar, IconChartBar, IconChecklist, IconDots } from '@tabler/ico
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, type ComponentType } from 'react';
 import ChestModal from './components/ChestModal';
+import CravingSOS from './components/CravingSOS';
 import Overlays from './components/Overlays';
 import { FloaterLayer, Tap } from './components/ui';
 import { goTo, useNow, useSummary, useUi, type Page } from './lib/hooks';
@@ -140,7 +141,14 @@ function Shell() {
         {TABS.map((t) => {
           const active = page === t.id;
           return (
-            <Tap key={t.id} className="tab" data-active={active || undefined} onClick={() => goTo(t.id)} aria-label={t.label}>
+            <Tap
+              key={t.id}
+              className="tab"
+              data-active={active || undefined}
+              // Tapping the tab you're on scrolls back to the top
+              onClick={() => (active ? window.scrollTo({ top: 0, behavior: 'smooth' }) : goTo(t.id))}
+              aria-label={t.label}
+            >
               {active && <motion.div layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
               <div style={{ position: 'relative', display: 'grid', justifyItems: 'center', gap: 2 }}>
                 <t.icon size={23} stroke={active ? 2.2 : 1.7} />
@@ -161,6 +169,7 @@ function Shell() {
       <FloaterLayer />
       <Overlays />
       <ChestModal />
+      <CravingSOS />
     </AppShell>
   );
 }

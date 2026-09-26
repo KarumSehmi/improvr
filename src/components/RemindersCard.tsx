@@ -179,7 +179,8 @@ export default function RemindersCard() {
           </Text>
         </div>
         <Select
-          w={112}
+          w={118}
+          style={{ flexShrink: 0 }}
           size="xs"
           data={[
             { value: '2', label: 'At most 2' },

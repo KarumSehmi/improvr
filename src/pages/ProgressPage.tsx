@@ -8,6 +8,7 @@ import {
   SimpleGrid,
   Stack,
   Table,
+  Tabs,
   Text,
   Timeline,
   Title,
@@ -303,6 +304,7 @@ export default function ProgressPage() {
   const scored = evals.filter((e) => e.pct != null && e.closed);
   const avg = scored.length ? Math.round(scored.reduce((s, e) => s + (e.pct ?? 0), 0) / scored.length) : 0;
   const vape = summary.habitStreaks.vape ?? { current: 0, best: 0 };
+  const [tab, setTab] = useState('overview');
 
   return (
     <Stack>
@@ -333,24 +335,52 @@ export default function ProgressPage() {
         </Text>
       </Card>
 
-      <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
-        <StatTile emoji="🔥" value={logStreak.current} label="Days logged in a row" sub={`best ${logStreak.best}`} />
-        <StatTile emoji="🚭" value={vape.current} label="Days nicotine-free" sub={`best ${vape.best}`} />
-        <StatTile emoji="🏆" value={perfectDays} label="Perfect days" />
-        <StatTile emoji="📊" value={`${avg}%`} label="Average score" sub={`${scored.length} days logged`} />
-        <StatTile emoji="💪" value={summary.trainingStreak.current} label="Weeks hitting gym target" sub={`best ${summary.trainingStreak.best}`} />
-        <StatTile emoji="💷" value={`£${summary.fineTotal}`} label="Total fines" sub={summary.owed ? `£${summary.owed} still owed` : 'all paid up'} />
-      </SimpleGrid>
+      <Tabs value={tab} onChange={(v) => v && setTab(v)} variant="pills" radius="xl" keepMounted={false}>
+        <Tabs.List grow>
+          {[
+            ['overview', 'Overview'],
+            ['habits', 'Habits'],
+            ['history', 'History'],
+            ['badges', 'Badges'],
+          ].map(([value, label]) => (
+            <Tabs.Tab key={value} value={value} px={8} fz="sm">
+              {label}
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
 
-      <InsightsCard summary={summary} />
-      <WeekCard summary={summary} />
-      <ScoreHeatmap summary={summary} />
-      <AchievementsCard summary={summary} />
-      <CleanCard summary={summary} />
-      <StreakTable summary={summary} />
-      <TrainingChart summary={summary} />
-      <BodyCard summary={summary} />
-      <NotesCard summary={summary} />
+        <Tabs.Panel value="overview" pt="md">
+          <Stack>
+            <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
+              <StatTile emoji="🔥" value={logStreak.current} label="Days logged in a row" sub={`best ${logStreak.best}`} />
+              <StatTile emoji="🚭" value={vape.current} label="Days nicotine-free" sub={`best ${vape.best}`} />
+              <StatTile emoji="🏆" value={perfectDays} label="Perfect days" />
+              <StatTile emoji="📊" value={`${avg}%`} label="Average score" sub={`${scored.length} days logged`} />
+              <StatTile emoji="💪" value={summary.trainingStreak.current} label="Weeks hitting gym target" sub={`best ${summary.trainingStreak.best}`} />
+              <StatTile emoji="💷" value={`£${summary.fineTotal}`} label="Total fines" sub={summary.owed ? `£${summary.owed} still owed` : 'all paid up'} />
+            </SimpleGrid>
+            <InsightsCard summary={summary} />
+            <WeekCard summary={summary} />
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="habits" pt="md">
+          <Stack>
+            <CleanCard summary={summary} />
+            <StreakTable summary={summary} />
+            <TrainingChart summary={summary} />
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="history" pt="md">
+          <Stack>
+            <ScoreHeatmap summary={summary} />
+            <BodyCard summary={summary} />
+            <NotesCard summary={summary} />
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="badges" pt="md">
+          <AchievementsCard summary={summary} />
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   );
 }

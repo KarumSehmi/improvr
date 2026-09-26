@@ -32,10 +32,12 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 - **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
 - **✏️ Your habits** – add your own habits, switch any off, move chore days, and set how often daily ones are due (every day, every 3 days, weekly…), all inside the app (More → Your habits). Changing how often never rewrites past days.
 - **🔔 Smart notifications** – when something needs doing: morning routine not done, to-dos still open at midday, afternoon and evening check-ins (with what's left right now), caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off, there are at most 4 reminders a day (fine and lock-in warnings always come through), opening the app clears them, and a new one replaces the last so they never pile up.
+- **🆘 Craving SOS** – the red button on Today. When a craving hits it starts a 10-minute timer with a breathing guide (in 4, hold 4, out 6), one thing to do instead at a time, *your own* reason for quitting, and your streak and money saved. "It passed" logs the win (+5 XP); "I slipped" logs it honestly. It keeps the screen on, and after a few it tells you when your cravings usually hit.
 - **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what nicotine etc. costs you per week and see £ saved.
 - **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip.
 - **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.
-- **More** – fines (with a one-tap donate link), notifications, Apple Watch, habits, the rules, settings, sync and backup.
+- **More** – a short menu: fines (with a one-tap donate link), notifications, your habits, Apple Watch, settings, the rules, sync and backup. Each opens in a sheet.
+- **Progress** is split into tabs: Overview, Habits, History and Badges. Tap the tab you're on to jump back to the top of any page.
 
 ## The rules (lenient but strict)
 

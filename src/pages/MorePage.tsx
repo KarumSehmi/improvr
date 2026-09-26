@@ -12,6 +12,8 @@ import {
   Select,
   Stack,
   Switch,
+  UnstyledButton,
+  Drawer,
   Text,
   TextInput,
   Title,
@@ -21,9 +23,10 @@ import {
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconDownload, IconTrash, IconUpload } from '@tabler/icons-react';
+import { useMediaQuery } from '@mantine/hooks';
+import { IconChevronRight, IconDownload, IconTrash, IconUpload } from '@tabler/icons-react';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { fireworks, pop } from '../lib/celebrate';
 import HabitsEditor from '../components/HabitsEditor';
 import RemindersCard from '../components/RemindersCard';
@@ -33,7 +36,7 @@ import { budgetSettings } from '../lib/budget';
 import { BUILT_IN_BY_ID, FREQUENCY_OPTIONS, SLEEP_TARGETS } from '../lib/config';
 import { everyOn } from '../lib/engine';
 import { dateKey, fmt, weekday } from '../lib/dates';
-import { useSummary } from '../lib/hooks';
+import { useSummary, useUi } from '../lib/hooks';
 import { getData, importData, newId, removeItem, updateSettings, upsert, useApp } from '../lib/store';
 import type { AppData } from '../lib/types';
 
@@ -156,7 +159,7 @@ function RulesCard() {
   const target = useApp((s) => s.settings.workoutTarget);
   return (
     <Card p={0}>
-      <Accordion variant="default" chevronPosition="right">
+      <Accordion variant="default" chevronPosition="right" defaultValue="rules">
         <Accordion.Item value="rules" style={{ borderBottom: 0 }}>
           <Accordion.Control>
             <Text fw={800}>📜 The rules</Text>
@@ -423,20 +426,83 @@ function AccountCard() {
   );
 }
 
+/** One row in the More menu. */
+function MenuRow({ emoji, title, sub, right, onClick }: { emoji: string; title: string; sub: string; right?: ReactNode; onClick: () => void }) {
+  return (
+    <UnstyledButton onClick={onClick} className="menu-row">
+      <Text fz={22} w={30} ta="center">
+        {emoji}
+      </Text>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Text fw={700} size="sm">
+          {title}
+        </Text>
+        <Text size="xs" c="dimmed" truncate>
+          {sub}
+        </Text>
+      </div>
+      {right}
+      <IconChevronRight size={18} style={{ opacity: 0.4, flexShrink: 0 }} />
+    </UnstyledButton>
+  );
+}
+
+/** Everything else, as a short menu. Each section opens in a sheet. */
 export default function MorePage() {
+  const summary = useSummary();
+  const sheet = useUi((s) => s.moreSheet);
+  const mode = useApp((s) => s.mode);
+  const email = useApp((s) => s.email);
+  const lastSleep = useApp((s) => s.server?.lastSleep);
+  const devices = useApp((s) => s.pushDevices);
+  const habitCount = summary.habits.length;
+  const wide = useMediaQuery('(min-width: 48em)');
+  const open = (id: string) => useUi.setState({ moreSheet: id });
+
+  const sections: { id: string; emoji: string; title: string; sub: string; right?: ReactNode; body: ReactNode }[] = [
+    {
+      id: 'fines',
+      emoji: '💷',
+      title: 'Charity fines',
+      sub: summary.owed ? 'Donate, then mark it paid' : `All paid up · £${summary.fineTotal} fined in total`,
+      right: summary.owed ? (
+        <Badge color="red" variant="filled">
+          £{summary.owed} owed
+        </Badge>
+      ) : null,
+      body: <FinesCard />,
+    },
+    { id: 'notifications', emoji: '🔔', title: 'Notifications', sub: mode === 'cloud' && devices ? 'On · what you get reminded about, and how often' : 'What you get reminded about, and how often', body: <RemindersCard /> },
+    { id: 'habits', emoji: '✏️', title: 'Your habits', sub: `${habitCount} habits · switch off, how often, add your own`, body: <HabitsEditor /> },
+    { id: 'watch', emoji: '⌚', title: 'Apple Watch sleep', sub: lastSleep ? `Last synced ${dayjs(lastSleep.at).format('ddd HH:mm')}` : 'Fill in sleep automatically', body: <SleepSyncCard /> },
+    { id: 'settings', emoji: '⚙️', title: 'Settings', sub: 'Name, fines, card limit, weekends, finasteride, theme, sounds', body: <SettingsCard /> },
+    { id: 'rules', emoji: '📜', title: 'The rules', sub: 'How it all works', body: <RulesCard /> },
+    { id: 'sync', emoji: '☁️', title: 'Sync & backup', sub: mode === 'cloud' ? `Signed in as ${email}` : 'This device only', body: <AccountCard /> },
+  ];
+  const current = sections.find((s) => s.id === sheet);
+
   return (
     <Stack>
       <Title order={2}>More</Title>
-      <FinesCard />
-      <RemindersCard />
-      <SleepSyncCard />
-      <HabitsEditor />
-      <RulesCard />
-      <SettingsCard />
-      <AccountCard />
+      <Card p={4}>
+        {sections.map((s) => (
+          <MenuRow key={s.id} emoji={s.emoji} title={s.title} sub={s.sub} right={s.right} onClick={() => open(s.id)} />
+        ))}
+      </Card>
       <Text size="xs" c="dimmed" ta="center">
         Improvr · just try to be better than you were yesterday
       </Text>
+
+      <Drawer
+        opened={!!current}
+        onClose={() => useUi.setState({ moreSheet: null })}
+        position={wide ? 'right' : 'bottom'}
+        size={wide ? 'md' : '92%'}
+        radius={wide ? 0 : 'xl'}
+        classNames={{ content: 'sheet', header: 'sheet-header', body: 'sheet-inner' }}
+      >
+        <div className="sheet-body">{current?.body}</div>
+      </Drawer>
     </Stack>
   );
 }

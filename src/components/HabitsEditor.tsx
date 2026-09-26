@@ -11,25 +11,26 @@ import { Tile } from './ui';
 
 const WEEKDAY_OPTIONS = WEEKDAYS.map((d, i) => ({ value: String(i), label: d }));
 
+const EVERY_OPTIONS = [1, 2, 3, 4, 5, 7, 14, 28];
+
 function ScheduleControl({ schedule, onChange }: { schedule: ChoreSchedule; onChange: (s: ChoreSchedule) => void }) {
   if ('every' in schedule) {
+    const options = [...new Set([...EVERY_OPTIONS, schedule.every])].sort((a, b) => a - b);
     return (
-      <NumberInput
-        w={96}
+      <Select
+        w={150}
         size="xs"
-        min={1}
-        max={60}
-        prefix="every "
-        suffix="d"
-        value={schedule.every}
-        onChange={(v) => Number(v) >= 1 && onChange({ ...schedule, every: Number(v) })}
-        aria-label="Every how many days"
+        data={options.map((n) => ({ value: String(n), label: n === 1 ? 'Every day' : scheduleLabel({ every: n }).replace(/^every/, 'Every') }))}
+        value={String(schedule.every)}
+        onChange={(v) => v && onChange({ ...schedule, every: Number(v) })}
+        allowDeselect={false}
+        aria-label="How often"
       />
     );
   }
   return (
     <Select
-      w={126}
+      w={150}
       size="xs"
       data={WEEKDAY_OPTIONS}
       value={String(schedule.weekday)}
@@ -190,24 +191,24 @@ export default function HabitsEditor() {
                           </Text>
                         )}
                       </Text>
-                      {h.schedule && (
-                        <Text size="xs" c="dimmed">
-                          {scheduleLabel(h.schedule)}
-                        </Text>
+                      {on && h.schedule && (
+                        <div style={{ marginTop: 6 }}>
+                          <ScheduleControl schedule={h.schedule} onChange={(s) => reschedule(h, s)} />
+                        </div>
+                      )}
+                      {on && !h.schedule && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind) && (
+                        <Select
+                          mt={6}
+                          w={150}
+                          size="xs"
+                          data={FREQUENCY_OPTIONS}
+                          value={String(everyOn(settings, h.id, today))}
+                          onChange={(v) => v && setFrequency(h.id, Number(v))}
+                          allowDeselect={false}
+                          aria-label={`How often: ${h.label}`}
+                        />
                       )}
                     </div>
-                    {h.schedule && on && <ScheduleControl schedule={h.schedule} onChange={(s) => reschedule(h, s)} />}
-                    {!h.schedule && on && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind) && (
-                      <Select
-                        w={132}
-                        size="xs"
-                        data={FREQUENCY_OPTIONS}
-                        value={String(everyOn(settings, h.id, today))}
-                        onChange={(v) => v && setFrequency(h.id, Number(v))}
-                        allowDeselect={false}
-                        aria-label={`How often: ${h.label}`}
-                      />
-                    )}
                     {h.custom && (
                       <ActionIcon variant="subtle" color="red" onClick={() => remove(h)} aria-label="Delete">
                         <IconTrash size={16} />

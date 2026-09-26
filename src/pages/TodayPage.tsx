@@ -2,6 +2,7 @@ import { Alert, Button, Card, Group, SegmentedControl, Stack, Text } from '@mant
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef } from 'react';
 import BudgetCard from '../components/BudgetCard';
+import { SosButton } from '../components/CravingSOS';
 import DayRail from '../components/DayRail';
 import HabitRow from '../components/HabitRow';
 import HeroCard from '../components/HeroCard';
@@ -153,7 +154,11 @@ export default function TodayPage() {
                 Donate now
               </Button>
             )}
-            <Button size="xs" color="red" variant={settings.donateUrl ? 'light' : 'filled'} onClick={() => goTo('more')}>
+            <Button size="xs" color="red" variant={settings.donateUrl ? 'light' : 'filled'} onClick={() => {
+                goTo('more');
+                useUi.setState({ moreSheet: 'fines' });
+              }}
+            >
               I've paid
             </Button>
           </Group>
@@ -245,6 +250,10 @@ export default function TodayPage() {
       {date === today && <BudgetCard today={today} />}
 
       {date === today && <UpcomingCard today={today} summary={summary} />}
+
+      <SosButton />
+      {/* room so the SOS button never covers the last card */}
+      <div style={{ height: 40 }} />
     </Stack>
   );
 }

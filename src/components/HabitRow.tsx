@@ -10,6 +10,7 @@ import { everyOn, type ItemEval, type Streak } from '../lib/engine';
 import { updateDay, useApp } from '../lib/store';
 import { formatDuration, sleepMinutes } from '../lib/sleep';
 import type { DayLog } from '../lib/types';
+import { logUrge } from '../lib/cravings';
 import { floatXp } from '../lib/feedback';
 import { CheckCircle, Tap, Tile } from './ui';
 
@@ -418,9 +419,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                 onClick={(e) => {
                   if (urges < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
                   pop(e);
-                  set((l) => {
-                    l.urges = { ...l.urges, [id]: urges + 1 };
-                  });
+                  set((l) => logUrge(l, id, Date.now()));
                   notifications.show({
                     color: 'teal',
                     title: `💪 Urge beaten${urges ? ` (${urges + 1} today)` : ''}`,

@@ -25,6 +25,8 @@ export interface DayLog {
   mood?: number;
   /** Cravings you felt and beat, per stay-clean habit. */
   urges?: Record<string, number>;
+  /** When each craving was beaten (to spot when they tend to hit). */
+  urgeAt?: Record<string, number[]>;
   /** Sleep times sent from your Apple Watch via the iPhone Shortcut. */
   sleepAuto?: { asleep: string; awake: string; at: number };
   /** When each habit was ticked off — used to race yesterday's pace. */
@@ -115,6 +117,8 @@ export interface Settings {
   frequency?: Record<string, { from: DateKey; every: number }[]>;
   /** Credit card: monthly limit (£), the hard ceiling to stay well under, and the day the card's month starts. */
   budget?: { limit?: number; ceiling?: number; startDay?: number };
+  /** Why you're quitting each stay-clean habit, shown when a craving hits. */
+  reasons?: Record<string, string>;
   /** Weekend targets (Sat & Sun): asleep before / up before, e.g. '02:00' and '10:30'. */
   weekend?: { sleep?: string; wake?: string };
   /** Most notifications to send in a day (0 = no limit). */

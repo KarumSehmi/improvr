@@ -72,16 +72,25 @@ interface UiState {
   chestDate: DateKey | null;
   /** Section to unfold (e.g. tapped in the rail while it's folded away as "later"). */
   openSection: string | null;
+  /** Craving SOS: open since `start`, for this stay-clean habit (null = the first one). */
+  sos: { habit: string | null; start: number } | null;
+  /** More page: the section open in a sheet. */
+  moreSheet: string | null;
 }
 
-export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null, reviewOpen: false, chestDate: null, openSection: null }));
+export const useUi = create<UiState>()(() => ({ page: 'today', viewDate: null, reviewOpen: false, chestDate: null, openSection: null, sos: null, moreSheet: null }));
 
 export function openDay(date: DateKey | null) {
   useUi.setState({ page: 'today', viewDate: date });
   window.scrollTo({ top: 0 });
 }
 
+/** Open the craving SOS (10-minute timer). */
+export function openSos(habit: string | null = null) {
+  useUi.setState({ sos: { habit, start: Date.now() } });
+}
+
 export function goTo(page: Page) {
-  useUi.setState({ page });
+  useUi.setState({ page, moreSheet: null });
   window.scrollTo({ top: 0 });
 }

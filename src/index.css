@@ -485,6 +485,78 @@ body::before {
   border-color: var(--mantine-color-teal-outline) !important;
 }
 
+/* ---------- More: menu rows and sheets ---------- */
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 10px;
+  border-radius: 16px;
+}
+
+.menu-row + .menu-row {
+  border-top: 1px solid var(--divider);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.menu-row:active {
+  background: var(--ring-track);
+}
+
+.sheet .mantine-Card-root {
+  border: 0;
+  background: transparent !important;
+  backdrop-filter: none;
+  box-shadow: none !important;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.sheet-header {
+  min-height: 44px;
+  padding-top: 8px;
+  padding-bottom: 0;
+}
+
+.sheet-inner {
+  padding-top: 0;
+}
+
+.sheet-body {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 24px);
+}
+
+/* ---------- Craving SOS button ---------- */
+.sos-fab {
+  position: fixed !important;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 84px);
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 16px 0 12px;
+  border-radius: 22px;
+  font-size: 18px;
+  color: white;
+  background: linear-gradient(135deg, var(--mantine-color-red-6), var(--mantine-color-pink-6));
+  box-shadow: 0 8px 24px rgba(240, 62, 62, 0.35);
+}
+
+.sos-fab span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+@media (min-width: 48em) {
+  .sos-fab {
+    bottom: 24px;
+  }
+}
+
 /* ---------- Card spending ---------- */
 .budget-bar {
   position: relative;

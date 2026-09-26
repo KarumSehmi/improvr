@@ -3,6 +3,7 @@
  * enough data behind it to mean something.
  */
 import { CHECKINS, WEEKDAYS } from './config';
+import { cravingPeak } from './cravings';
 import { addDays, diffDays, weekday, weekStart } from './dates';
 import { habitRates, slipStats, weekStats, type DayEval, type Summary } from './engine';
 
@@ -70,6 +71,15 @@ export function insights(summary: Summary): Insight[] {
     }
     if (s.saved != null && s.saved >= 5) {
       out.push({ id: `saved-${s.habit.id}`, emoji: '💷', tone: 'good', weight: 76, text: `Staying off ${label} has saved you £${s.saved}${s.savedSinceSlip != null && s.savedSinceSlip !== s.saved ? ` (£${s.savedSinceSlip} since your last slip)` : ''}.` });
+    }
+  }
+
+  // When cravings hit (from the SOS and "beat an urge")
+  for (const h of habits.filter((x) => x.kind === 'avoid')) {
+    const peak = cravingPeak(summary, h.id);
+    if (peak) {
+      const what = h.label.replace(/^No /, '').toLowerCase();
+      out.push({ id: `craving-${h.id}`, emoji: '🆘', tone: 'tip', weight: 83, text: `Most ${what} cravings hit ${peak.label} (${peak.count} of ${peak.total}). Plan something for then.` });
     }
   }
 
