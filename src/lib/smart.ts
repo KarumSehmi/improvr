@@ -3,7 +3,7 @@
  * that matter right now — instead of making you scan the whole list.
  */
 import { birthdaysOn, eventsOn } from './calendar';
-import { WATER_TARGET, scheduleLabel } from './config';
+import { WATER_TARGET, clockLabel, habitLabel, scheduleLabel, sleepTargets } from './config';
 import { addDays, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
@@ -69,7 +69,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
         id: 'morning',
         emoji: '🌅',
         title: h < 12 ? 'Morning routine' : 'Still to do from this morning',
-        detail: list(morning.map((i) => i.habit.label)),
+        detail: list(morning.map((i) => habitLabel(i.habit, data.settings, date))),
         tone: h < 12 ? 'info' : 'warn',
         priority: h < 12 ? 90 : h < 21 ? 66 : 45,
         action: quick.length ? { kind: 'tick', label: `Done ${quick.length === morning.length ? 'all' : quick.length}`, habitIds: quick.map((i) => i.habit.id) } : undefined,
@@ -156,9 +156,12 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     }
   }
 
-  if (date === summary.today && (h >= 21 || h < 1) && item('sleep')) {
-    const left = until(now, 1);
-    out.push({ id: 'bed', emoji: '🌙', title: `Asleep by 1am — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
+  // Tonight's bedtime (later on Friday and Saturday nights)
+  const bed = sleepTargets(data.settings, h < 4 ? date : addDays(date, 1)).sleep;
+  const [bh, bm] = bed.split(':').map(Number);
+  if (date === summary.today && (h >= 21 || h < bh) && item('sleep')) {
+    const left = until(now, bh, bm);
+    out.push({ id: 'bed', emoji: '🌙', title: `Asleep by ${clockLabel(bed)} — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
   }
 
   if (!e.closed && (h >= 21 || h < 4)) {

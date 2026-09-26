@@ -4,7 +4,7 @@
  * and at most once per day.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { DEFAULT_REMINDERS } from './config.js';
+import { DEFAULT_REMINDERS, SLEEP_TARGETS, clockLabel, habitLabel, sleepTargets } from './config.js';
 import { addDays, weekday, weekStart, type DateKey } from './dates.js';
 import { budgetStatus, money } from './budget.js';
 import { weekStats, type Summary } from './engine.js';
@@ -23,7 +23,7 @@ export const NUDGES: { id: NudgeId; label: string; when: string }[] = [
   { id: 'deadline', label: "Yesterday isn't logged yet", when: '20:00' },
   { id: 'lockin', label: "Today isn't locked in (with streaks at risk)", when: 'lockIn' },
   { id: 'lastcall', label: 'Last call before a £ fine', when: '23:30' },
-  { id: 'bedtime', label: 'Bed by 1am countdown', when: 'bedtime' },
+  { id: 'bedtime', label: 'Bedtime countdown (later at weekends)', when: 'bedtime' },
   { id: 'fines', label: 'Fines you still owe', when: 'Sun 12:00' },
   { id: 'review', label: 'Weekly review is ready', when: 'Mon 09:00' },
   { id: 'spending', label: 'Update your card spending (weekly)', when: 'Sun 18:00' },
@@ -34,6 +34,14 @@ export interface Nudge {
   title: string;
   body: string;
 }
+
+/** Fine and lock-in warnings always come through; the rest share a daily allowance. */
+const ALWAYS = new Set<NudgeId>(['lastcall', 'deadline', 'lockin', 'fines']);
+/** When several are due at once and there isn't room for all, these win (in this order). */
+const IMPORTANCE: NudgeId[] = ['lastcall', 'deadline', 'lockin', 'fines', 'bedtime', 'morning', 'spending', 'todos', 'afternoon', 'evening', 'caffeine', 'review'];
+
+/** Default most reminders in a day (not counting fine / lock-in warnings). */
+export const DEFAULT_NOTIFY_MAX = 4;
 
 /** How long after its time a nudge can still go out (covers a late server run). */
 const WINDOW_MIN = 90;
@@ -64,18 +72,19 @@ export function dueNudges(args: {
   const open = today ? today.items.filter((i) => i.required && !i.done && !i.missed && !i.skipped) : [];
   const out: Nudge[] = [];
 
-  const due = (id: NudgeId, at: string, day?: number) =>
-    s.notify?.[id] !== false &&
-    sent[id] !== date &&
-    (day == null || weekday(date) === day) &&
-    minutes >= toMin(at) &&
-    minutes < toMin(at) + WINDOW_MIN;
+  const due = (id: NudgeId, at: string | number, day?: number) => {
+    const t = typeof at === 'number' ? at : toMin(at);
+    return s.notify?.[id] !== false && sent[id] !== date && (day == null || weekday(date) === day) && minutes >= t && minutes < t + WINDOW_MIN;
+  };
+  // Weekend lie-ins and later nights move the morning and bedtime reminders too.
+  const targets = sleepTargets(s, date);
+  const lieIn = toMin(targets.wake) - toMin(SLEEP_TARGETS.weekday.wake);
 
   if (today && !today.dayOff) {
     const morning = open.filter((i) => i.habit.section === 'morning');
-    if (morning.length && due('morning', r.morning)) {
+    if (morning.length && due('morning', toMin(r.morning) + lieIn)) {
       const checkin = today.log?.checkins?.am ? 'One tap in Up next.' : 'Check in for +5 XP.';
-      out.push({ id: 'morning', title: '🌅 Morning routine', body: `Still to do: ${names(morning.map((i) => i.habit.label))}. ${checkin}` });
+      out.push({ id: 'morning', title: '🌅 Morning routine', body: `Still to do: ${names(morning.map((i) => habitLabel(i.habit, s, date)))}. ${checkin}` });
     }
 
     const caffeine = open.find((i) => i.habit.id === 'caffeine');
@@ -123,9 +132,12 @@ export function dueNudges(args: {
     }
   }
 
-  // Just after midnight counts as "tonight"
-  if (due('bedtime', r.bedtime)) {
-    out.push({ id: 'bedtime', title: '🌙 Bed by 1am', body: 'Phone down, face routine, lights off.' });
+  // Tonight's target: a reminder after midnight is about the day that's just started, one before it about tomorrow.
+  const bedAt = toMin(r.bedtime);
+  const night = sleepTargets(s, bedAt < 12 * 60 ? date : addDays(date, 1));
+  const later = toMin(night.sleep) - toMin(SLEEP_TARGETS.weekday.sleep);
+  if (due('bedtime', bedAt + later)) {
+    out.push({ id: 'bedtime', title: `🌙 Bed by ${clockLabel(night.sleep)}`, body: 'Phone down, face routine, lights off.' });
   }
 
   if (summary.owed > 0 && due('fines', '12:00', 0)) {
@@ -149,5 +161,9 @@ export function dueNudges(args: {
     out.push({ id: 'review', title: '📊 Your week in review', body: 'See how last week went and pick one thing to focus on.' });
   }
 
-  return out;
+  // Don't overdo it: at most a few reminders a day, most important first.
+  const max = s.notifyMax ?? DEFAULT_NOTIFY_MAX;
+  if (!max) return out;
+  let room = Math.max(0, max - Object.entries(sent).filter(([id, d]) => d === date && !ALWAYS.has(id as NudgeId)).length);
+  return out.sort((a, b) => IMPORTANCE.indexOf(a.id) - IMPORTANCE.indexOf(b.id)).filter((n) => ALWAYS.has(n.id) || room-- > 0);
 }

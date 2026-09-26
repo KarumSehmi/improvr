@@ -11,6 +11,16 @@ export function pushEnvironment(): PushEnv {
   return 'ok';
 }
 
+/** Clear anything Improvr has left in Notification Centre (called whenever the app is opened). */
+export async function clearDelivered(): Promise<void> {
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    for (const n of (await reg?.getNotifications()) ?? []) n.close();
+  } catch {
+    // not supported here
+  }
+}
+
 const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 export function b64urlToBytes(s: string): Uint8Array<ArrayBuffer> {

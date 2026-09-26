@@ -18,7 +18,7 @@ import {
   useMantineColorScheme,
   type MantineColorScheme,
 } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconDownload, IconTrash, IconUpload } from '@tabler/icons-react';
@@ -30,7 +30,7 @@ import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
 import { setFrequency } from '../lib/actions';
 import { budgetSettings } from '../lib/budget';
-import { BUILT_IN_BY_ID, FREQUENCY_OPTIONS } from '../lib/config';
+import { BUILT_IN_BY_ID, FREQUENCY_OPTIONS, SLEEP_TARGETS } from '../lib/config';
 import { everyOn } from '../lib/engine';
 import { dateKey, fmt, weekday } from '../lib/dates';
 import { useSummary } from '../lib/hooks';
@@ -187,6 +187,10 @@ function RulesCard() {
                 Football Mondays are optional.
               </List.Item>
               <List.Item>
+                <b>Weekends are more relaxed:</b> asleep by 2am on Friday and Saturday nights, up by 10:30 on Saturday and Sunday (change
+                these in Settings).
+              </List.Item>
+              <List.Item>
                 <b>Paula's Choice</b> can be skipped any time, no penalty.
               </List.Item>
               <List.Item>
@@ -268,6 +272,26 @@ function SettingsCard() {
             onChange={(v) => Number(v) >= 1 && updateSettings({ budget: { ...settings.budget, startDay: Math.min(28, Number(v)) } })}
           />
         </Group>
+        <div>
+          <Text size="sm" fw={500}>
+            Weekends are more relaxed
+          </Text>
+          <Text size="xs" c="dimmed" mb={6}>
+            Friday & Saturday nights and Saturday & Sunday mornings (weekdays stay 1am / 9am)
+          </Text>
+          <Group grow>
+            <TimeInput
+              label="Asleep before"
+              value={settings.weekend?.sleep ?? SLEEP_TARGETS.weekend.sleep}
+              onChange={(e) => e.currentTarget.value && updateSettings({ weekend: { ...settings.weekend, sleep: e.currentTarget.value } })}
+            />
+            <TimeInput
+              label="Up before"
+              value={settings.weekend?.wake ?? SLEEP_TARGETS.weekend.wake}
+              onChange={(e) => e.currentTarget.value && updateSettings({ weekend: { ...settings.weekend, wake: e.currentTarget.value } })}
+            />
+          </Group>
+        </div>
         <Select
           label="Apply finasteride"
           description="Only shows on Night when it's due, and carries over if you miss it. Changing it doesn't touch past days."

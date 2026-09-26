@@ -3,7 +3,7 @@ import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBottle, IconBottleFilled } from '@tabler/icons-react';
 import type { MouseEvent, ReactNode } from 'react';
-import { BONUS, WATER_TARGET, scheduleLabel } from '../lib/config';
+import { BONUS, WATER_TARGET, habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import { everyOn, type ItemEval, type Streak } from '../lib/engine';
@@ -210,11 +210,16 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           id={id}
           emoji={habit.emoji}
           color={color}
-          label={habit.label}
+          label={habitLabel(habit, settings, date)}
           focus={focus}
           state={done ? 'done' : missed ? 'missed' : undefined}
           meta={
             <>
+              {sleepTargets(settings, date).weekend && (
+                <Badge size="xs" variant="light" color="indigo">
+                  weekend
+                </Badge>
+              )}
               {watch ? (
                 <Meta c={missed ? 'red.4' : 'dimmed'}>
                   ⌚ {id === 'sleep' ? `asleep ${watch.asleep} · ${formatDuration(sleepMinutes(watch.asleep, watch.awake))}` : `up ${watch.awake}`}

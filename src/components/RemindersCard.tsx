@@ -1,4 +1,4 @@
-import { Accordion, Alert, Anchor, Badge, Button, Card, Group, List, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
+import { Accordion, Alert, Anchor, Badge, Button, Card, Group, List, Select, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBell, IconBellOff, IconCalendarPlus } from '@tabler/icons-react';
@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { DEFAULT_REMINDERS } from '../lib/config';
 import { useNow, useSummary } from '../lib/hooks';
-import { NUDGES } from '../lib/nudges';
+import { DEFAULT_NOTIFY_MAX, NUDGES } from '../lib/nudges';
 import { currentSubscription, pushEnvironment, subscribe } from '../lib/push';
 import { buildReminders, downloadReminders } from '../lib/reminders';
 import { updateSettings, useApp } from '../lib/store';
@@ -168,6 +168,32 @@ export default function RemindersCard() {
             </Alert>
           ))}
       </Stack>
+
+      <Group justify="space-between" wrap="nowrap" mt="md" gap="sm">
+        <div style={{ minWidth: 0 }}>
+          <Text size="sm" fw={600}>
+            Reminders a day
+          </Text>
+          <Text size="xs" c="dimmed">
+            Fine & lock-in warnings always come through. Opening the app clears them, and a new one replaces the last.
+          </Text>
+        </div>
+        <Select
+          w={112}
+          size="xs"
+          data={[
+            { value: '2', label: 'At most 2' },
+            { value: '3', label: 'At most 3' },
+            { value: '4', label: 'At most 4' },
+            { value: '6', label: 'At most 6' },
+            { value: '0', label: 'No limit' },
+          ]}
+          value={String(settings.notifyMax ?? DEFAULT_NOTIFY_MAX)}
+          onChange={(v) => v != null && updateSettings({ notifyMax: Number(v) })}
+          allowDeselect={false}
+          aria-label="Most reminders a day"
+        />
+      </Group>
 
       <Stack gap={6} mt="md">
         {NUDGES.map((n) => (

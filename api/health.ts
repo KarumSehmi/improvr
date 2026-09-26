@@ -3,10 +3,12 @@
  * and it fills in "Asleep before 1am" and "Up before 9am" for you, with the actual times.
  *
  * Needs FIREBASE_SERVICE_ACCOUNT in Vercel → Settings → Environment Variables (same JSON as the GitHub secret).
- * Kept self-contained on purpose — Vercel builds each /api file on its own.
+ * Imports end in .js so Node can run the compiled files on Vercel.
  */
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { SLEEP_TARGETS, clockLabel, sleepTargets } from '../src/lib/config.js';
+import type { Settings } from '../src/lib/types.js';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -108,19 +110,26 @@ export function readNight(asleep: unknown, awake: unknown): { asleep: string; aw
   return { asleep: toClock(night.s), awake: toClock(night.e) };
 }
 
-/** "Before 1am" = any time in the evening or 00:00–00:59. "Before 9am" = woke before 09:00. */
-export function judgeSleep(asleep: string, awake: string): { sleepOk: boolean; wakeOk: boolean } {
-  const [ah] = asleep.split(':').map(Number);
-  const [wh, wm] = awake.split(':').map(Number);
-  return { sleepOk: ah >= 12 || ah < 1, wakeOk: wh * 60 + wm < 9 * 60 };
+const minutesOf = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * "Before 1am" = any time in the evening or after midnight but before 1am. "Before 9am" = woke before 09:00.
+ * At the weekend the targets are later (2am / 10:30 by default).
+ */
+export function judgeSleep(asleep: string, awake: string, targets: { sleep: string; wake: string } = SLEEP_TARGETS.weekday): { sleepOk: boolean; wakeOk: boolean } {
+  const a = minutesOf(asleep);
+  return { sleepOk: a >= 12 * 60 || a < minutesOf(targets.sleep), wakeOk: minutesOf(awake) < minutesOf(targets.wake) };
 }
 
 /**
  * Fill a day in from the Watch: both answers and the actual times. The Watch is the source of truth,
  * so this overwrites whatever was there when it syncs (you can still change it by hand afterwards).
  */
-export function mergeSleep(day: Record<string, unknown>, asleep: string, awake: string, at: number): Record<string, unknown> {
-  const { sleepOk, wakeOk } = judgeSleep(asleep, awake);
+export function mergeSleep(day: Record<string, unknown>, asleep: string, awake: string, at: number, targets = SLEEP_TARGETS.weekday): Record<string, unknown> {
+  const { sleepOk, wakeOk } = judgeSleep(asleep, awake, targets);
   // Tick times let the app race yesterday's pace.
   const doneAt = { ...(day.doneAt as Record<string, number>) };
   for (const [id, ok] of [['sleep', sleepOk], ['wake', wakeOk]] as const) {
@@ -188,15 +197,16 @@ export default async function handler(req: Req, res: Res) {
 
   const settings = (await db.doc(`users/${uid}/meta/settings`).get()).data() ?? {};
   const date = localDate((settings.timeZone as string) || 'Europe/London');
-  const { sleepOk, wakeOk } = judgeSleep(asleep, awake);
+  const targets = sleepTargets(settings as Settings, date);
+  const { sleepOk, wakeOk } = judgeSleep(asleep, awake, targets);
   const ref = db.doc(`users/${uid}/days/${date}`);
   const at = Date.now();
 
   await db.runTransaction(async (t) => {
     const day = (await t.get(ref)).data() ?? {};
-    t.set(ref, mergeSleep(day, asleep, awake, at));
+    t.set(ref, mergeSleep(day, asleep, awake, at, targets));
   });
   await db.doc(`users/${uid}/meta/server`).set({ lastSleep: { date, asleep, awake, at } }, { merge: true });
 
-  return res.status(200).json({ ok: true, date, asleepBefore1am: sleepOk, upBefore9am: wakeOk });
+  return res.status(200).json({ ok: true, date, [`asleepBefore${clockLabel(targets.sleep)}`]: sleepOk, [`upBefore${clockLabel(targets.wake)}`]: wakeOk });
 }

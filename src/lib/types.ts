@@ -115,6 +115,10 @@ export interface Settings {
   frequency?: Record<string, { from: DateKey; every: number }[]>;
   /** Credit card: monthly limit (£), the hard ceiling to stay well under, and the day the card's month starts. */
   budget?: { limit?: number; ceiling?: number; startDay?: number };
+  /** Weekend targets (Sat & Sun): asleep before / up before, e.g. '02:00' and '10:30'. */
+  weekend?: { sleep?: string; wake?: string };
+  /** Most notifications to send in a day (0 = no limit). */
+  notifyMax?: number;
   /** One-off data updates already applied. */
   migrations?: string[];
 

@@ -2,7 +2,7 @@
  * The built-in habits. You can also hide these, change chore days and add your own
  * from the app (More → Your habits). Points are what make the XP bar move — bigger = more important.
  */
-import type { DateKey } from './dates.js';
+import { weekday, type DateKey } from './dates.js';
 import type { ReminderSettings, Settings, WorkoutType } from './types.js';
 
 export type SectionId = 'morning' | 'day' | 'room' | 'night' | 'clean';
@@ -265,6 +265,38 @@ export const LEVEL_TITLES = [
   'Mythic',
   'GOAT',
 ];
+
+// ---------------------------------------------------------------------------
+// Sleep & wake targets: a bit more lenient at the weekend
+// ---------------------------------------------------------------------------
+
+export const SLEEP_TARGETS = {
+  weekday: { sleep: '01:00', wake: '09:00' },
+  weekend: { sleep: '02:00', wake: '10:30' },
+};
+
+/**
+ * The targets that apply to a day's "asleep" and "up" answers. Saturday and Sunday are the weekend:
+ * that covers Friday and Saturday nights (sleep is about the night before) and both lie-ins.
+ */
+export function sleepTargets(settings: Settings, date: DateKey): { sleep: string; wake: string; weekend: boolean } {
+  const wd = weekday(date);
+  const weekend = wd === 6 || wd === 0;
+  return weekend ? { ...SLEEP_TARGETS.weekend, ...settings.weekend, weekend } : { ...SLEEP_TARGETS.weekday, weekend };
+}
+
+/** '01:00' → '1am', '10:30' → '10:30am'. */
+export function clockLabel(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
+}
+
+/** Habit name for a day ("Asleep before 2am" on a Saturday). */
+export function habitLabel(h: Habit, settings: Settings, date: DateKey): string {
+  if (h.id !== 'sleep' && h.id !== 'wake') return h.label;
+  const t = sleepTargets(settings, date);
+  return h.id === 'sleep' ? `Asleep before ${clockLabel(t.sleep)}` : `Up before ${clockLabel(t.wake)}`;
+}
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
   morning: '08:30',
