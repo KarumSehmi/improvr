@@ -23,6 +23,7 @@ import { insights } from '../lib/insights';
 import { averageClock, formatDuration, sleepMinutes } from '../lib/sleep';
 import { SCORE_COLORS } from '../lib/scoreColors';
 import { useApp } from '../lib/store';
+import RecoveryCard from '../components/RecoveryCard';
 import { Tile } from '../components/ui';
 
 function StatTile({ emoji, value, label, sub }: { emoji: string; value: string | number; label: string; sub?: string }) {
@@ -365,6 +366,7 @@ export default function ProgressPage() {
         </Tabs.Panel>
         <Tabs.Panel value="habits" pt="md">
           <Stack>
+            <RecoveryCard summary={summary} />
             <CleanCard summary={summary} />
             <StreakTable summary={summary} />
             <TrainingChart summary={summary} />

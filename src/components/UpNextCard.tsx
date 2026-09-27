@@ -1,7 +1,7 @@
 import { Button, Card, Group, Text } from '@mantine/core';
 import dayjs from 'dayjs';
 import type { MouseEvent } from 'react';
-import { addWater, scrollToAndFlash, tickAll } from '../lib/actions';
+import { addWater, logWorkout, scrollToAndFlash, tickAll } from '../lib/actions';
 import type { DateKey } from '../lib/dates';
 import type { DayEval, Summary } from '../lib/engine';
 import { useNow, useUi } from '../lib/hooks';
@@ -28,6 +28,7 @@ export default function UpNextCard({ date, evaluation, summary, onLock }: { date
     if (a.kind === 'lock') onLock();
     if (a.kind === 'chest') useUi.setState({ chestDate: date });
     if (a.kind === 'scroll') scrollToAndFlash(a.target);
+    if (a.kind === 'workout') logWorkout(date, a.workout, e);
   };
 
   return (

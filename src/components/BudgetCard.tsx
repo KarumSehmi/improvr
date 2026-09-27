@@ -6,6 +6,7 @@ import { BONUS } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import { addDays, diffDays, fmt, type DateKey } from '../lib/dates';
 import { floatXp } from '../lib/feedback';
+import { savedBetween } from '../lib/personal';
 import { upsert, useApp } from '../lib/store';
 
 const COLOR = { 'no-data': 'gray', 'on-track': 'teal', 'over-pace': 'orange', 'over-limit': 'red' } as const;
@@ -14,12 +15,14 @@ const COLOR = { 'no-data': 'gray', 'on-track': 'teal', 'over-pace': 'orange', 'o
 export default function BudgetCard({ today }: { today: DateKey }) {
   const spending = useApp((s) => s.spending);
   const settings = useApp((s) => s.settings);
+  const days = useApp((s) => s.days);
   const b = budgetStatus(spending, settings, today);
   const months = pastMonths(spending, settings, today);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<string | number>('');
   const open = editing || b.needsUpdate;
   const daysLeft = diffDays(b.end, today);
+  const kept = savedBetween(days, 'vape', b.start, today, settings.costPerWeek?.vape ?? 0);
 
   const save = () => {
     const spent = Number(value);
@@ -88,6 +91,11 @@ export default function BudgetCard({ today }: { today: DateKey }) {
         <Text size="sm" fw={600}>
           {budgetMessage(b)}
         </Text>
+        {kept > 0 && (
+          <Text size="xs" fw={700} c="teal.4">
+            🚭 Staying nicotine-free has kept {money(kept)} in your pocket this month
+          </Text>
+        )}
 
         {open ? (
           <Group gap="xs" wrap="nowrap" align="flex-end">

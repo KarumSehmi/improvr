@@ -7,10 +7,13 @@ import { motion } from 'motion/react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { achievements, type Achievement } from '../lib/achievements';
 import { burst, fireworks } from '../lib/celebrate';
-import { QUOTE } from '../lib/config';
+import { budgetStatus, money } from '../lib/budget';
+import { QUOTE, clockLabel } from '../lib/config';
 import { addDays, fmt, weekStart } from '../lib/dates';
 import { grade, weekStats, type Summary, type WeekStats } from '../lib/engine';
 import { useSummary, useToday, useUi } from '../lib/hooks';
+import { weekExtras } from '../lib/personal';
+import { formatDuration } from '../lib/sleep';
 import { updateSettings, useApp } from '../lib/store';
 
 export default function Overlays() {
@@ -194,6 +197,37 @@ function Stat({ label, value, delta }: { label: string; value: string; delta?: R
   );
 }
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** The things you care about most: nicotine, drinking nights, sleep and the card. */
+function yourWeek(summary: Summary, stats: WeekStats, card: ReturnType<typeof budgetStatus>): string[] {
+  const x = weekExtras(summary, stats.start);
+  const out: string[] = [];
+  if (x.nicotine) {
+    const n = x.nicotine;
+    out.push(`🚭 ${n.clean}/${stats.days} days nicotine-free${n.urges ? ` · 💪 ${plural(n.urges, 'craving')} beaten` : ''}${n.slips ? ` · ${plural(n.slips, 'slip')}` : ''}`);
+  }
+  if (x.drinks) {
+    const used = x.drinks.nights.length;
+    const when = x.drinks.nights.map((d) => fmt(d, 'ddd')).join(', ');
+    out.push(
+      used === 0
+        ? '🍺 A dry week'
+        : used <= x.drinks.limit
+          ? `🍺 ${used} of ${x.drinks.limit} drinking night${x.drinks.limit === 1 ? '' : 's'} used (${when}) ✓`
+          : `🍺 ${used} drinking nights (${when}) — ${used - x.drinks.limit} over`,
+    );
+  }
+  if (x.sleep) {
+    out.push(`😴 Asleep around ${clockLabel(x.sleep.asleep)}, up around ${clockLabel(x.sleep.awake)} · ${formatDuration(x.sleep.mins)} a night`);
+  }
+  if (card.asOf) {
+    const state = card.state === 'on-track' ? 'on track' : card.state === 'over-pace' ? `${money(card.vsPace)} ahead of pace` : 'over the limit';
+    out.push(`💳 ${money(card.spent)} of ${money(card.limit)} on the card this month — ${state}`);
+  }
+  return out;
+}
+
 function ReviewModal({ opened, summary, stats, before, onClose }: { opened: boolean; summary: Summary; stats: WeekStats; before: WeekStats; onClose: () => void }) {
   const settings = useApp((s) => s.settings);
   const today = useToday();
@@ -205,6 +239,8 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
   const g = grade(stats.avgPct);
   const slips = Object.entries(stats.slips).filter(([, n]) => n > 0);
   const ws = weekStart(today);
+  const spending = useApp((s) => s.spending);
+  const personal = yourWeek(summary, stats, budgetStatus(spending, settings, today));
 
   const start = () => {
     const habitId = focus ?? suggested;
@@ -250,6 +286,19 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
           {stats.moodAvg != null && <Stat label="Mood" value={`${stats.moodAvg.toFixed(1)}/5`} delta={<Delta now={stats.moodAvg} before={before.moodAvg} />} />}
           <Stat label="Slips" value={String(slips.reduce((s, [, n]) => s + n, 0))} delta={<Delta now={slips.reduce((s, [, n]) => s + n, 0)} before={Object.values(before.slips).reduce((a, b) => a + b, 0)} invert />} />
         </SimpleGrid>
+
+        {personal.length > 0 && (
+          <div>
+            <div className="eyebrow">Your week</div>
+            <Stack gap={4} mt={6}>
+              {personal.map((line) => (
+                <Text key={line} size="sm">
+                  {line}
+                </Text>
+              ))}
+            </Stack>
+          </div>
+        )}
 
         {best.length > 0 && (
           <div>

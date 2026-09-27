@@ -11,6 +11,7 @@ import { slipStats } from '../lib/engine';
 import { floatXp } from '../lib/feedback';
 import { openSos, useSummary, useUi } from '../lib/hooks';
 import { logicalNow } from '../lib/moments';
+import { recovery } from '../lib/recovery';
 import { updateDay, updateSettings, useApp } from '../lib/store';
 import { ScoreRing, Tap } from './ui';
 
@@ -70,6 +71,7 @@ export default function CravingSOS() {
   const stats = slipStats(summary).find((s) => s.habit.id === habit.id);
   const streak = summary.habitStreaks[habit.id]?.current ?? 0;
   const peak = cravingPeak(summary, habit.id);
+  const next = habit.id === 'vape' ? recovery(streak) : null;
   const reason = settings.reasons?.[habit.id] ?? '';
   const date = logicalNow(new Date(now)).date;
   const beatenToday = days[date]?.urges?.[habit.id] ?? 0;
@@ -195,6 +197,11 @@ export default function CravingSOS() {
             {stats?.saved ? ` · 💰 £${stats.saved} saved` : ''} · 💪 {stats?.urgesAll ?? 0} cravings beaten
             {peak ? ` · they usually hit ${peak.label}` : ''}
           </Text>
+          {next?.next && (
+            <Text size="xs" fw={700} c="teal.3" mt={4}>
+              {next.next.emoji} {next.inDays} day{next.inDays === 1 ? '' : 's'} to {next.next.title}: {next.next.text}
+            </Text>
+          )}
         </Card>
 
         <Button size="lg" variant="gradient" gradient={{ from: 'teal.5', to: 'green.6', deg: 135 }} onClick={passed}>

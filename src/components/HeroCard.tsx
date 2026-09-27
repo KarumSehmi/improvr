@@ -205,6 +205,11 @@ export default function HeroCard({ date, isToday, evaluation: e, yesterdayPct, s
         <Text size="xs" fs="italic" mt="sm" c="dimmed">
           “{QUOTE}”
         </Text>
+        {summary.settings.reasons?.vape && summary.habits.some((h) => h.id === 'vape') && (
+          <Text size="xs" fw={700} mt={4} c="teal.3">
+            🚭 {summary.settings.reasons.vape}
+          </Text>
+        )}
       </Card>
     </Stack>
   );
