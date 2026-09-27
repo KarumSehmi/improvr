@@ -22,6 +22,14 @@ const STEPS: { id: string; run: () => void }[] = [
     id: 'fin-every-3',
     run: () => setFrequency('fin', 3),
   },
+  {
+    // A to-do for today: book the dentist.
+    id: 'dentist-todo',
+    run: () => {
+      if (useApp.getState().todos.dentist) return;
+      upsert('todos', { id: 'dentist', title: 'Book the dentist 🦷', date: dateKey(), doneOn: null, createdAt: Date.now() });
+    },
+  },
 ];
 
 export function runMigrations() {

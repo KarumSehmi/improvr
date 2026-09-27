@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BUILT_IN_BY_ID, CHECKINS, QUESTS, SECTIONS, defaultSettings } from './config';
-import { startOfDay } from './dates';
+import { dateKey, startOfDay } from './dates';
 import { summarize } from './engine';
 import { markNotDone, setFrequency, toggleTodo } from './actions';
 import { runMigrations } from './migrations';
@@ -32,7 +32,16 @@ describe('toothbrush and haircut', () => {
     runMigrations();
     expect(useApp.getState().todos.haircut).toMatchObject({ title: 'Haircut 💈', date: '2026-10-04', repeat: 14 });
     runMigrations(); // only once
-    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut']);
+    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut', 'dentist']);
+  });
+
+  it('adds "book the dentist" as a to-do for today, once', () => {
+    useApp.setState({ days: {}, todos: {}, spending: {}, settings: { ...defaultSettings(START), migrations: ['haircut-todo', 'fin-every-3'] } });
+    runMigrations();
+    expect(useApp.getState().todos.dentist).toMatchObject({ title: 'Book the dentist 🦷', doneOn: null });
+    expect(useApp.getState().todos.dentist.date).toBe(dateKey());
+    runMigrations();
+    expect(Object.keys(useApp.getState().todos)).toEqual(['dentist']);
   });
 });
 
