@@ -1,13 +1,13 @@
-import { ActionIcon, Badge, Button, Group, NumberInput, Text } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, Text } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconBottle, IconBottleFilled } from '@tabler/icons-react';
+import { IconBottle, IconBottleFilled, IconMinus, IconPlus } from '@tabler/icons-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { BONUS, WATER_TARGET, habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import { everyOn, type ItemEval, type Streak } from '../lib/engine';
-import { updateDay, useApp } from '../lib/store';
+import { updateDay, updateSettings, useApp } from '../lib/store';
 import { formatDuration, sleepMinutes } from '../lib/sleep';
 import type { DayLog } from '../lib/types';
 import { logUrge } from '../lib/cravings';
@@ -25,6 +25,9 @@ interface Props {
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+
+/** Finasteride goes up or down in steps of this many ml. */
+const DOSE_STEP = 0.25;
 
 function Row(props: {
   id: string;
@@ -78,7 +81,8 @@ function NotDone({ chore }: { chore?: boolean }) {
 }
 
 function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
-  if (streak.current < 2) return null;
+  // A broken streak still has a record to chase — that's the number to beat.
+  if (streak.current < 2) return streak.best >= 5 ? <Meta>🏁 best {streak.best}</Meta> : null;
   return (
     <Text size="xs" fw={800} c={atRisk ? 'orange.5' : 'orange.4'}>
       <span className="flame">🔥</span> {streak.current}
@@ -320,6 +324,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       const ml = log?.finMl ?? null;
       // % w/v → mg per ml: 0.025% = 0.025 g / 100 ml = 0.25 mg/ml
       const mgPerMl = settings.finConcentration * 10;
+      const mg = (v: number) => `${+(v * mgPerMl).toFixed(3)} mg`;
       const toggle = (e: MouseEvent) => {
         if (!done) reward(e);
         set((l) => {
@@ -327,6 +332,12 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           if (l.missed) delete l.missed[id];
         });
       };
+      // Used more or less than usual today? Nudge it up or down (typing "0.5" would untick the row at "0").
+      const nudge = (delta: number) =>
+        set((l) => {
+          l.finMl = Math.max(DOSE_STEP, Math.round(((l.finMl ?? 0) + delta) * 100) / 100);
+        });
+      const usual = ml === settings.finTargetMl;
       return (
         <Row
           id={id}
@@ -339,37 +350,43 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
             <>
               {missed && <NotDone />}
               {overdue}
-              <Meta>{ml ? `${ml} ml · ${(ml * mgPerMl).toFixed(3)} mg` : `${settings.finTargetMl} ml · ${settings.finConcentration}%`}</Meta>
+              <Meta>{ml ? mg(ml) : `${settings.finTargetMl} ml · ${mg(settings.finTargetMl)}`}</Meta>
               {often}
               <StreakTag streak={streak} atRisk={atRisk} />
             </>
           }
           right={
-            <Group gap={8} wrap="nowrap" onClick={stop}>
-              {done && (
-                <NumberInput
-                  w={84}
-                  size="sm"
-                  radius="md"
-                  inputMode="decimal"
-                  suffix=" ml"
-                  step={0.1}
-                  decimalScale={2}
-                  min={0}
-                  max={10}
-                  hideControls
-                  value={ml ?? ''}
-                  onChange={(v) =>
-                    set((l) => {
-                      l.finMl = typeof v === 'number' ? v : null;
-                    })
-                  }
-                />
+            <Group gap={6} wrap="nowrap" onClick={stop}>
+              {done && ml != null && (
+                <Group gap={0} wrap="nowrap">
+                  <Tap onClick={() => nudge(-DOSE_STEP)} aria-label="0.25 ml less">
+                    <ActionIcon component="div" size={30} radius="xl" variant="subtle" color="gray">
+                      <IconMinus size={15} />
+                    </ActionIcon>
+                  </Tap>
+                  <Text fw={800} fz="sm" ta="center" miw={50} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {ml} ml
+                  </Text>
+                  <Tap onClick={() => nudge(DOSE_STEP)} aria-label="0.25 ml more">
+                    <ActionIcon component="div" size={30} radius="xl" variant="subtle" color="gray">
+                      <IconPlus size={15} />
+                    </ActionIcon>
+                  </Tap>
+                </Group>
               )}
               <Tap onClick={toggle} aria-label={habit.label}>
                 <CheckCircle checked={done} missed={missed} />
               </Tap>
             </Group>
+          }
+          below={
+            done && ml != null && !usual ? (
+              <Group justify="flex-end" mt={2}>
+                <Button size="compact-xs" variant="subtle" color="gray" onClick={() => updateSettings({ finTargetMl: ml })}>
+                  Make {ml} ml my usual amount
+                </Button>
+              </Group>
+            ) : null
           }
         />
       );

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { MOODS } from '../lib/config';
 import type { DateKey } from '../lib/dates';
+import { reflectionPrompt } from '../lib/moments';
 import { updateDay } from '../lib/store';
 import { Tap } from './ui';
 
@@ -75,7 +76,7 @@ export default function ReflectionCard({ date, note, mood, later }: { date: Date
         minRows={2}
         maxRows={6}
         label="How can I be better tomorrow?"
-        placeholder="One thing to do better tomorrow…"
+        placeholder={reflectionPrompt(date)}
         value={value}
         onChange={(ev) => {
           setValue(ev.currentTarget.value);

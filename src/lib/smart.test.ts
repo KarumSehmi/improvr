@@ -83,6 +83,30 @@ describe('up next', () => {
     expect(ids).toContain('bed');
     expect(ids).toContain('lock');
   });
+
+  it('still counts down to bed after midnight, when the day shown is last night', () => {
+    // 00:30 on the 4th: the app is still showing the 3rd.
+    const ids = suggestions(new Date(2026, 7, 4, 0, 30), today, e, sum, d).map((x) => x.id);
+    expect(ids).toContain('bed');
+  });
+
+  it('puts open to-dos in the list, louder when one has been carried over', () => {
+    const todos = {
+      a: { id: 'a', title: 'Call the bank', date: today, createdAt: 0 },
+      done: { id: 'done', title: 'Already done', date: today, doneOn: today, createdAt: 0 },
+      later: { id: 'later', title: 'Next week', date: addDays(today, 5), createdAt: 0 },
+    };
+    const one = suggestions(at(13), today, e, sum, { ...d, todos }).find((x) => x.id === 'todos');
+    expect(one).toMatchObject({ title: 'Call the bank', tone: 'info', action: { kind: 'scroll', target: 'todos' } });
+
+    const carried = { ...todos, b: { id: 'b', title: 'Send the form', date: addDays(today, -3), createdAt: 0 } };
+    const two = suggestions(at(13), today, e, sum, { ...d, todos: carried }).find((x) => x.id === 'todos');
+    expect(two).toMatchObject({ title: '2 to-dos still open', tone: 'warn' });
+    expect(two?.detail).toBe('"Send the form" has been carried over for 3 days.');
+    expect(two!.priority).toBeGreaterThan(one!.priority);
+
+    expect(suggestions(at(13), today, e, sum, { ...d, todos: { done: todos.done, later: todos.later } }).find((x) => x.id === 'todos')).toBeUndefined();
+  });
 });
 
 describe('reminders', () => {

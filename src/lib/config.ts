@@ -238,6 +238,22 @@ export const QUESTS: Quest[] = [
   { id: 'breathe', emoji: '🫁', title: '5 minutes of slow breathing', detail: 'In for 4, hold for 4, out for 6.' },
 ];
 
+/** A different nudge for the evening note each day. The question stays the same: how can I be better tomorrow? */
+export const REFLECTION_PROMPTS = [
+  'One thing to do differently tomorrow…',
+  'What got in the way today?',
+  'What went well — and how do you repeat it?',
+  'What would tomorrow-you thank you for?',
+  'Which habit felt hardest today, and why?',
+  'One small win from today…',
+  "What's the first thing you'll do tomorrow morning?",
+  'If today was a 6/10, what would have made it a 7?',
+  'What have you been putting off?',
+  'What drained you today? What gave you energy?',
+  'Who could you check in on tomorrow?',
+  'What would make tomorrow 1% better?',
+];
+
 export const MOODS = [
   { value: 1, emoji: '😫', label: 'Awful' },
   { value: 2, emoji: '😕', label: 'Meh' },

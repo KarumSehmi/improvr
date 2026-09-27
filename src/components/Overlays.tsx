@@ -11,6 +11,7 @@ import { budgetStatus, money } from '../lib/budget';
 import { QUOTE, clockLabel } from '../lib/config';
 import { addDays, fmt, weekStart } from '../lib/dates';
 import { grade, weekStats, type Summary, type WeekStats } from '../lib/engine';
+import { focusOutcome } from '../lib/review';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { weekExtras } from '../lib/personal';
 import { formatDuration } from '../lib/sleep';
@@ -235,7 +236,12 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
   const best = [...rated].sort((a, b) => b.rate - a.rate).slice(0, 3);
   const worst = [...rated].sort((a, b) => a.rate - b.rate).filter((r) => r.rate < 1).slice(0, 3);
   const [focus, setFocus] = useState<string | null>(null);
-  const suggested = worst[0]?.habit.id ?? null;
+  // How did last week's focus go? (It's still stored as the focus until you pick the next one.)
+  const lastFocus = settings.focus?.week === stats.start ? stats.rates.find((r) => r.habit.id === settings.focus?.habitId) : undefined;
+  const lastFocusBefore = lastFocus ? before.rates.find((r) => r.habit.id === lastFocus.habit.id) : undefined;
+  const focusVerdict = lastFocus ? focusOutcome(lastFocus, lastFocusBefore) : null;
+  // Not there yet? Suggest sticking with it; otherwise the weakest habit is the obvious pick.
+  const suggested = focusVerdict?.keep ? lastFocus!.habit.id : (worst[0]?.habit.id ?? null);
   const g = grade(stats.avgPct);
   const slips = Object.entries(stats.slips).filter(([, n]) => n > 0);
   const ws = weekStart(today);
@@ -298,6 +304,24 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
               ))}
             </Stack>
           </div>
+        )}
+
+        {lastFocus && focusVerdict && (
+          <Card p="sm" style={{ borderColor: `var(--mantine-color-${focusVerdict.color}-outline)` }}>
+            <div className="eyebrow">🎯 Last week's focus</div>
+            <Group justify="space-between" wrap="nowrap" mt={4}>
+              <Text fw={800} truncate>
+                {lastFocus.habit.emoji} {lastFocus.habit.label}
+              </Text>
+              <Text fw={900} style={{ flexShrink: 0 }}>
+                {lastFocus.done}/{lastFocus.required}
+                {lastFocusBefore && lastFocusBefore.required > 0 && <Delta now={Math.round(lastFocus.rate * 100)} before={Math.round(lastFocusBefore.rate * 100)} suffix="%" />}
+              </Text>
+            </Group>
+            <Text size="sm" c="dimmed" mt={2}>
+              {focusVerdict.text}
+            </Text>
+          </Card>
         )}
 
         {best.length > 0 && (

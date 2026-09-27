@@ -237,7 +237,8 @@ function SettingsCard() {
         </Group>
         <Group grow>
           <NumberInput
-            label="Finasteride target"
+            label="Finasteride per day"
+            description="What a tick logs. Use − / + on the Night list to change a day."
             suffix=" ml"
             min={0.1}
             step={0.1}

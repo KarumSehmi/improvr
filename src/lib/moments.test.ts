@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BUILT_IN_BY_ID, CHECKINS, QUESTS, SECTIONS, defaultSettings } from './config';
-import { startOfDay } from './dates';
+import { dateKey, startOfDay } from './dates';
 import { summarize } from './engine';
 import { markNotDone, setFrequency, toggleTodo } from './actions';
 import { runMigrations } from './migrations';
-import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, rollChest, sectionLater, sectionStatus } from './moments';
+import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, reflectionPrompt, rollChest, sectionLater, sectionStatus } from './moments';
 import { dueNudges } from './nudges';
 import { updateDay, useApp } from './store';
 import type { AppData, DayLog, Settings, Todo } from './types';
@@ -32,7 +32,16 @@ describe('toothbrush and haircut', () => {
     runMigrations();
     expect(useApp.getState().todos.haircut).toMatchObject({ title: 'Haircut 💈', date: '2026-10-04', repeat: 14 });
     runMigrations(); // only once
-    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut']);
+    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut', 'dentist']);
+  });
+
+  it('adds "book the dentist" as a to-do for today, once', () => {
+    useApp.setState({ days: {}, todos: {}, spending: {}, settings: { ...defaultSettings(START), migrations: ['haircut-todo', 'fin-every-3'] } });
+    runMigrations();
+    expect(useApp.getState().todos.dentist).toMatchObject({ title: 'Book the dentist 🦷', doneOn: null });
+    expect(useApp.getState().todos.dentist.date).toBe(dateKey());
+    runMigrations();
+    expect(Object.keys(useApp.getState().todos)).toEqual(['dentist']);
   });
 });
 
@@ -244,5 +253,13 @@ describe('check-in notifications', () => {
     expect(ids(15, { checkins: { pm: { at: 1, energy: 4 } } })).not.toContain('afternoon');
     expect(ids(15, {}, { afternoon: '2026-09-25' })).not.toContain('afternoon');
     expect(ids(19)).toContain('evening');
+  });
+});
+
+describe('reflection prompts', () => {
+  it('rotate day by day, the same on every device', () => {
+    expect(reflectionPrompt('2026-09-21')).toBe(reflectionPrompt('2026-09-21'));
+    const week = [0, 1, 2, 3, 4, 5, 6].map((i) => reflectionPrompt(`2026-09-2${i + 1}`));
+    expect(new Set(week).size).toBeGreaterThan(3);
   });
 });
