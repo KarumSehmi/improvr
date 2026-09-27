@@ -41,7 +41,7 @@ export interface Habit {
 /** `from` = the hour a section becomes relevant (before that it's folded away as "later" on Today). */
 export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: string; color: string; from: number }[] = [
   { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
-  { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water & food', color: 'cyan', from: 10 },
+  { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
   { id: 'room', title: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
   { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
   { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
@@ -49,8 +49,9 @@ export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: 
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
 
-/** Teeth were added part-way through, so earlier days don't count them. */
+/** Teeth and creatine were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
+const ADDED_CREATINE = '2026-09-27';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -84,6 +85,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'water', label: '2 bottles of water', emoji: '🚰', section: 'day', kind: 'water', points: 10 },
   { id: 'macro', label: 'Logged on MacroFactor', emoji: '📱', section: 'day', kind: 'check', points: 10 },
   { id: 'protein', label: 'Hit protein', emoji: '🍗', section: 'day', kind: 'check', points: 15 },
+  { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
   { id: 'budCanvas', label: 'Fill out Bud + check Canvas', emoji: '📚', section: 'day', kind: 'chore', points: 20, schedule: { weekday: 2 } },
 
   // Room — daily ones carry over, weekly ones are spread across the week

@@ -154,6 +154,17 @@ describe('streaks', () => {
     expect([weighed('2026-09-21'), weighed('2026-09-22'), weighed('2026-09-23')]).toEqual([true, true, false]);
   });
 
+  it('creatine is a daily tick from the day it was added', () => {
+    const d = data({ '2026-09-27': { done: { creatine: true } } });
+    const s = summarize(d, '2026-09-28');
+    const creatine = (date: string) => s.evalByDate[date].items.find((i) => i.habit.id === 'creatine');
+    expect(HABIT_BY_ID.creatine).toMatchObject({ kind: 'check', section: 'day' });
+    expect(creatine('2026-09-26')).toMatchObject({ visible: false, required: false }); // before it was added
+    expect(creatine('2026-09-27')).toMatchObject({ visible: true, required: true, done: true });
+    expect(creatine('2026-09-28')).toMatchObject({ visible: true, required: true, done: false });
+    expect(s.habitStreaks.creatine.current).toBe(1);
+  });
+
   it('only one day off per week', () => {
     const d = data({ '2026-09-22': { dayOff: true } });
     expect(dayOffUsedInWeek(d.days, '2026-09-24')).toBe('2026-09-22');
