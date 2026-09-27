@@ -78,7 +78,8 @@ function NotDone({ chore }: { chore?: boolean }) {
 }
 
 function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
-  if (streak.current < 2) return null;
+  // A broken streak still has a record to chase — that's the number to beat.
+  if (streak.current < 2) return streak.best >= 5 ? <Meta>🏁 best {streak.best}</Meta> : null;
   return (
     <Text size="xs" fw={800} c={atRisk ? 'orange.5' : 'orange.4'}>
       <span className="flame">🔥</span> {streak.current}

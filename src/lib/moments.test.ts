@@ -4,7 +4,7 @@ import { startOfDay } from './dates';
 import { summarize } from './engine';
 import { markNotDone, setFrequency, toggleTodo } from './actions';
 import { runMigrations } from './migrations';
-import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, rollChest, sectionLater, sectionStatus } from './moments';
+import { badgeCount, checkinStates, chestReady, chestTier, currentCheckin, dueNow, hatTrickStreak, logicalNow, pace, questFor, reflectionPrompt, rollChest, sectionLater, sectionStatus } from './moments';
 import { dueNudges } from './nudges';
 import { updateDay, useApp } from './store';
 import type { AppData, DayLog, Settings, Todo } from './types';
@@ -244,5 +244,13 @@ describe('check-in notifications', () => {
     expect(ids(15, { checkins: { pm: { at: 1, energy: 4 } } })).not.toContain('afternoon');
     expect(ids(15, {}, { afternoon: '2026-09-25' })).not.toContain('afternoon');
     expect(ids(19)).toContain('evening');
+  });
+});
+
+describe('reflection prompts', () => {
+  it('rotate day by day, the same on every device', () => {
+    expect(reflectionPrompt('2026-09-21')).toBe(reflectionPrompt('2026-09-21'));
+    const week = [0, 1, 2, 3, 4, 5, 6].map((i) => reflectionPrompt(`2026-09-2${i + 1}`));
+    expect(new Set(week).size).toBeGreaterThan(3);
   });
 });

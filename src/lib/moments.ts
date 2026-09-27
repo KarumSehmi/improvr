@@ -3,7 +3,7 @@
  * (the number on the app icon), racing yesterday's pace, the daily bonus quest and the reward chest.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { CHECKINS, QUESTS, SECTIONS, type CheckinId, type Quest, type SectionId } from './config.js';
+import { CHECKINS, QUESTS, REFLECTION_PROMPTS, SECTIONS, type CheckinId, type Quest, type SectionId } from './config.js';
 import { addDays, dateKey, startOfDay, type DateKey } from './dates.js';
 import { isOpen, type DayEval, type ItemEval } from './engine.js';
 import { openTodos } from './todos.js';
@@ -152,6 +152,11 @@ function hash(s: string): number {
 /** Today's quest (the same all day, on every device). Swapping moves to a different one. */
 export function questFor(date: DateKey, swap = 0): Quest {
   return QUESTS[(hash(date) + swap * 7) % QUESTS.length];
+}
+
+/** Tonight's reflection prompt (salted so it doesn't march in step with the quest). */
+export function reflectionPrompt(date: DateKey): string {
+  return REFLECTION_PROMPTS[hash(`note:${date}`) % REFLECTION_PROMPTS.length];
 }
 
 // ---------------------------------------------------------------------------

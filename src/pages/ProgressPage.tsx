@@ -1,4 +1,4 @@
-import { BarChart, Heatmap } from '@mantine/charts';
+import { AreaChart, BarChart, Heatmap } from '@mantine/charts';
 import {
   Badge,
   Button,
@@ -7,7 +7,6 @@ import {
   Progress,
   SimpleGrid,
   Stack,
-  Table,
   Tabs,
   Text,
   Timeline,
@@ -16,6 +15,7 @@ import {
 } from '@mantine/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { achievements } from '../lib/achievements';
+import { SECTION_BY_ID } from '../lib/config';
 import { addDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
 import { completionRate, grade, slipStats, weekStats, type Summary } from '../lib/engine';
 import { useSummary, useToday, useUi } from '../lib/hooks';
@@ -23,7 +23,8 @@ import { insights } from '../lib/insights';
 import { averageClock, formatDuration, sleepMinutes } from '../lib/sleep';
 import { SCORE_COLORS } from '../lib/scoreColors';
 import { useApp } from '../lib/store';
-import { Tile } from '../components/ui';
+import { habitHistory, personalBests, scoreTrend } from '../lib/trend';
+import { Tile, WeekDots } from '../components/ui';
 
 function StatTile({ emoji, value, label, sub }: { emoji: string; value: string | number; label: string; sub?: string }) {
   return (
@@ -159,58 +160,50 @@ function CleanCard({ summary }: { summary: Summary }) {
   );
 }
 
-function StreakTable({ summary }: { summary: Summary }) {
-  const rows = summary.habits.filter((h) => h.kind !== 'avoid').map((h) => ({
-    h,
-    streak: summary.habitStreaks[h.id],
-    rate: completionRate(summary, h.id, 30),
-  }));
+function HabitList({ summary }: { summary: Summary }) {
+  const rows = summary.habits
+    .filter((h) => h.kind !== 'avoid')
+    .map((h) => ({ h, streak: summary.habitStreaks[h.id], rate: completionRate(summary, h.id, 30), week: habitHistory(summary, h.id) }));
   return (
     <Card p="sm">
-      <Text fw={800} px={4} mb="xs">
+      <Text fw={800} px={4}>
         🔥 Habit streaks
       </Text>
-      <Table verticalSpacing={6} horizontalSpacing={6}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Habit</Table.Th>
-            <Table.Th ta="right">Now</Table.Th>
-            <Table.Th ta="right">Best</Table.Th>
-            <Table.Th w={90}>30 days</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map(({ h, streak, rate }) => (
-            <Table.Tr key={h.id}>
-              <Table.Td>
-                <Text size="sm" lineClamp={1}>
-                  {h.emoji} {h.label}
+      <Text size="xs" c="dimmed" px={4}>
+        Last 7 days as dots (today on the right) · % of the last 30 days · best run.
+      </Text>
+      <div style={{ marginTop: 4 }}>
+        {rows.map(({ h, streak, rate, week }) => (
+          <div key={h.id} className="hrow">
+            <div className="hrow-main" style={{ minHeight: 0 }}>
+              <Tile emoji={h.emoji} color={SECTION_BY_ID[h.section].color} size={32} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Text size="sm" fw={600} lh={1.25} truncate>
+                  {h.label}
                 </Text>
-              </Table.Td>
-              <Table.Td ta="right" fw={700}>
-                {streak.current}
-              </Table.Td>
-              <Table.Td ta="right" c="dimmed">
-                {streak.best}
-              </Table.Td>
-              <Table.Td>
-                {rate == null ? (
-                  <Text size="xs" c="dimmed">
-                    —
-                  </Text>
-                ) : (
-                  <Group gap={4} wrap="nowrap">
-                    <Progress value={rate} size="sm" style={{ flex: 1 }} color="violet" />
-                    <Text size="xs" w={30} ta="right">
-                      {rate}%
-                    </Text>
-                  </Group>
-                )}
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+                <Text size="xs" c="dimmed">
+                  {rate == null ? 'nothing due yet' : `${rate}% · 30 days`}
+                  {streak.best > 1 ? ` · best ${streak.best}` : ''}
+                </Text>
+              </div>
+              <Stack gap={3} align="flex-end" style={{ flexShrink: 0 }}>
+                <WeekDots days={week} />
+                <Text size="xs" fw={800} c={streak.current >= 2 ? 'orange.4' : 'dimmed'} lh={1}>
+                  {streak.current >= 2 ? (
+                    <>
+                      <span className="flame">🔥</span> {streak.current}
+                    </>
+                  ) : streak.current === 1 ? (
+                    '🔥 1'
+                  ) : (
+                    'no streak'
+                  )}
+                </Text>
+              </Stack>
+            </div>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }
@@ -244,6 +237,75 @@ function TrainingChart({ summary }: { summary: Summary }) {
   );
 }
 
+/** Are you getting better? A 7-day average of your daily score, this month vs last, and your bests. */
+function TrendCard({ summary }: { summary: Summary }) {
+  const trend = useMemo(() => scoreTrend(summary, 56), [summary]);
+  const bests = useMemo(() => personalBests(summary), [summary]);
+  const data = trend.points.map((p) => ({ ...p, label: fmt(p.date, 'D MMM') }));
+  const diff = trend.recent != null && trend.previous != null ? trend.recent - trend.previous : null;
+  const line =
+    trend.scored < 5
+      ? 'Log a week or so and your trend shows up here.'
+      : trend.recent == null
+        ? 'A 7-day average of your daily score.'
+        : `Last 4 weeks: ${trend.recent}% on average${diff == null ? '' : diff > 0 ? ` · up ${diff}% on the 4 weeks before` : diff < 0 ? ` · down ${-diff}% on the 4 weeks before` : ' · level with the 4 weeks before'}`;
+  return (
+    <Card p="sm">
+      <Group justify="space-between" px={4} align="flex-start" wrap="nowrap">
+        <div style={{ minWidth: 0 }}>
+          <Text fw={800}>📈 Better than last month?</Text>
+          <Text size="xs" c={diff != null && diff > 0 ? 'teal.4' : diff != null && diff < 0 ? 'orange.4' : 'dimmed'} fw={diff ? 700 : 400}>
+            {line}
+          </Text>
+        </div>
+      </Group>
+      {trend.scored >= 5 && (
+        <AreaChart
+          mt="sm"
+          h={170}
+          data={data}
+          dataKey="label"
+          series={[{ name: 'avg', label: '7-day average', color: 'teal.5' }]}
+          curveType="monotone"
+          strokeWidth={2}
+          fillOpacity={0.12}
+          withDots={false}
+          connectNulls
+          gridAxis="x"
+          tickLine="none"
+          strokeDasharray="0"
+          yAxisProps={{ domain: [0, 100], ticks: [0, 50, 100], width: 42, tickFormatter: (v: number) => `${v}%` }}
+          xAxisProps={{ interval: 'preserveStartEnd', minTickGap: 48 }}
+          referenceLines={trend.previous != null ? [{ y: trend.previous, label: `last month ${trend.previous}%`, labelPosition: 'insideBottomLeft', color: 'gray.6' }] : []}
+          valueFormatter={(v) => `${v}%`}
+        />
+      )}
+      {(bests.bestDay || bests.bestWeek || bests.longestLog > 0) && (
+        <SimpleGrid cols={3} mt="sm" px={4} spacing={4}>
+          <div>
+            <Text fw={800}>{bests.bestDay ? `${bests.bestDay.pct}%` : '—'}</Text>
+            <Text size="10px" c="dimmed">
+              best day{bests.bestDay ? ` · ${fmt(bests.bestDay.date, 'D MMM')}` : ''}
+            </Text>
+          </div>
+          <div>
+            <Text fw={800}>{bests.bestWeek ? `${bests.bestWeek.avg}%` : '—'}</Text>
+            <Text size="10px" c="dimmed">
+              best week{bests.bestWeek ? ` · w/c ${fmt(bests.bestWeek.start, 'D MMM')}` : ' · needs a full week'}
+            </Text>
+          </div>
+          <div>
+            <Text fw={800}>{bests.longestLog}</Text>
+            <Text size="10px" c="dimmed">
+              longest logging streak
+            </Text>
+          </div>
+        </SimpleGrid>
+      )}
+    </Card>
+  );
+}
+
 function BodyCard({ summary }: { summary: Summary }) {
   const settings = useApp((s) => s.settings);
   const last30 = summary.evals.slice(-30);
@@ -269,8 +331,8 @@ function BodyCard({ summary }: { summary: Summary }) {
           />
         </>
       )}
-      <StatTile emoji="🌙" value={lateNights.length} label="Nights after 1am" sub="last 30 days" />
-      <StatTile emoji="⏰" value={lateWakes.length} label="Up after 9am" sub="last 30 days" />
+      <StatTile emoji="🌙" value={lateNights.length} label="Late nights" sub="past your target · 30 days" />
+      <StatTile emoji="⏰" value={lateWakes.length} label="Late mornings" sub="past your target · 30 days" />
       <StatTile emoji="💧" value={`${finDays.length}/${last30.length}`} label="Finasteride days" sub={`avg ${avgMl.toFixed(2)} ml · ${(avgMl * mgPerMl).toFixed(3)} mg`} />
       <StatTile emoji="🚰" value={last30.filter((e) => (e.log?.water ?? 0) >= 2).length} label="Water target days" sub="last 30 days" />
     </SimpleGrid>
@@ -366,12 +428,13 @@ export default function ProgressPage() {
         <Tabs.Panel value="habits" pt="md">
           <Stack>
             <CleanCard summary={summary} />
-            <StreakTable summary={summary} />
+            <HabitList summary={summary} />
             <TrainingChart summary={summary} />
           </Stack>
         </Tabs.Panel>
         <Tabs.Panel value="history" pt="md">
           <Stack>
+            <TrendCard summary={summary} />
             <ScoreHeatmap summary={summary} />
             <BodyCard summary={summary} />
             <NotesCard summary={summary} />

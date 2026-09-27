@@ -175,7 +175,7 @@ export default function TodoCard({ today }: { today: DateKey }) {
   };
 
   return (
-    <Card p="sm">
+    <Card id="todos" p="sm">
       {list.length > 0 && (
         <Group justify="space-between" px={4} mb={4}>
           <Text fw={800} fz={17}>

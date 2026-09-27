@@ -87,7 +87,6 @@ export default function TodayPage() {
   const date = viewDate ?? (new Date(now).getHours() < 4 && yesterdayPending ? yesterday : today);
   const e = summary.evalByDate[date];
   const open = isOpen(date, today);
-  const hour = new Date(now).getHours();
   // Is this day "now"? (Up past midnight still counts as the day before.) Then things not due yet fold away.
   const moment = logicalNow(new Date(now));
   const live = date === moment.date;
@@ -233,7 +232,7 @@ export default function TodayPage() {
                     streak={streak}
                     color={sec.color}
                     focus={item.habit.id === focusId}
-                    atRisk={date === today && hour >= 18 && streak.current >= 3 && !item.done && !item.missed && item.required}
+                    atRisk={live && moment.hour >= 18 && streak.current >= 3 && !item.done && !item.missed && item.required}
                   />
                 );
               })}

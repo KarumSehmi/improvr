@@ -7,7 +7,8 @@ import { WATER_TARGET, clockLabel, habitLabel, scheduleLabel, sleepTargets } fro
 import { addDays, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
-import { chestReady } from './moments';
+import { chestReady, logicalNow } from './moments';
+import { carriedDays, openTodos } from './todos';
 import type { AppData } from './types';
 
 export type SuggestionAction =
@@ -42,7 +43,7 @@ function dur(ms: number): string {
 
 const list = (xs: string[], max = 3) => (xs.length <= max ? xs.join(', ') : `${xs.slice(0, max).join(', ')} +${xs.length - max} more`);
 
-export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summary, data: Pick<AppData, 'events' | 'birthdays' | 'settings'> & Partial<Pick<AppData, 'spending'>>): Suggestion[] {
+export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summary, data: Pick<AppData, 'events' | 'birthdays' | 'settings'> & Partial<Pick<AppData, 'spending' | 'todos'>>): Suggestion[] {
   const out: Suggestion[] = [];
   const h = now.getHours();
   const item = (id: string) => e.items.find((i) => i.habit.id === id && i.visible);
@@ -137,6 +138,29 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     });
   }
 
+  // To-dos: today's, plus anything carried over from earlier days (those get louder the longer they wait)
+  if (data.todos && date === summary.today) {
+    const pending = openTodos(data.todos, date);
+    if (pending.length) {
+      const carried = pending.filter((t) => carriedDays(t, date) > 0).sort((a, b) => carriedDays(b, date) - carriedDays(a, date));
+      const oldest = carried[0];
+      const late = oldest ? carriedDays(oldest, date) : 0;
+      out.push({
+        id: 'todos',
+        emoji: '📝',
+        title: pending.length === 1 ? pending[0].title : `${pending.length} to-dos still open`,
+        detail: oldest
+          ? `${carried.length === 1 ? `"${oldest.title}" has` : `${carried.length} have`} been carried over for ${late} day${late === 1 ? '' : 's'}.`
+          : pending.length === 1
+            ? "On today's list."
+            : list(pending.map((t) => t.title)),
+        tone: oldest ? 'warn' : 'info',
+        priority: oldest ? 68 + Math.min(12, late * 3) : h >= 12 ? 57 : 44,
+        action: { kind: 'scroll', label: 'Show', target: 'todos' },
+      });
+    }
+  }
+
   // Evening: nutrition, streaks at risk, bed, lock-in
   if (h >= 18 || h < 4) {
     const food = open.filter((i) => i.habit.id === 'macro' || i.habit.id === 'protein');
@@ -159,7 +183,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   // Tonight's bedtime (later on Friday and Saturday nights)
   const bed = sleepTargets(data.settings, h < 4 ? date : addDays(date, 1)).sleep;
   const [bh, bm] = bed.split(':').map(Number);
-  if (date === summary.today && (h >= 21 || h < bh) && item('sleep')) {
+  if (date === logicalNow(now).date && (h >= 21 || h < bh) && item('sleep')) {
     const left = until(now, bh, bm);
     out.push({ id: 'bed', emoji: '🌙', title: `Asleep by ${clockLabel(bed)} — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
   }

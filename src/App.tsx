@@ -33,9 +33,14 @@ export default function App() {
   if (status === 'loading') {
     return (
       <Center h="100dvh">
-        <Stack align="center" gap="xs">
-          <Text fz={40}>🔥</Text>
-          <Loader type="dots" />
+        <Stack align="center" gap={6}>
+          <Text fz={44} className="pulse" lh={1}>
+            🔥
+          </Text>
+          <Text fw={900} fz="xl" variant="gradient">
+            Improvr
+          </Text>
+          <Loader type="dots" size="sm" />
         </Stack>
       </Center>
     );
