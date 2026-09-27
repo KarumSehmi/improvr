@@ -4,7 +4,9 @@ import { IconCopy } from '@tabler/icons-react';
 import { hapticTrigger } from 'ios-haptics';
 import { AnimatePresence, motion } from 'motion/react';
 import { useId, useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { fmt, type DateKey } from '../lib/dates';
 import { useFloaters } from '../lib/feedback';
+import type { HistoryState } from '../lib/trend';
 
 // Scrolling on a phone often ends on a row. Anything that moved, or landed during or just after a
 // scroll (e.g. the tap that stops a flick), isn't a real tap.
@@ -180,6 +182,19 @@ export function ScoreRing({ value, marker, size = 128, stroke = 12, children, co
         />
       )}
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>{children}</div>
+    </div>
+  );
+}
+
+const DOT_LABEL: Record<HistoryState, string> = { done: 'done', missed: 'missed', open: 'still open', none: 'not due', off: 'day off' };
+
+/** A habit's last week as a row of dots, today on the right. */
+export function WeekDots({ days }: { days: { date: DateKey; state: HistoryState }[] }) {
+  return (
+    <div className="dots" aria-label={days.map((d) => `${fmt(d.date, 'ddd')}: ${DOT_LABEL[d.state]}`).join(', ')}>
+      {days.map((d) => (
+        <span key={d.date} className="dot" data-state={d.state} title={`${fmt(d.date, 'ddd D MMM')} · ${DOT_LABEL[d.state]}`} />
+      ))}
     </div>
   );
 }
