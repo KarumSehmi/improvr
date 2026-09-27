@@ -3,19 +3,22 @@
  * that matter right now — instead of making you scan the whole list.
  */
 import { birthdaysOn, eventsOn } from './calendar';
-import { WATER_TARGET, clockLabel, habitLabel, scheduleLabel, sleepTargets } from './config';
-import { addDays, weekday, weekStart, type DateKey } from './dates';
+import { WATER_TARGET, WORKOUTS, clockLabel, habitLabel, scheduleLabel, sleepTargets } from './config';
+import { addDays, fmt, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
 import { chestReady, logicalNow } from './moments';
+import { drinkNights } from './personal';
+import { NICOTINE_MILESTONES } from './recovery';
 import { carriedDays, openTodos } from './todos';
-import type { AppData } from './types';
+import type { AppData, WorkoutType } from './types';
 
 export type SuggestionAction =
   | { kind: 'tick'; label: string; habitIds: string[] }
   | { kind: 'water'; label: string }
   | { kind: 'lock'; label: string }
   | { kind: 'chest'; label: string }
+  | { kind: 'workout'; label: string; workout: WorkoutType }
   | { kind: 'scroll'; label: string; target: string };
 
 export interface Suggestion {
@@ -110,7 +113,19 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   const needed = target - sessions;
   if (needed > 0 && e.workoutCount === 0) {
     const tight = needed >= daysLeft - 1;
-    if (tight || h >= 15) {
+    const football = WORKOUTS.find((w) => w.id === 'football');
+    if (weekday(date) === 1 && h >= 15 && football && date === summary.today) {
+      // Monday football: optional, but one tap when you've played.
+      out.push({
+        id: 'train',
+        emoji: '⚽',
+        title: 'Football tonight?',
+        detail: `Optional — counts as a session (${sessions}/${target} this week). Tap when you've played.`,
+        tone: 'info',
+        priority: 60,
+        action: { kind: 'workout', label: `Played +${football.points}`, workout: 'football' },
+      });
+    } else if (tight || h >= 15) {
       out.push({
         id: 'train',
         emoji: '🏋️',
@@ -121,6 +136,40 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
         action: { kind: 'scroll', label: 'Log it', target: 'training' },
       });
     }
+  }
+
+  // The morning after a drinking night
+  const lastNight = summary.evals.find((x) => x.date === addDays(date, -1));
+  if (date === summary.today && h >= 5 && h < 13 && lastNight?.log?.avoid?.alcohol === 'slip') {
+    out.push({
+      id: 'after',
+      emoji: '🥤',
+      title: 'Big night? Water first',
+      detail: 'A bottle before anything else, then the morning routine. Today still counts.',
+      tone: 'info',
+      priority: 84,
+      action: water && !water.done ? { kind: 'water', label: '+1 bottle' } : undefined,
+    });
+  }
+
+  // Drinking nights: one a week is fine. On the nights you usually go out, say where you stand.
+  const drink = item('alcohol');
+  if (drink?.allowance && date === summary.today && (h >= 17 || h < 4) && !e.log?.avoid?.alcohol && drinkNights(summary).has(weekday(date))) {
+    const left = drink.allowance.limit - drink.allowance.used;
+    const bed = clockLabel(sleepTargets(data.settings, addDays(date, 1)).sleep);
+    if (left > 0) {
+      out.push({ id: 'drinks', emoji: '🍺', title: `${left} drinking night${left === 1 ? '' : 's'} left this week`, detail: `If tonight's the night: eat first, water between drinks, bed by ${bed}.`, tone: 'info', priority: 77 });
+    } else {
+      const used = week.find((x) => x.date < date && x.log?.avoid?.alcohol === 'slip');
+      out.push({ id: 'drinks', emoji: '🍺', title: `Drinking night used${used ? ` (${fmt(used.date, 'ddd')})` : ''}`, detail: "Tonight's a dry one — another would count as a slip.", tone: 'warn', priority: 80 });
+    }
+  }
+
+  // Nicotine-free milestones, on the day you reach them
+  const clean = summary.habits.some((x) => x.id === 'vape') ? (summary.habitStreaks.vape?.current ?? 0) : 0;
+  const milestone = NICOTINE_MILESTONES.find((m) => m.days === clean);
+  if (milestone && date === summary.today) {
+    out.push({ id: 'milestone', emoji: milestone.emoji, title: `${milestone.title} nicotine-free`, detail: milestone.text, tone: 'good', priority: 95 });
   }
 
   // Overdue chores

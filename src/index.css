@@ -675,3 +675,45 @@ body::before {
     display: none !important;
   }
 }
+
+/* Nicotine recovery timeline */
+.recovery-strip {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin: 14px 4px 0;
+}
+.recovery-strip::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 13px;
+  height: 2px;
+  background: var(--ring-track);
+}
+.recovery-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.recovery-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  background: var(--mantine-color-body);
+  border: 2px solid var(--ring-track);
+}
+.recovery-step[data-reached] .recovery-dot {
+  border-color: var(--mantine-color-teal-5);
+  background: color-mix(in srgb, var(--mantine-color-teal-5) 22%, var(--mantine-color-body));
+}
+.recovery-step[data-next] .recovery-dot {
+  border-color: var(--mantine-color-teal-5);
+  border-style: dashed;
+}

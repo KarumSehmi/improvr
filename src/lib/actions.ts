@@ -1,8 +1,8 @@
 /** One-tap bulk actions shared by "Up next" and the section quick buttons. */
 import { floatXp, notifyUndo } from './feedback';
 import { pop } from './celebrate';
-import type { Habit } from './config';
-import type { Todo } from './types';
+import { WORKOUTS, type Habit } from './config';
+import type { Todo, WorkoutType } from './types';
 import type { DateKey } from './dates';
 import { addDays, dateKey } from './dates';
 import { everyOn } from './engine';
@@ -75,6 +75,17 @@ export function addWater(date: DateKey) {
     l.water = (l.water ?? 0) + 1;
   });
   pop();
+}
+
+/** Log a session (e.g. Monday football) straight from "Up next". */
+export function logWorkout(date: DateKey, id: WorkoutType, e?: { clientX: number; clientY: number }) {
+  const w = WORKOUTS.find((x) => x.id === id);
+  if (!w || useApp.getState().days[date]?.workouts?.includes(id)) return;
+  updateDay(date, (l) => {
+    l.workouts = [...(l.workouts ?? []), id];
+  });
+  pop(e);
+  floatXp(e, `+${w.points}`);
 }
 
 export function scrollToAndFlash(id: string) {
