@@ -43,15 +43,16 @@ export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: 
   { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
   { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
   { id: 'room', title: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
-  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
+  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin, finasteride & minoxidil', color: 'indigo', from: 20 },
   { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
 
-/** Teeth and creatine were added part-way through, so earlier days don't count them. */
+/** Teeth, creatine and minoxidil were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
+const ADDED_MINOXIDIL = '2026-09-30';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -101,6 +102,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
   { id: 'facePm', label: 'Face wash + moisturiser', emoji: '🫧', section: 'night', kind: 'check', points: 5, hint: 'PM' },
   { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'night', kind: 'dose', points: 10 },
+  { id: 'minoxidil', label: 'Took minoxidil', emoji: '💆', section: 'night', kind: 'check', points: 10, since: ADDED_MINOXIDIL },
   {
     id: 'paulas',
     label: "Paula's Choice",
