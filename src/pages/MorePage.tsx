@@ -186,8 +186,8 @@ function RulesCard() {
                 <b>Chores carry over.</b> Room stuff, bin, weekly cleans — if you don't do it, it's back tomorrow (in orange) until you do.
               </List.Item>
               <List.Item>
-                <b>Training is weekly:</b> {target}+ sessions Mon–Sun. Gym gives the most XP, home workouts and football count too.
-                Football Mondays are optional.
+                <b>Gym is weekly:</b> {target}+ gym sessions Mon–Sun, no excuses. Football and home workouts are extra — they earn XP
+                but don't count towards the target. Plus a <b>15 min home workout</b> every day except Monday.
               </List.Item>
               <List.Item>
                 <b>Weekends are more relaxed:</b> asleep by 2am on Friday and Saturday nights, up by 10:30 on Saturday and Sunday (change

@@ -16,7 +16,8 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
   const workouts = days[date]?.workouts ?? [];
   const ws = weekStart(date);
   const week = LETTERS.map((_, i) => addDays(ws, i));
-  const sessions = week.filter((d) => (days[d]?.workouts?.length ?? 0) > 0).length;
+  // Only the gym counts towards the target; football is extra.
+  const sessions = week.filter((d) => days[d]?.workouts?.includes('gym')).length;
   const hit = sessions >= target;
 
   return (
@@ -31,7 +32,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
               Training
             </Text>
             <Text size="xs" c="dimmed">
-              {hit ? 'Weekly target smashed' : `${target - sessions} more this week`}
+              {hit ? 'Gym target smashed' : `${target - sessions} more gym session${target - sessions === 1 ? '' : 's'} this week`}
             </Text>
           </div>
         </Group>
@@ -62,7 +63,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
         }}
       >
         <Group gap={6} mt="sm" px={4}>
-          {WORKOUTS.map((w) => (
+          {WORKOUTS.filter((w) => !w.legacy || workouts.includes(w.id)).map((w) => (
             <Chip key={w.id} value={w.id} color="teal" variant="light" radius="xl" size="sm">
               {w.emoji} {w.label}
               <Text span size="xs" c="dimmed" ml={4}>
@@ -75,7 +76,8 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
 
       <Group gap={4} mt="md" px={4} justify="space-between" wrap="nowrap">
         {week.map((d, i) => {
-          const trained = (days[d]?.workouts?.length ?? 0) > 0;
+          const gym = !!days[d]?.workouts?.includes('gym');
+          const extra = gym ? undefined : WORKOUTS.find((w) => days[d]?.workouts?.includes(w.id))?.emoji;
           return (
             <Stack key={d} gap={3} align="center" style={{ flex: 1 }}>
               <Text fz={10} c={d === date ? undefined : 'dimmed'} fw={d === date ? 900 : 600}>
@@ -90,12 +92,12 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
                   placeItems: 'center',
                   fontSize: 13,
                   color: 'white',
-                  background: trained ? 'linear-gradient(135deg, var(--mantine-color-teal-4), var(--mantine-color-green-6))' : 'var(--ring-track)',
+                  background: gym ? 'linear-gradient(135deg, var(--mantine-color-teal-4), var(--mantine-color-green-6))' : 'var(--ring-track)',
                   outline: d === date ? '2px solid var(--mantine-color-violet-5)' : undefined,
                   outlineOffset: 2,
                 }}
               >
-                {trained ? '✓' : ''}
+                {gym ? '✓' : (extra ?? '')}
               </div>
             </Stack>
           );
@@ -104,7 +106,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
 
       {weekday(date) === 1 && (
         <Text size="xs" c="dimmed" mt="sm" px={4}>
-          ⚽ Football Monday — optional. If you go, it counts and no gym needed today.
+          ⚽ Football Monday — optional extra. It earns XP but doesn't count towards your gym sessions.
         </Text>
       )}
     </Card>

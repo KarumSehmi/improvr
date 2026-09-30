@@ -174,19 +174,46 @@ describe('streaks', () => {
 });
 
 describe('training weeks', () => {
-  it('needs the weekly target, counts football, and never judges the current week early', () => {
+  it('only gym counts towards the weekly target, and never judges the current week early', () => {
     const days: Record<string, DayLog> = {
+      '2026-09-14': { workouts: ['gym'] },
+      '2026-09-15': { workouts: ['gym'] },
       '2026-09-21': { workouts: ['football'] },
+      '2026-09-22': { workouts: ['gym'] },
       '2026-09-23': { workouts: ['gym'] },
+      '2026-09-24': { workouts: ['gym'] },
       '2026-09-25': { workouts: ['home'] },
       '2026-09-29': { workouts: ['gym'] },
     };
-    const s = summarize(data(days), '2026-09-30');
+    const s = summarize(data(days, { startDate: '2026-09-14' }), '2026-09-30');
     expect(s.weeks.map((w) => [w.start, w.sessions, w.outcome])).toEqual([
+      ['2026-09-14', 2, 'fail'],
       ['2026-09-21', 3, 'success'],
       ['2026-09-28', 1, 'neutral'],
     ]);
     expect(s.trainingStreak.current).toBe(1);
+  });
+
+  it('football and home workouts alone miss the target', () => {
+    const days: Record<string, DayLog> = {
+      '2026-09-21': { workouts: ['football'] },
+      '2026-09-23': { workouts: ['home'] },
+      '2026-09-25': { workouts: ['gym'] },
+      '2026-09-26': { workouts: ['gym'] },
+    };
+    const s = summarize(data(days), '2026-09-30');
+    expect(s.weeks[0]).toMatchObject({ sessions: 2, outcome: 'fail' });
+  });
+});
+
+describe('home workout', () => {
+  it('is due every day except Monday', () => {
+    const s = summarize(data({}, { startDate: '2026-09-28' }), '2026-10-01');
+    const item = (d: string) => s.evalByDate[d].items.find((i) => i.habit.id === 'homeWorkout')!;
+    expect(item('2026-09-28').required).toBe(false); // Monday: football
+    expect(item('2026-09-29').required).toBe(false); // before it was added
+    expect(item('2026-09-30').required).toBe(true);
+    expect(item('2026-10-01').required).toBe(true);
   });
 });
 

@@ -151,6 +151,8 @@ export interface DayEval {
   points: number;
   perfect: boolean;
   workoutCount: number;
+  /** Went to the gym — the only thing that counts towards the weekly target. */
+  gym: boolean;
   /** Check-ins done (morning, afternoon, evening). */
   checkins: number;
 }
@@ -160,7 +162,7 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
   const dayOff = !!log?.dayOff;
 
   const items: ItemEval[] = habits.map((habit) => {
-    if (habit.since && date < habit.since) {
+    if ((habit.since && date < habit.since) || habit.restDays?.includes(weekday(date))) {
       return { habit, visible: false, required: false, done: false, skipped: false, overdueDays: 0, missed: false };
     }
     if (habit.kind === 'chore') {
@@ -216,7 +218,7 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
   if (data.spending?.[date]) points += BONUS.budget;
   points += log?.chest ?? 0;
 
-  return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size, checkins };
+  return { date, log, dayOff, closed, onTime, items, required, completed, pct, points, perfect, workoutCount: workouts.size, gym: workouts.has('gym'), checkins };
 }
 
 /** Slip days for a habit from Monday up to and including `date`. */
@@ -360,14 +362,14 @@ export function summarize(data: AppData, today: DateKey): Summary {
   });
   const logStreak = runStreak(evals.map((e, i) => logOutcome(e, openFlags[i])));
 
-  // Training: X sessions per Mon–Sun week. Football, gym and home workouts all count.
+  // Training: X gym sessions per Mon–Sun week. Football and home workouts are extra.
   const target = data.settings.workoutTarget;
   const weeks: WeekTraining[] = [];
   if (evals.length) {
     const byWeek = new Map<DateKey, number>();
     for (const e of evals) {
       const w = weekStart(e.date);
-      byWeek.set(w, (byWeek.get(w) ?? 0) + (e.workoutCount > 0 ? 1 : 0));
+      byWeek.set(w, (byWeek.get(w) ?? 0) + (e.gym ? 1 : 0));
     }
     const current = weekStart(today);
     for (const [w, sessions] of byWeek) {
@@ -573,7 +575,7 @@ export function weekStats(summary: Summary, start: DateKey, until?: DateKey): We
     daysOff: evals.filter((e) => e.dayOff).length,
     avgPct: scored.length ? Math.round(scored.reduce((s, e) => s + (e.pct ?? 0), 0) / scored.length) : null,
     xp: evals.reduce((s, e) => s + e.points, 0),
-    sessions: evals.filter((e) => e.workoutCount > 0).length,
+    sessions: evals.filter((e) => e.gym).length,
     slips,
     moodAvg: moods.length ? moods.reduce((a, b) => a + b, 0) / moods.length : null,
     rates: habitRates(summary, evals),

@@ -136,7 +136,7 @@ export default function TodayPage() {
   const focusRate = focusId ? weekStats(summary, ws).rates.find((r) => r.habit.id === focusId) : undefined;
   const focus = focusRate ? { habit: focusRate.habit, done: focusRate.done, required: focusRate.required } : null;
   const weekOf = weekStart(date);
-  const sessions = [0, 1, 2, 3, 4, 5, 6].filter((i) => (days[addDays(weekOf, i)]?.workouts?.length ?? 0) > 0).length;
+  const sessions = [0, 1, 2, 3, 4, 5, 6].filter((i) => days[addDays(weekOf, i)]?.workouts?.includes('gym')).length;
 
   return (
     <Stack gap="md">
