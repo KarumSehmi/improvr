@@ -33,6 +33,8 @@ export interface Habit {
   missPrompt?: string;
   /** Added part-way through — days before this don't count. */
   since?: DateKey;
+  /** Weekdays it doesn't apply (0 Sun … 6 Sat) — hidden and not counted those days. */
+  restDays?: number[];
   /** Stay-clean habits only: slips allowed per Mon–Sun week before it counts as a miss. */
   weeklyLimit?: number;
   custom?: boolean;
@@ -49,10 +51,11 @@ export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: 
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
 
-/** Teeth, creatine and minoxidil were added part-way through, so earlier days don't count them. */
+/** Teeth, creatine, minoxidil and the home workout were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
 const ADDED_MINOXIDIL = '2026-09-30';
+const ADDED_HOME_WORKOUT = '2026-09-30';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -87,6 +90,17 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'macro', label: 'Logged on MacroFactor', emoji: '📱', section: 'day', kind: 'check', points: 10 },
   { id: 'protein', label: 'Hit protein', emoji: '🍗', section: 'day', kind: 'check', points: 15 },
   { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
+  {
+    id: 'homeWorkout',
+    label: '15 min home workout',
+    emoji: '🚴',
+    section: 'day',
+    kind: 'check',
+    points: 20,
+    hint: 'Peloton',
+    restDays: [1], // Monday is football
+    since: ADDED_HOME_WORKOUT,
+  },
   { id: 'budCanvas', label: 'Fill out Bud + check Canvas', emoji: '📚', section: 'day', kind: 'chore', points: 20, schedule: { weekday: 2 } },
 
   // Room — daily ones carry over, weekly ones are spread across the week
@@ -161,9 +175,11 @@ export const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 7].map((n) => ({ value: String(
 
 export const WATER_TARGET = 2;
 
-export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: number }[] = [
+/** Only gym counts towards the weekly target — football is extra. */
+export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: number; legacy?: boolean }[] = [
   { id: 'gym', label: 'Gym', emoji: '🏋️', points: 40 },
-  { id: 'home', label: 'Home workout', emoji: '🏠', points: 20 },
+  // Now a daily habit; kept so days that logged it here still score.
+  { id: 'home', label: 'Home workout', emoji: '🏠', points: 20, legacy: true },
   { id: 'football', label: 'Football', emoji: '⚽', points: 30 },
 ];
 

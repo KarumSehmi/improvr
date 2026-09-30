@@ -104,33 +104,33 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     });
   }
 
-  // Training — only nag when the week is getting tight
+  // Training — only nag when the week is getting tight. Only the gym counts towards the target.
   const target = data.settings.workoutTarget;
   const ws = weekStart(date);
   const week = summary.evals.filter((x) => x.date >= ws && x.date <= addDays(ws, 6));
-  const sessions = week.filter((x) => x.workoutCount > 0).length;
+  const sessions = week.filter((x) => x.gym).length;
   const daysLeft = 7 - ((weekday(date) + 6) % 7); // including today
   const needed = target - sessions;
-  if (needed > 0 && e.workoutCount === 0) {
+  const football = WORKOUTS.find((w) => w.id === 'football');
+  if (weekday(date) === 1 && h >= 15 && football && date === summary.today && !e.log?.workouts?.includes('football')) {
+    // Monday football: optional extra, but one tap when you've played.
+    out.push({
+      id: 'train',
+      emoji: '⚽',
+      title: 'Football tonight?',
+      detail: `Optional extra — doesn't count towards your ${target} gym sessions (${sessions}/${target} this week). Tap when you've played.`,
+      tone: 'info',
+      priority: 60,
+      action: { kind: 'workout', label: `Played +${football.points}`, workout: 'football' },
+    });
+  } else if (needed > 0 && !e.gym) {
     const tight = needed >= daysLeft - 1;
-    const football = WORKOUTS.find((w) => w.id === 'football');
-    if (weekday(date) === 1 && h >= 15 && football && date === summary.today) {
-      // Monday football: optional, but one tap when you've played.
-      out.push({
-        id: 'train',
-        emoji: '⚽',
-        title: 'Football tonight?',
-        detail: `Optional — counts as a session (${sessions}/${target} this week). Tap when you've played.`,
-        tone: 'info',
-        priority: 60,
-        action: { kind: 'workout', label: `Played +${football.points}`, workout: 'football' },
-      });
-    } else if (tight || h >= 15) {
+    if (tight || h >= 15) {
       out.push({
         id: 'train',
         emoji: '🏋️',
-        title: tight ? `Need ${needed} more session${needed === 1 ? '' : 's'} in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : `${sessions}/${target} sessions this week`,
-        detail: weekday(date) === 1 ? 'Football tonight counts (optional).' : tight ? 'Go today — gym gives the most XP.' : 'Gym, home workout or football all count.',
+        title: tight ? `Need ${needed} more gym session${needed === 1 ? '' : 's'} in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : `${sessions}/${target} gym sessions this week`,
+        detail: tight ? 'Go today — only the gym counts towards the target.' : 'Football and home workouts are extra — the gym is what counts.',
         tone: tight ? 'warn' : 'info',
         priority: tight ? 76 : 35,
         action: { kind: 'scroll', label: 'Log it', target: 'training' },
