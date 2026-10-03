@@ -367,7 +367,7 @@ function ReviewModal({ opened, summary, stats, before, onClose }: { opened: bool
         <Select
           label="🎯 Pick one focus for this week"
           description="It gets pinned on your Today page"
-          data={summary.habits.map((h) => ({ value: h.id, label: `${h.emoji} ${h.label}` }))}
+          data={summary.habits.filter((h) => !h.optional).map((h) => ({ value: h.id, label: `${h.emoji} ${h.label}` }))}
           value={focus ?? suggested}
           onChange={setFocus}
           allowDeselect={false}
