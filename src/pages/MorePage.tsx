@@ -187,7 +187,8 @@ function RulesCard() {
               </List.Item>
               <List.Item>
                 <b>Gym is weekly:</b> {target}+ gym sessions Mon–Sun, no excuses. Football and home workouts are extra — they earn XP
-                but don't count towards the target. Plus a <b>15 min home workout</b> every day except Monday.
+                but don't count towards the target. The <b>15 min home workout</b> is a bonus — XP when you do it, no penalty when
+                you don't.
               </List.Item>
               <List.Item>
                 <b>Weekends are more relaxed:</b> asleep by 2am on Friday and Saturday nights, up by 10:30 on Saturday and Sunday (change

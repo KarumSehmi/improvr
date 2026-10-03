@@ -196,7 +196,7 @@ export default function HabitsEditor() {
                           <ScheduleControl schedule={h.schedule} onChange={(s) => reschedule(h, s)} />
                         </div>
                       )}
-                      {on && !h.schedule && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind) && (
+                      {on && !h.schedule && !h.optional && (FLEXIBLE_KINDS as readonly string[]).includes(h.kind) && (
                         <Select
                           mt={6}
                           w={150}

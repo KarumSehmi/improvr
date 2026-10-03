@@ -122,6 +122,11 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
           key
         </Badge>
       )}
+      {habit.optional && (
+        <Badge size="xs" variant="light" color="teal">
+          bonus
+        </Badge>
+      )}
       {habit.hint && <Meta>{habit.hint}</Meta>}
       <StreakTag streak={streak} atRisk={atRisk} />
     </>

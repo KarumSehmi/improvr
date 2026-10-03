@@ -35,6 +35,8 @@ export interface Habit {
   since?: DateKey;
   /** Weekdays it doesn't apply (0 Sun … 6 Sat) — hidden and not counted those days. */
   restDays?: number[];
+  /** A bonus: shows up and earns XP when done, but skipping it never hurts the score. */
+  optional?: boolean;
   /** Stay-clean habits only: slips allowed per Mon–Sun week before it counts as a miss. */
   weeklyLimit?: number;
   custom?: boolean;
@@ -98,6 +100,7 @@ export const BUILT_IN_HABITS: Habit[] = [
     kind: 'check',
     points: 20,
     hint: 'Peloton',
+    optional: true, // not every day — a bonus when you do it
     restDays: [1], // Monday is football
     since: ADDED_HOME_WORKOUT,
   },

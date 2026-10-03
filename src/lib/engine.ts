@@ -175,6 +175,8 @@ export function evaluateDay(date: DateKey, data: AppData, tracks: Record<string,
       return { habit, visible, required: visible && !skipped, done, skipped, overdueDays: cd?.overdueDays ?? 0, missed };
     }
     const done = isDone(habit, log);
+    // A bonus: always there to tick, never counted against you.
+    if (habit.optional) return { habit, visible: true, required: false, done, skipped: false, overdueDays: 0, missed: false };
     // Set to every few days: only shows when it's due (or done).
     const fd = tracks[habit.id]?.byDate[date];
     if (fd) {
@@ -358,7 +360,14 @@ export function summarize(data: AppData, today: DateKey): Summary {
 
   const habitStreaks: Record<string, Streak> = {};
   habits.forEach((h, idx) => {
-    habitStreaks[h.id] = runStreak(evals.map((e, i) => habitOutcome(e.items[idx], e, openFlags[i])));
+    habitStreaks[h.id] = runStreak(
+      evals.map((e, i) => {
+        const item = e.items[idx];
+        // A bonus streak is still days in a row: a finished day without it ends the run (but not your score).
+        if (h.optional && item.visible && !item.done && !openFlags[i] && !e.dayOff) return 'fail';
+        return habitOutcome(item, e, openFlags[i]);
+      }),
+    );
   });
   const logStreak = runStreak(evals.map((e, i) => logOutcome(e, openFlags[i])));
 
@@ -510,7 +519,8 @@ export function completionRate(summary: Summary, habitId: string, n: number): nu
   for (const e of summary.evals.slice(-n)) {
     if (e.dayOff) continue;
     const it = e.items[idx];
-    if (!it.required && !it.done) continue;
+    // Bonuses count every day they were on offer, so the % is how often you did it.
+    if (!it.required && !it.done && !(it.habit.optional && it.visible)) continue;
     req++;
     if (it.done) done++;
   }
@@ -543,20 +553,22 @@ export interface WeekStats {
   rates: HabitRate[];
 }
 
-/** Completion per habit over a set of days (days off excluded). */
+/** Completion per habit over a set of days (days off excluded). Bonuses aren't judged, so they're left out. */
 export function habitRates(summary: Summary, evals: DayEval[]): HabitRate[] {
-  return summary.habits.map((habit, idx) => {
-    let done = 0;
-    let required = 0;
-    for (const e of evals) {
-      if (e.dayOff) continue;
-      const it = e.items[idx];
-      if (!it?.required && !it?.done) continue;
-      required++;
-      if (it.done) done++;
-    }
-    return { habit, done, required, rate: required ? done / required : 0 };
-  });
+  return summary.habits
+    .map((habit, idx) => {
+      let done = 0;
+      let required = 0;
+      for (const e of evals) {
+        if (e.dayOff) continue;
+        const it = e.items[idx];
+        if (!it?.required && !it?.done) continue;
+        required++;
+        if (it.done) done++;
+      }
+      return { habit, done, required, rate: required ? done / required : 0 };
+    })
+    .filter((r) => !r.habit.optional);
 }
 
 /** Stats for the Mon–Sun week starting `start`, optionally only up to `until` (for like-for-like comparisons). */

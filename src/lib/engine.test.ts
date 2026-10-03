@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUILT_IN_BY_ID as HABIT_BY_ID, defaultSettings } from './config';
 import { addDays, logDeadline, startOfDay } from './dates';
-import { dayOffUsedInWeek, levelFor, runStreak, summarize, trackChore } from './engine';
+import { completionRate, dayOffUsedInWeek, levelFor, runStreak, summarize, trackChore, weekStats } from './engine';
 import type { AppData, DayLog } from './types';
 
 const START = '2026-09-21'; // a Monday
@@ -207,13 +207,30 @@ describe('training weeks', () => {
 });
 
 describe('home workout', () => {
-  it('is due every day except Monday', () => {
-    const s = summarize(data({}, { startDate: '2026-09-28' }), '2026-10-01');
+  it('is a bonus: not on Mondays, never required, XP when done', () => {
+    const days = { '2026-10-01': { done: { homeWorkout: true } } };
+    const s = summarize(data(days, { startDate: '2026-09-28' }), '2026-10-02');
+    const without = summarize(data({}, { startDate: '2026-09-28' }), '2026-10-02');
     const item = (d: string) => s.evalByDate[d].items.find((i) => i.habit.id === 'homeWorkout')!;
-    expect(item('2026-09-28').required).toBe(false); // Monday: football
-    expect(item('2026-09-29').required).toBe(false); // before it was added
-    expect(item('2026-09-30').required).toBe(true);
-    expect(item('2026-10-01').required).toBe(true);
+    expect(item('2026-09-28').visible).toBe(false); // Monday: football
+    expect(item('2026-09-29').visible).toBe(false); // before it was added
+    expect(item('2026-09-30')).toMatchObject({ visible: true, required: false, missed: false });
+    expect(item('2026-10-01')).toMatchObject({ visible: true, required: false, done: true });
+    // Doing it earns XP without changing what the day asks of you.
+    expect(s.evalByDate['2026-10-01'].points - without.evalByDate['2026-10-01'].points).toBe(20);
+    expect(s.evalByDate['2026-10-01'].required).toBe(without.evalByDate['2026-10-01'].required);
+  });
+
+  it('keeps an honest days-in-a-row streak but is never judged', () => {
+    const days = {
+      '2026-09-30': { done: { homeWorkout: true } },
+      '2026-10-01': { done: { homeWorkout: true } },
+      '2026-10-03': { done: { homeWorkout: true } },
+    };
+    const s = summarize(data(days, { startDate: '2026-09-28' }), '2026-10-04');
+    expect(s.habitStreaks.homeWorkout).toEqual({ current: 1, best: 2 });
+    expect(completionRate(s, 'homeWorkout', 30)).toBe(60); // 3 of the 5 days it was on offer
+    expect(weekStats(s, '2026-09-28').rates.some((r) => r.habit.id === 'homeWorkout')).toBe(false);
   });
 });
 
