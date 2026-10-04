@@ -450,16 +450,16 @@ function MenuRow({ emoji, title, sub, right, onClick }: { emoji: string; title: 
 }
 
 /** Everything else, as a short menu. Each section opens in a sheet. */
-export default function MorePage() {
+export default function SettingsPage() {
   const summary = useSummary();
-  const sheet = useUi((s) => s.moreSheet);
+  const sheet = useUi((s) => s.settingsSheet);
   const mode = useApp((s) => s.mode);
   const email = useApp((s) => s.email);
   const lastSleep = useApp((s) => s.server?.lastSleep);
   const devices = useApp((s) => s.pushDevices);
   const habitCount = summary.habits.length;
   const wide = useMediaQuery('(min-width: 48em)');
-  const open = (id: string) => useUi.setState({ moreSheet: id });
+  const open = (id: string) => useUi.setState({ settingsSheet: id });
 
   const sections: { id: string; emoji: string; title: string; sub: string; right?: ReactNode; body: ReactNode }[] = [
     {
@@ -497,7 +497,7 @@ export default function MorePage() {
 
       <Drawer
         opened={!!current}
-        onClose={() => useUi.setState({ moreSheet: null })}
+        onClose={() => useUi.setState({ settingsSheet: null })}
         position={wide ? 'right' : 'bottom'}
         size={wide ? 'md' : '92%'}
         radius={wide ? 0 : 'xl'}

@@ -3,9 +3,11 @@
  * questions, to-dos, and editing your habits. Today, Quick log, Wrap up and the habit sheet all
  * go through here so they behave the same.
  */
+import { notifications } from '@mantine/notifications';
 import { floatXp, notifyUndo } from './feedback';
-import { pop } from './celebrate';
-import { WATER_TARGET, WORKOUTS, allHabits, type ChoreSchedule, type Habit, type HabitEdit } from './config';
+import { burst, fireworks, pop } from './celebrate';
+import { BONUS, CHECKINS, WATER_TARGET, WORKOUTS, allHabits, type CheckinId, type ChoreSchedule, type Habit, type HabitEdit } from './config';
+import { sound } from './sound';
 import type { DayLog, Settings, Todo, WorkoutType } from './types';
 import type { DateKey } from './dates';
 import { addDays, dateKey } from './dates';
@@ -192,6 +194,35 @@ export function toggleWorkout(date: DateKey, id: WorkoutType, e?: At) {
   if (!has) return logWorkout(date, id, e);
   updateDay(date, (l) => {
     l.workouts = (l.workouts ?? []).filter((w) => w !== id);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Check-ins and the bonus quest
+// ---------------------------------------------------------------------------
+
+/** Log a check-in for the window that's open right now, with how your energy is. */
+export function checkIn(date: DateKey, id: CheckinId, energy: number, e?: At) {
+  updateDay(date, (l) => {
+    l.checkins = { ...l.checkins, [id]: { at: Date.now(), energy } };
+  });
+  pop(e);
+  const all = Object.keys(useApp.getState().days[date]?.checkins ?? {}).length >= CHECKINS.length;
+  floatXp(e, `+${BONUS.checkin + (all ? BONUS.allCheckins : 0)}`);
+  if (all) {
+    fireworks();
+    notifications.show({ color: 'yellow', title: '🎯 Hat-trick!', message: `Checked in morning, afternoon and evening: +${BONUS.allCheckins} bonus XP.` });
+  } else sound.chime();
+}
+
+/** Tick today's bonus quest off (or back on). */
+export function toggleQuest(date: DateKey, done: boolean, e?: At) {
+  if (!done) {
+    burst();
+    floatXp(e, `+${BONUS.quest}`);
+  }
+  updateDay(date, (l) => {
+    l.quest = { ...l.quest, done: !done };
   });
 }
 

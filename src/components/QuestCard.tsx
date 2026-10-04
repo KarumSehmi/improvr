@@ -1,10 +1,8 @@
-import { Button, Card, Group, Text } from '@mantine/core';
+import { Card, Text, UnstyledButton } from '@mantine/core';
 import { IconArrowsShuffle } from '@tabler/icons-react';
-import type { MouseEvent } from 'react';
+import { toggleQuest } from '../lib/actions';
 import { BONUS } from '../lib/config';
-import { burst } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
-import { floatXp } from '../lib/feedback';
 import { QUEST_SWAPS, questFor } from '../lib/moments';
 import { updateDay } from '../lib/store';
 import type { DayLog } from '../lib/types';
@@ -16,50 +14,40 @@ export default function QuestCard({ date, log }: { date: DateKey; log: DayLog | 
   const done = !!log?.quest?.done;
   const quest = questFor(date, swaps);
 
-  const toggle = (e: MouseEvent) => {
-    if (!done) {
-      burst();
-      floatXp(e, `+${BONUS.quest}`);
-    }
-    updateDay(date, (l) => {
-      l.quest = { ...l.quest, done: !done };
-    });
-  };
-
   return (
-    <Card p="sm" className="quest" data-done={done || undefined}>
-      <Group justify="space-between" px={4} wrap="nowrap">
-        <div className="eyebrow">🎲 Bonus quest · +{BONUS.quest} XP</div>
-        {!done && swaps < QUEST_SWAPS && (
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            color="gray"
-            leftSection={<IconArrowsShuffle size={13} />}
-            onClick={() =>
-              updateDay(date, (l) => {
-                l.quest = { ...l.quest, swap: swaps + 1 };
-              })
-            }
-          >
-            Swap
-          </Button>
-        )}
-      </Group>
-      <div className="hrow" data-state={done ? 'done' : undefined}>
-        <Tap onClick={toggle} aria-label={quest.title}>
+    <Card p="sm" px="md" className="quest" data-done={done || undefined}>
+      <div className="hrow" data-state={done ? 'done' : undefined} style={{ padding: '4px 0' }}>
+        <Tap onClick={(e) => toggleQuest(date, done, e)} aria-label={quest.title} aria-pressed={done}>
           <div className="hrow-main">
-            <Tile emoji={quest.emoji} color="yellow" dim={done} />
+            <Tile emoji={quest.emoji} color="yellow" size={38} dim={done} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="hrow-label">{quest.title}</div>
-              <Text size="xs" c="dimmed">
-                {done ? 'Quest complete — nice.' : quest.detail}
-              </Text>
+              <div className="eyebrow" style={{ color: 'var(--mantine-color-yellow-5)' }}>
+                🎲 Bonus quest · +{BONUS.quest} XP
+              </div>
+              <div className="hrow-label" style={{ marginTop: 2 }}>
+                {quest.title}
+              </div>
+              <div className="hrow-meta">{done ? 'Quest complete — nice.' : quest.detail}</div>
             </div>
-            <CheckCircle checked={done} />
+            <CheckCircle checked={done} color="yellow" />
           </div>
         </Tap>
       </div>
+      {!done && swaps < QUEST_SWAPS && (
+        <UnstyledButton
+          onClick={() =>
+            updateDay(date, (l) => {
+              l.quest = { ...l.quest, swap: swaps + 1 };
+            })
+          }
+          style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '2px 0 2px 50px' }}
+        >
+          <IconArrowsShuffle size={13} style={{ opacity: 0.6 }} />
+          <Text size="xs" fw={700} c="dimmed">
+            Not feeling it? Swap it (once)
+          </Text>
+        </UnstyledButton>
+      )}
     </Card>
   );
 }

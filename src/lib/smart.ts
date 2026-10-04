@@ -19,7 +19,9 @@ export type SuggestionAction =
   | { kind: 'lock'; label: string }
   | { kind: 'chest'; label: string }
   | { kind: 'workout'; label: string; workout: WorkoutType }
-  | { kind: 'scroll'; label: string; target: string };
+  | { kind: 'scroll'; label: string; target: string }
+  | { kind: 'card'; label: string }
+  | { kind: 'wrap'; label: string };
 
 export interface Suggestion {
   id: string;
@@ -244,18 +246,23 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   }
 
   if (!e.closed && (h >= 21 || h < 4)) {
-    out.push({ id: 'lock', emoji: '🔒', title: 'Lock in before bed', detail: `Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'lock', label: 'Lock in' } });
+    // Things left? Go through them one at a time, then lock in.
+    out.push(
+      open.length >= 2
+        ? { id: 'lock', emoji: '🌙', title: `Wrap up: ${open.length} things left`, detail: `Two minutes, one at a time, then lock in. Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'wrap', label: 'Start' } }
+        : { id: 'lock', emoji: '🔒', title: 'Lock in before bed', detail: `Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'lock', label: 'Lock in' } },
+    );
   }
 
   // Credit card: weekly update, or a warning if you're over pace
   if (date === summary.today && data.spending && featureOn(data.settings, 'budget')) {
     const card = budgetStatus(data.spending, data.settings, date);
     if (card.needsUpdate) {
-      out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'scroll', label: 'Update', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'card', label: 'Update' } });
     } else if (card.state === 'over-limit') {
-      out.push({ id: 'card', emoji: '💳', title: `${money(card.spent - card.limit)} over your ${money(card.limit)} card limit`, detail: 'Try not to use the card again this month.', tone: 'warn', priority: 62, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: `${money(card.spent - card.limit)} over your ${money(card.limit)} card limit`, detail: 'Try not to use the card again this month.', tone: 'warn', priority: 62, action: { kind: 'card', label: 'See' } });
     } else if (card.state === 'over-pace' && card.daysLeft) {
-      out.push({ id: 'card', emoji: '💳', title: `Card: ${money(card.perDay)} a day max`, detail: `${money(card.vsPace)} ahead of pace — that finishes under ${money(card.limit)}.`, tone: 'warn', priority: 52, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: `Card: ${money(card.perDay)} a day max`, detail: `${money(card.vsPace)} ahead of pace — that finishes under ${money(card.limit)}.`, tone: 'warn', priority: 52, action: { kind: 'card', label: 'See' } });
     }
   }
 

@@ -1,30 +1,38 @@
-import { AppShell, Badge, Center, Container, Group, Loader, NavLink, Stack, Text } from '@mantine/core';
-import { IconCalendar, IconChartBar, IconChecklist, IconDots } from '@tabler/icons-react';
+import { AppShell, Button, Center, Container, Group, Kbd, Loader, Stack, Text } from '@mantine/core';
+import { useHotkeys } from '@mantine/hooks';
+import { IconCalendarEvent, IconChartBar, IconChecklist, IconPlus, IconSettings } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, type ComponentType } from 'react';
 import ChestModal from './components/ChestModal';
 import CravingSOS from './components/CravingSOS';
+import { CardSheet } from './components/BudgetCard';
+import HabitSheet from './components/HabitSheet';
 import Overlays from './components/Overlays';
+import QuickLog from './components/QuickLog';
+import { TodoEditor } from './components/Todos';
+import WrapUp from './components/WrapUp';
 import { FloaterLayer, Tap } from './components/ui';
 import { goTo, useNow, useSummary, useUi, type Page } from './lib/hooks';
 import { runMigrations } from './lib/migrations';
 import { clearDelivered } from './lib/push';
 import { badgeCount, daypart, logicalNow } from './lib/moments';
 import { updateSettings, useApp } from './lib/store';
-import CalendarPage from './pages/CalendarPage';
 import LoginPage from './pages/LoginPage';
-import MorePage from './pages/MorePage';
+import PlanPage from './pages/PlanPage';
 import ProgressPage from './pages/ProgressPage';
+import SettingsPage from './pages/SettingsPage';
 import TodayPage from './pages/TodayPage';
 
-const TABS: { id: Page; label: string; icon: ComponentType<{ size?: number; stroke?: number }> }[] = [
+type Icon = ComponentType<{ size?: number; stroke?: number }>;
+
+const TABS: { id: Page; label: string; icon: Icon }[] = [
   { id: 'today', label: 'Today', icon: IconChecklist },
-  { id: 'calendar', label: 'Calendar', icon: IconCalendar },
+  { id: 'plan', label: 'Plan', icon: IconCalendarEvent },
   { id: 'progress', label: 'Progress', icon: IconChartBar },
-  { id: 'more', label: 'More', icon: IconDots },
+  { id: 'settings', label: 'Settings', icon: IconSettings },
 ];
 
-const PAGES: Record<Page, ComponentType> = { today: TodayPage, calendar: CalendarPage, progress: ProgressPage, more: MorePage };
+const PAGES: Record<Page, ComponentType> = { today: TodayPage, plan: PlanPage, progress: ProgressPage, settings: SettingsPage };
 
 export default function App() {
   const status = useApp((s) => s.status);
@@ -33,14 +41,14 @@ export default function App() {
   if (status === 'loading') {
     return (
       <Center h="100dvh">
-        <Stack align="center" gap={6}>
-          <Text fz={44} className="pulse" lh={1}>
+        <Stack align="center" gap={8}>
+          <Text fz={48} className="pulse" lh={1}>
             🔥
           </Text>
-          <Text fw={900} fz="xl" variant="gradient">
+          <Text fw={900} fz={22} variant="gradient" lts={-0.5}>
             Improvr
           </Text>
-          <Loader type="dots" size="sm" />
+          <Loader type="dots" size="sm" color="violet" />
         </Stack>
       </Center>
     );
@@ -71,7 +79,7 @@ function useSkyAndBadge(): number {
   const todos = useApp((s) => s.todos);
   const part = daypart(new Date(now));
   const { date, hour } = logicalNow(new Date(now));
-  const count = badgeCount(summary.evalByDate[date], hour, todos, summary.today);
+  const count = badgeCount(summary.evalByDate[date], hour, todos, summary.today, summary.settings);
 
   useEffect(() => {
     document.documentElement.dataset.daypart = part;
@@ -86,6 +94,8 @@ function useSkyAndBadge(): number {
   return count;
 }
 
+const openLog = () => useUi.setState({ logOpen: true });
+
 function Shell() {
   const page = useUi((s) => s.page);
   const summary = useSummary();
@@ -99,82 +109,107 @@ function Shell() {
     document.addEventListener('visibilitychange', clear);
     return () => document.removeEventListener('visibilitychange', clear);
   }, []);
+  // Keyboard: L or N to log something, 1–4 for the pages.
+  useHotkeys([
+    ['l', openLog],
+    ['n', openLog],
+    ['1', () => goTo('today')],
+    ['2', () => goTo('plan')],
+    ['3', () => goTo('progress')],
+    ['4', () => goTo('settings')],
+  ]);
   const alerts = summary.owed > 0 || summary.openUnlogged.some((d) => d !== summary.today);
+  const badge = alerts ? '!' : dueCount > 0 ? String(dueCount) : null;
   const Page = PAGES[page];
 
+  const tab = (t: (typeof TABS)[number]) => {
+    const active = page === t.id;
+    return (
+      <Tap
+        key={t.id}
+        className="tab"
+        data-active={active || undefined}
+        // Tapping the tab you're on scrolls back to the top
+        onClick={() => (active ? window.scrollTo({ top: 0, behavior: 'smooth' }) : goTo(t.id))}
+        aria-label={t.label}
+        aria-current={active ? 'page' : undefined}
+      >
+        {active && <motion.div layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
+        <div style={{ position: 'relative', display: 'grid', justifyItems: 'center', gap: 3 }}>
+          <t.icon size={23} stroke={active ? 2.2 : 1.7} />
+          <span className="tab-label">{t.label}</span>
+          {t.id === 'today' && badge && !(active && !alerts) && <span className="tab-badge">{badge}</span>}
+        </div>
+      </Tap>
+    );
+  };
+
   return (
-    <AppShell navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: true } }} padding="md">
-      <AppShell.Navbar p="md" className="glass">
-        <Group gap={8} mb="lg" px="xs">
-          <Text fz={26}>🔥</Text>
-          <Text fw={900} fz="xl" variant="gradient">
+    <AppShell navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: true } }} padding="md">
+      <AppShell.Navbar p="md" className="side">
+        <Group gap={8} mb="lg" px={6} mt={4}>
+          <Text fz={26} lh={1}>
+            🔥
+          </Text>
+          <Text fw={900} fz={21} variant="gradient" lts={-0.4}>
             Improvr
           </Text>
         </Group>
-        {TABS.map((t) => (
-          <NavLink
-            key={t.id}
-            active={page === t.id}
-            label={t.label}
-            leftSection={<t.icon size={20} stroke={1.8} />}
-            rightSection={
-              t.id === 'today' && alerts ? (
-                <Badge size="xs" color="red" circle>
-                  !
-                </Badge>
-              ) : null
-            }
-            onClick={() => goTo(t.id)}
-            style={{ borderRadius: 'var(--mantine-radius-lg)' }}
-            mb={4}
-            fw={600}
-          />
-        ))}
+        <Button variant="gradient" size="md" radius="lg" leftSection={<IconPlus size={18} stroke={2.6} />} rightSection={<Kbd size="xs">L</Kbd>} onClick={openLog} mb="lg" justify="space-between">
+          Log something
+        </Button>
+        <Stack gap={4}>
+          {TABS.map((t, i) => {
+            const active = page === t.id;
+            return (
+              <button key={t.id} type="button" className="side-link" data-active={active || undefined} onClick={() => goTo(t.id)}>
+                <t.icon size={21} stroke={active ? 2.2 : 1.8} />
+                <span style={{ flex: 1, textAlign: 'left' }}>{t.label}</span>
+                {t.id === 'today' && badge ? (
+                  <span className="tab-badge" style={{ position: 'static', boxShadow: 'none' }}>
+                    {badge}
+                  </span>
+                ) : (
+                  <Kbd size="xs" style={{ opacity: 0.5 }}>
+                    {i + 1}
+                  </Kbd>
+                )}
+              </button>
+            );
+          })}
+        </Stack>
+        <Text size="xs" c="dimmed" mt="auto" px={6} fs="italic">
+          Just try to be better than you were yesterday.
+        </Text>
       </AppShell.Navbar>
 
       <AppShell.Main className="safe-top main-pad">
-        <Container size={680} px={0}>
+        <Container size={page === 'today' ? 720 : 680} px={0}>
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={page} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }}>
+            <motion.div key={page} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
               <Page />
             </motion.div>
           </AnimatePresence>
         </Container>
       </AppShell.Main>
 
-      <nav className="tabbar" data-hidden-desktop>
-        {TABS.map((t) => {
-          const active = page === t.id;
-          return (
-            <Tap
-              key={t.id}
-              className="tab"
-              data-active={active || undefined}
-              // Tapping the tab you're on scrolls back to the top
-              onClick={() => (active ? window.scrollTo({ top: 0, behavior: 'smooth' }) : goTo(t.id))}
-              aria-label={t.label}
-            >
-              {active && <motion.div layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
-              <div style={{ position: 'relative', display: 'grid', justifyItems: 'center', gap: 2 }}>
-                <t.icon size={23} stroke={active ? 2.2 : 1.7} />
-                <Text fz={10.5} fw={active ? 800 : 600}>
-                  {t.label}
-                </Text>
-                {t.id === 'today' && (alerts || (dueCount > 0 && !active)) && (
-                  <Badge size="xs" color="red" circle pos="absolute" top={-6} right={-10}>
-                    {alerts ? '!' : dueCount}
-                  </Badge>
-                )}
-              </div>
-            </Tap>
-          );
-        })}
+      <nav className="tabbar" data-hidden-desktop aria-label="Pages">
+        {TABS.slice(0, 2).map(tab)}
+        <Tap className="plus" onClick={openLog} aria-label="Log something">
+          <IconPlus size={28} stroke={2.6} />
+        </Tap>
+        {TABS.slice(2).map(tab)}
       </nav>
 
       <FloaterLayer />
       <Overlays />
       <ChestModal />
       <CravingSOS />
+      <QuickLog />
+      <WrapUp />
+      <HabitSheet />
+      <TodoEditor />
+      <CardSheet />
     </AppShell>
   );
 }

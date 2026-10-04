@@ -1,18 +1,20 @@
-import { ActionIcon, Badge, Button, Group, Text } from '@mantine/core';
+import { Button, Group } from '@mantine/core';
 import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconBottle, IconBottleFilled, IconMinus, IconPlus } from '@tabler/icons-react';
+import { IconBottle, IconBottleFilled, IconCheck, IconMinus, IconPlus, IconX } from '@tabler/icons-react';
 import type { MouseEvent, ReactNode } from 'react';
-import { BONUS, WATER_TARGET, habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
+import { answerClean, answerTime, bump, setDone, setSkipped, targetOf } from '../lib/actions';
+import { BONUS, habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import { pop } from '../lib/celebrate';
 import type { DateKey } from '../lib/dates';
 import { everyOn, type ItemEval, type Streak } from '../lib/engine';
-import { updateDay, updateSettings, useApp } from '../lib/store';
-import { formatDuration, sleepMinutes } from '../lib/sleep';
-import type { DayLog } from '../lib/types';
-import { logUrge } from '../lib/cravings';
 import { floatXp } from '../lib/feedback';
-import { CheckCircle, Tap, Tile } from './ui';
+import { openHabit } from '../lib/hooks';
+import { logUrge } from '../lib/cravings';
+import { formatDuration, sleepMinutes } from '../lib/sleep';
+import { updateDay, updateSettings, useApp } from '../lib/store';
+import type { DayLog } from '../lib/types';
+import { CheckCircle, M, Meta, Seg, Stepper, Tap, Tile, accent } from './ui';
 
 interface Props {
   item: ItemEval;
@@ -24,70 +26,58 @@ interface Props {
   focus: boolean;
 }
 
-const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
-
 /** Finasteride goes up or down in steps of this many ml. */
 const DOSE_STEP = 0.25;
 
 function Row(props: {
   id: string;
+  date: DateKey;
   emoji: string;
   color: string;
   label: string;
   meta?: ReactNode;
   right?: ReactNode;
   below?: ReactNode;
-  state?: 'done' | 'missed';
+  state?: 'done' | 'missed' | 'skipped';
   focus?: boolean;
   onClick?: (e: MouseEvent) => void;
 }) {
+  const more = () => openHabit(props.id, props.date);
   const main = (
     <div className="hrow-main">
       <Tile emoji={props.emoji} color={props.color} dim={props.state === 'done'} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="hrow-label">{props.label}</div>
-        {props.meta && (
-          <Group gap={6} wrap="wrap" mt={2}>
-            {props.meta}
-          </Group>
-        )}
+        {props.meta}
       </div>
       {props.right}
     </div>
   );
   return (
-    <div className="hrow" id={`row-${props.id}`} data-habit={props.id} data-state={props.state} data-focus={props.focus || undefined}>
-      {props.onClick ? <Tap onClick={props.onClick}>{main}</Tap> : main}
+    <div className="hrow" id={`row-${props.id}`} data-habit={props.id} data-state={props.state} data-focus={props.focus || undefined} style={accent(props.color)}>
+      {props.onClick ? (
+        <Tap onClick={props.onClick} onLongPress={more} aria-label={props.label} aria-pressed={props.state === 'done'}>
+          {main}
+        </Tap>
+      ) : (
+        // Rows with their own buttons still open the habit sheet when you hold the name.
+        <Tap onClick={() => {}} onLongPress={more} tabIndex={-1} role="group" style={{ cursor: 'default' }}>
+          {main}
+        </Tap>
+      )}
       {props.below}
     </div>
   );
 }
 
-function Meta({ children, c = 'dimmed' }: { children: ReactNode; c?: string }) {
-  return (
-    <Text size="xs" c={c} fw={500}>
-      {children}
-    </Text>
-  );
-}
-
-/** Marked "didn't do it" (tap the tick to do it after all). */
-function NotDone({ chore }: { chore?: boolean }) {
-  return (
-    <Badge size="xs" color="red" variant="light">
-      {chore ? 'not today' : 'not done'}
-    </Badge>
-  );
-}
-
-function StreakTag({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
+function StreakBits({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
   // A broken streak still has a record to chase — that's the number to beat.
-  if (streak.current < 2) return streak.best >= 5 ? <Meta>🏁 best {streak.best}</Meta> : null;
+  if (streak.current < 2) return streak.best >= 5 ? <M>🏁 best {streak.best}</M> : null;
   return (
-    <Text size="xs" fw={800} c={atRisk ? 'orange.5' : 'orange.4'}>
+    <M tone={atRisk ? 'warn' : 'streak'}>
       <span className="flame">🔥</span> {streak.current}
       {atRisk ? ' at risk' : ''}
-    </Text>
+    </M>
   );
 }
 
@@ -95,102 +85,61 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
   const settings = useApp((s) => s.settings);
   const { habit, done, missed, overdueDays, skipped } = item;
   const id = habit.id;
-  const set = (fn: (l: DayLog) => void) => updateDay(date, fn);
-  // Set to every few days in Your habits / Settings
+  // Set to every few days in Settings → Habits
   const every = everyOn(settings, id, date);
-  const often = every > 1 ? <Meta>{scheduleLabel({ every })}</Meta> : null;
-  const overdue =
-    overdueDays > 0 && !done && !missed ? (
-      <Badge size="xs" color="orange" variant="filled">
-        {overdueDays}d overdue
-      </Badge>
-    ) : null;
-  const reward = (e: { clientX: number; clientY: number } | undefined) => {
-    pop(e);
-    floatXp(e, `+${habit.points}`);
-  };
-
-  const meta = (
+  const common = (
     <>
-      {focus && (
-        <Badge size="xs" variant="gradient">
-          focus
-        </Badge>
-      )}
-      {habit.important && !focus && (
-        <Badge size="xs" variant="light" color="pink">
-          key
-        </Badge>
-      )}
-      {habit.optional && (
-        <Badge size="xs" variant="light" color="teal">
-          bonus
-        </Badge>
-      )}
-      {habit.hint && <Meta>{habit.hint}</Meta>}
-      <StreakTag streak={streak} atRisk={atRisk} />
+      {habit.important && !focus && <M tone="accent">★ key</M>}
+      {habit.optional && <M tone="accent">bonus</M>}
+      {habit.hint && <M>{habit.hint}</M>}
+      <StreakBits streak={streak} atRisk={atRisk} />
     </>
   );
+  const overdue = overdueDays > 0 && !done && !missed ? <M tone="warn">{overdueDays}d overdue</M> : null;
+  const often = every > 1 ? <M>{scheduleLabel({ every })}</M> : null;
+  const state = done ? 'done' : missed ? 'missed' : skipped ? 'skipped' : undefined;
 
   switch (habit.kind) {
     case 'check':
     case 'chore': {
-      const toggle = (e: MouseEvent) => {
-        if (!done) reward(e);
-        set((l) => {
-          l.done = { ...l.done, [id]: !done };
-          if (l.skipped) delete l.skipped[id];
-          if (l.missed) delete l.missed[id];
-        });
-      };
+      const toggle = (e: MouseEvent) => setDone(date, habit, !done, e);
       const schedule = habit.kind === 'chore' && habit.schedule && !('every' in habit.schedule && habit.schedule.every === 1) ? scheduleLabel(habit.schedule) : null;
       return (
         <Row
           id={id}
+          date={date}
           emoji={habit.emoji}
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : missed ? 'missed' : undefined}
+          state={state}
           onClick={habit.skippable ? undefined : toggle}
           meta={
-            <>
-              {missed && <NotDone chore={habit.kind === 'chore'} />}
+            <Meta>
+              {missed && <M tone="bad">{habit.kind === 'chore' ? 'not today' : 'not done'}</M>}
               {overdue}
+              {skipped && <M>skipped</M>}
               {often}
-              {skipped && (
-                <Badge size="xs" color="gray" variant="light">
-                  skipped
-                </Badge>
-              )}
-              {schedule && <Meta>{schedule}</Meta>}
-              {meta}
-            </>
+              {schedule && <M>{schedule}</M>}
+              {common}
+            </Meta>
           }
           right={
             habit.skippable ? (
-              <Group gap={6} wrap="nowrap">
+              <Group gap={8} wrap="nowrap">
                 {!done && (
-                  <Tap
-                    onClick={() =>
-                      set((l) => {
-                        l.skipped = { ...l.skipped, [id]: !skipped };
-                      })
-                    }
-                  >
-                    <Button component="div" size="compact-xs" variant={skipped ? 'filled' : 'subtle'} color="gray">
-                      {skipped ? 'Undo skip' : 'Skip'}
-                    </Button>
+                  <Tap className="chip" data-small onClick={() => setSkipped(date, habit, !skipped)}>
+                    {skipped ? 'Undo skip' : 'Skip'}
                   </Tap>
                 )}
                 {!skipped && (
                   <Tap onClick={toggle} aria-label={habit.label}>
-                    <CheckCircle checked={done} missed={missed} />
+                    <CheckCircle checked={done} missed={missed} color={color} />
                   </Tap>
                 )}
               </Group>
             ) : (
-              <CheckCircle checked={done} missed={missed} />
+              <CheckCircle checked={done} missed={missed} color={color} />
             )
           }
         />
@@ -202,66 +151,51 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       // Filled in by the Apple Watch Shortcut, if you've set it up.
       const watch = log?.sleepAuto;
       const watchTime = watch ? (id === 'sleep' ? watch.asleep : watch.awake) : null;
-      const yes = (e: MouseEvent) => {
-        if (answer !== true) reward(e);
-        set((l) => {
-          l.done = { ...l.done, [id]: answer === true ? undefined : true } as Record<string, boolean>;
-          if (l.times) delete l.times[id];
-        });
-      };
-      const no = () =>
-        set((l) => {
-          l.done = { ...l.done, [id]: answer === false ? undefined : false } as Record<string, boolean>;
-          // Pre-fill "roughly when?" from the Watch so there's nothing to type.
-          if (answer !== false && watchTime && !l.times?.[id]) l.times = { ...l.times, [id]: watchTime };
-        });
       return (
         <Row
           id={id}
+          date={date}
           emoji={habit.emoji}
           color={color}
           label={habitLabel(habit, settings, date)}
           focus={focus}
-          state={done ? 'done' : missed ? 'missed' : undefined}
+          state={state}
           meta={
-            <>
-              {sleepTargets(settings, date).weekend && (
-                <Badge size="xs" variant="light" color="indigo">
-                  weekend
-                </Badge>
-              )}
+            <Meta>
+              {sleepTargets(settings, date).weekend && <M tone="accent">weekend</M>}
               {watch ? (
-                <Meta c={missed ? 'red.4' : 'dimmed'}>
-                  ⌚ {id === 'sleep' ? `asleep ${watch.asleep} · ${formatDuration(sleepMinutes(watch.asleep, watch.awake))}` : `up ${watch.awake}`}
-                </Meta>
+                <M tone={missed ? 'bad' : undefined}>⌚ {id === 'sleep' ? `asleep ${watch.asleep} · ${formatDuration(sleepMinutes(watch.asleep, watch.awake))}` : `up ${watch.awake}`}</M>
               ) : (
-                missed && log?.times?.[id] && <Meta c="red.4">~{log.times[id]}</Meta>
+                missed && log?.times?.[id] && <M tone="bad">~{log.times[id]}</M>
               )}
-              {meta}
-            </>
+              {common}
+            </Meta>
           }
           right={
-            <Group gap={8} wrap="nowrap">
-              <Tap onClick={no} aria-label="No">
-                <CheckCircle checked={false} missed={answer === false} idle="x" />
-              </Tap>
-              <Tap onClick={yes} aria-label="Yes">
-                <CheckCircle checked={answer === true} idle="check" />
-              </Tap>
-            </Group>
+            <Seg
+              value={answer === true ? 'yes' : answer === false ? 'no' : null}
+              options={[
+                { value: 'no', label: <IconX size={17} stroke={2.6} />, tone: 'bad', aria: 'No' },
+                { value: 'yes', label: <IconCheck size={17} stroke={2.8} />, tone: 'good', aria: 'Yes' },
+              ]}
+              onChange={(v, e) => {
+                const yes = v === 'yes';
+                if (yes) answerTime(date, habit, answer === true ? null : true, e);
+                else answerTime(date, habit, answer === false ? null : false, e);
+              }}
+            />
           }
           below={
             missed && (
               <TimeInput
                 mt="xs"
-                ml={50}
+                ml={48}
                 size="sm"
-                radius="md"
                 description={habit.missPrompt}
                 value={log?.times?.[id] ?? watchTime ?? ''}
                 onChange={(e) => {
                   const v = e.currentTarget.value;
-                  set((l) => {
+                  updateDay(date, (l) => {
                     l.times = { ...l.times, [id]: v };
                   });
                 }}
@@ -272,54 +206,71 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       );
     }
 
-    case 'water': {
-      const water = log?.water ?? 0;
+    case 'water':
+    case 'count': {
+      const target = targetOf(habit);
+      const value = habit.kind === 'water' ? (log?.water ?? 0) : (log?.counts?.[id] ?? 0);
+      const unit = habit.kind === 'water' ? (target === 1 ? 'bottle' : 'bottles') : (habit.unit ?? '');
+      const bottles = habit.kind === 'water' && target <= 4;
       return (
         <Row
           id={id}
+          date={date}
           emoji={habit.emoji}
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : missed ? 'missed' : undefined}
+          state={state}
           meta={
-            <>
-              {missed ? <NotDone /> : null}
+            <Meta>
+              {missed && <M tone="bad">not done</M>}
               {overdue}
-              <Meta>
-                {water}/{WATER_TARGET} bottles
-              </Meta>
+              {!bottles && (
+                <M tone={done ? 'good' : undefined}>
+                  {value}/{target}
+                  {unit ? ` ${unit}` : ''}
+                </M>
+              )}
+              {bottles && (
+                <M>
+                  {value}/{target} {unit}
+                </M>
+              )}
               {often}
-              {meta}
-            </>
+              {common}
+            </Meta>
           }
           right={
-            <Group gap={2} wrap="nowrap">
-              {Array.from({ length: WATER_TARGET }, (_, i) => {
-                const filled = i < water;
-                return (
-                  <Tap
-                    key={i}
-                    aria-label={`Bottle ${i + 1}`}
-                    onClick={(e) => {
-                      const next = filled && water === i + 1 ? i : i + 1;
-                      if (next > water) {
-                        pop(e);
-                        if (next >= WATER_TARGET) floatXp(e, `+${habit.points}`);
-                      }
-                      set((l) => {
-                        l.water = next;
-                        if (l.missed) delete l.missed[id];
-                      });
-                    }}
-                  >
-                    <ActionIcon component="div" size={40} radius="xl" variant={filled ? 'light' : 'subtle'} color={filled ? 'blue' : 'gray'}>
-                      {filled ? <IconBottleFilled size={24} /> : <IconBottle size={24} />}
-                    </ActionIcon>
-                  </Tap>
-                );
-              })}
-            </Group>
+            bottles ? (
+              <Group gap={2} wrap="nowrap">
+                {Array.from({ length: target }, (_, i) => {
+                  const filled = i < value;
+                  return (
+                    <Tap
+                      key={i}
+                      aria-label={`Bottle ${i + 1}`}
+                      onClick={(e) => {
+                        const next = filled && value === i + 1 ? i : i + 1;
+                        bump(date, habit, next - value, e);
+                      }}
+                      style={{
+                        width: 36,
+                        height: 40,
+                        borderRadius: 12,
+                        display: 'grid',
+                        placeItems: 'center',
+                        color: filled ? 'var(--accent-text)' : 'var(--text-3)',
+                        background: filled ? 'var(--accent-soft)' : 'transparent',
+                      }}
+                    >
+                      {filled ? <IconBottleFilled size={22} /> : <IconBottle size={22} stroke={1.6} />}
+                    </Tap>
+                  );
+                })}
+              </Group>
+            ) : (
+              <Stepper value={value} target={target} color={color} onChange={(d, e) => bump(date, habit, d, e)} />
+            )
           }
         />
       );
@@ -330,63 +281,55 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       // % w/v → mg per ml: 0.025% = 0.025 g / 100 ml = 0.25 mg/ml
       const mgPerMl = settings.finConcentration * 10;
       const mg = (v: number) => `${+(v * mgPerMl).toFixed(3)} mg`;
-      const toggle = (e: MouseEvent) => {
-        if (!done) reward(e);
-        set((l) => {
-          l.finMl = done ? null : settings.finTargetMl;
-          if (l.missed) delete l.missed[id];
-        });
-      };
+      const toggle = (e: MouseEvent) => setDone(date, habit, !done, e);
       // Used more or less than usual today? Nudge it up or down (typing "0.5" would untick the row at "0").
       const nudge = (delta: number) =>
-        set((l) => {
+        updateDay(date, (l) => {
           l.finMl = Math.max(DOSE_STEP, Math.round(((l.finMl ?? 0) + delta) * 100) / 100);
         });
       const usual = ml === settings.finTargetMl;
       return (
         <Row
           id={id}
+          date={date}
           emoji={habit.emoji}
           color={color}
           label={habit.label}
           focus={focus}
-          state={done ? 'done' : missed ? 'missed' : undefined}
+          state={state}
+          onClick={done ? undefined : toggle}
           meta={
-            <>
-              {missed && <NotDone />}
+            <Meta>
+              {missed && <M tone="bad">not done</M>}
               {overdue}
-              <Meta>{ml ? mg(ml) : `${settings.finTargetMl} ml · ${mg(settings.finTargetMl)}`}</Meta>
+              <M>{ml ? mg(ml) : `${settings.finTargetMl} ml · ${mg(settings.finTargetMl)}`}</M>
               {often}
-              <StreakTag streak={streak} atRisk={atRisk} />
-            </>
+              {common}
+            </Meta>
           }
           right={
-            <Group gap={6} wrap="nowrap" onClick={stop}>
-              {done && ml != null && (
-                <Group gap={0} wrap="nowrap">
-                  <Tap onClick={() => nudge(-DOSE_STEP)} aria-label="0.25 ml less">
-                    <ActionIcon component="div" size={30} radius="xl" variant="subtle" color="gray">
-                      <IconMinus size={15} />
-                    </ActionIcon>
+            done && ml != null ? (
+              <Group gap={6} wrap="nowrap">
+                <div className="stepper">
+                  <Tap className="stepper-btn" onClick={() => nudge(-DOSE_STEP)} aria-label={`${DOSE_STEP} ml less`}>
+                    <IconMinus size={15} stroke={2.4} />
                   </Tap>
-                  <Text fw={800} fz="sm" ta="center" miw={50} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {ml} ml
-                  </Text>
-                  <Tap onClick={() => nudge(DOSE_STEP)} aria-label="0.25 ml more">
-                    <ActionIcon component="div" size={30} radius="xl" variant="subtle" color="gray">
-                      <IconPlus size={15} />
-                    </ActionIcon>
+                  <div className="stepper-val">{ml} ml</div>
+                  <Tap className="stepper-btn" onClick={() => nudge(DOSE_STEP)} aria-label={`${DOSE_STEP} ml more`}>
+                    <IconPlus size={15} stroke={2.4} />
                   </Tap>
-                </Group>
-              )}
-              <Tap onClick={toggle} aria-label={habit.label}>
-                <CheckCircle checked={done} missed={missed} />
-              </Tap>
-            </Group>
+                </div>
+                <Tap onClick={toggle} aria-label={`Untick ${habit.label}`}>
+                  <CheckCircle checked missed={false} color={color} />
+                </Tap>
+              </Group>
+            ) : (
+              <CheckCircle checked={done} missed={missed} color={color} />
+            )
           }
           below={
             done && ml != null && !usual ? (
-              <Group justify="flex-end" mt={2}>
+              <Group justify="flex-end" mt={4}>
                 <Button size="compact-xs" variant="subtle" color="gray" onClick={() => updateSettings({ finTargetMl: ml })}>
                   Make {ml} ml my usual amount
                 </Button>
@@ -403,8 +346,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       const urges = log?.urges?.[id] ?? 0;
       const slipLabel = habit.weeklyLimit ? (id === 'alcohol' ? 'Drank' : 'Did it') : 'Slipped';
       const choose = (value: 'clean' | 'slip', e: MouseEvent) => {
-        const next = answer === value ? undefined : value;
-        if (next === 'clean') reward(e);
+        const next = answer === value ? null : value;
         if (next === 'slip') {
           const usedAfter = (allowance?.used ?? 0) + 1;
           if (allowance && usedAfter <= allowance.limit) {
@@ -413,76 +355,59 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
             notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Tomorrow is a fresh start — be better than today.' });
           }
         }
-        set((l) => {
-          const avoid = { ...l.avoid };
-          if (next) avoid[id] = next;
-          else delete avoid[id];
-          l.avoid = avoid;
-        });
+        answerClean(date, habit, next, e);
+      };
+      const beatUrge = (e: MouseEvent) => {
+        if (urges < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
+        pop(e);
+        updateDay(date, (l) => logUrge(l, id, Date.now()));
+        notifications.show({ color: 'teal', title: `💪 Urge beaten${urges ? ` (${urges + 1} today)` : ''}`, message: 'Cravings peak and pass in about 10 minutes. Ride it out.' });
       };
       return (
         <Row
           id={id}
+          date={date}
           emoji={habit.emoji}
           color={color}
           label={habit.label}
           focus={focus}
           state={answer === 'clean' ? 'done' : missed ? 'missed' : undefined}
           meta={
-            <>
+            <Meta>
               {allowance && allowance.limit > 0 && (
-                <Meta c={allowance.used > allowance.limit ? 'red.4' : allowance.used === allowance.limit ? 'orange.4' : 'dimmed'}>
+                <M tone={allowance.used > allowance.limit ? 'bad' : allowance.used === allowance.limit ? 'warn' : undefined}>
                   {allowance.used}/{allowance.limit} this week
-                </Meta>
+                </M>
               )}
-              {meta}
-              <Tap
-                aria-label="I beat an urge"
+              <StreakBits streak={streak} atRisk={atRisk} />
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
-                  if (urges < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
-                  pop(e);
-                  set((l) => logUrge(l, id, Date.now()));
-                  notifications.show({
-                    color: 'teal',
-                    title: `💪 Urge beaten${urges ? ` (${urges + 1} today)` : ''}`,
-                    message: 'Cravings peak and pass in about 10 minutes. Ride it out.',
-                  });
+                  e.stopPropagation();
+                  beatUrge(e);
                 }}
+                onKeyDown={(e) => e.key === 'Enter' && beatUrge(e as unknown as MouseEvent)}
+                aria-label="I beat an urge"
+                style={{ color: 'var(--mantine-color-grape-4)', fontWeight: 750, cursor: 'pointer' }}
               >
-                <Badge component="div" size="sm" variant="light" color="grape" style={{ textTransform: 'none', cursor: 'pointer' }}>
-                  💪 {urges ? `${urges} urge${urges === 1 ? '' : 's'} beaten` : 'beat an urge'}
-                </Badge>
-              </Tap>
-            </>
+                💪 {urges ? `${urges} urge${urges === 1 ? '' : 's'} beaten` : 'beat an urge'}
+              </span>
+            </Meta>
           }
           right={
-            <Group gap={6} wrap="nowrap">
-              <Tap onClick={(e) => choose('slip', e)} aria-label={slipLabel}>
-                <Button
-                  component="div"
-                  size="compact-sm"
-                  variant={answer === 'slip' ? 'filled' : 'default'}
-                  color={answer === 'slip' && allowance?.allowed ? 'orange' : 'red'}
-                  px={10}
-                >
-                  {slipLabel}
-                </Button>
-              </Tap>
-              <Tap onClick={(e) => choose('clean', e)} aria-label="Clean">
-                <Button
-                  component="div"
-                  size="compact-sm"
-                  variant={answer === 'clean' ? 'gradient' : 'default'}
-                  gradient={{ from: 'teal.5', to: 'green.6', deg: 135 }}
-                  px={12}
-                >
-                  Clean
-                </Button>
-              </Tap>
-            </Group>
+            <Seg
+              value={answer}
+              options={[
+                { value: 'slip', label: slipLabel, tone: answer === 'slip' && allowance?.allowed ? 'warn' : 'bad' },
+                { value: 'clean', label: 'Clean', tone: 'good' },
+              ]}
+              onChange={choose}
+            />
           }
         />
       );
     }
   }
 }
+
