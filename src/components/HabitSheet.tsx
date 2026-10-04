@@ -194,6 +194,14 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
   const [label, setLabel] = useState(habit.label);
   const [emoji, setEmoji] = useState(habit.emoji);
   const [hint, setHint] = useState(habit.hint ?? '');
+  // Follow changes made elsewhere (e.g. "Reset to how it came"); typing only saves when you leave the box.
+  const [saved, setSaved] = useState({ label: habit.label, emoji: habit.emoji, hint: habit.hint ?? '' });
+  if (saved.label !== habit.label || saved.emoji !== habit.emoji || saved.hint !== (habit.hint ?? '')) {
+    if (saved.label !== habit.label) setLabel(habit.label);
+    if (saved.emoji !== habit.emoji) setEmoji(habit.emoji);
+    if (saved.hint !== (habit.hint ?? '')) setHint(habit.hint ?? '');
+    setSaved({ label: habit.label, emoji: habit.emoji, hint: habit.hint ?? '' });
+  }
   const edited = !habit.custom && (settings.habitEdits?.[habit.id] || settings.scheduleOverrides?.[habit.id] || settings.weeklyLimits?.[habit.id] != null);
   const flexible = (FLEXIBLE_KINDS as readonly string[]).includes(habit.kind) && !habit.optional;
   const restable = ['check', 'water', 'count', 'dose'].includes(habit.kind);
@@ -247,13 +255,20 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
       <Divider label="Edit" labelPosition="left" />
 
       <Group gap="xs" wrap="nowrap" align="flex-end">
-        <TextInput label="Emoji" w={72} value={emoji} onChange={(e) => setEmoji(e.currentTarget.value)} onBlur={() => emoji.trim() && emoji !== habit.emoji && editHabit(habit.id, { emoji: emoji.trim() })} maxLength={4} />
+        <TextInput
+          label="Emoji"
+          w={72}
+          value={emoji}
+          onChange={(e) => setEmoji(e.currentTarget.value)}
+          onBlur={() => (!emoji.trim() ? setEmoji(habit.emoji) : emoji !== habit.emoji && editHabit(habit.id, { emoji: emoji.trim() }))}
+          maxLength={4}
+        />
         <TextInput
           label="Name"
           style={{ flex: 1 }}
           value={label}
           onChange={(e) => setLabel(e.currentTarget.value)}
-          onBlur={() => label.trim() && label !== habit.label && editHabit(habit.id, { label: label.trim() })}
+          onBlur={() => (!label.trim() ? setLabel(habit.label) : label !== habit.label && editHabit(habit.id, { label: label.trim() }))}
         />
       </Group>
 
@@ -294,7 +309,7 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
       )}
 
       {restable && (
-        <Field label="Days off from it" hint={rest.size ? `Not shown (or counted) on ${[...rest].sort().map((d) => WEEKDAYS[d]).join(', ')}.` : 'Tap a day to skip it every week (e.g. no home workout on football Mondays).'}>
+        <Field label="Days off from it" hint={`${rest.size ? `Not shown (or counted) on ${[...rest].sort().map((d) => WEEKDAYS[d]).join(', ')}.` : 'Tap a day to skip it every week (e.g. no home workout on football Mondays).'} Applies to past days too.`}>
           <Group gap={6} wrap="nowrap">
             {DAY_LETTERS.map((l, i) => {
               const off = rest.has(i);
@@ -323,8 +338,17 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
 
       {(habit.kind === 'water' || habit.kind === 'count') && (
         <Group grow align="flex-start">
-          <NumberInput label={habit.kind === 'water' ? 'Bottles a day' : 'Target'} min={1} max={500} value={habit.target ?? (habit.kind === 'water' ? 2 : 1)} onChange={(v) => Number(v) >= 1 && editHabit(habit.id, { target: Number(v) })} />
-          {habit.kind === 'count' && <TextInput label="Unit" placeholder="pages, mins…" defaultValue={habit.unit ?? ''} onBlur={(e) => editHabit(habit.id, { unit: e.currentTarget.value.trim() || undefined })} />}
+          <NumberInput
+            label={habit.kind === 'water' ? 'Bottles a day' : 'Target'}
+            description="Past days too"
+            min={1}
+            max={500}
+            value={habit.target ?? (habit.kind === 'water' ? 2 : 1)}
+            onChange={(v) => Number(v) >= 1 && editHabit(habit.id, { target: Number(v) })}
+          />
+          {habit.kind === 'count' && (
+            <TextInput key={habit.unit ?? ''} label="Unit" description="What you're counting" placeholder="pages, mins…" defaultValue={habit.unit ?? ''} onBlur={(e) => editHabit(habit.id, { unit: e.currentTarget.value.trim() || undefined })} />
+          )}
         </Group>
       )}
 
@@ -379,13 +403,14 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
             description="Shows when a craving hits"
             autosize
             minRows={1}
+            key={settings.reasons?.[habit.id] ?? ''}
             defaultValue={settings.reasons?.[habit.id] ?? ''}
             onBlur={(e) => updateSettings({ reasons: { ...settings.reasons, [habit.id]: e.currentTarget.value.trim() } })}
           />
         </>
       )}
 
-      <TextInput label="Little note under the name" placeholder="e.g. AM, Peloton, last night" value={hint} onChange={(e) => setHint(e.currentTarget.value)} onBlur={() => hint !== (habit.hint ?? '') && editHabit(habit.id, { hint: hint.trim() || undefined })} />
+      <TextInput label="Little note under the name" placeholder="e.g. AM, Peloton, last night" value={hint} onChange={(e) => setHint(e.currentTarget.value)} onBlur={() => hint !== (habit.hint ?? '') && editHabit(habit.id, { hint: hint.trim() })} />
 
       <Stack gap="sm">
         {!['avoid', 'time', 'chore'].includes(habit.kind) && (
@@ -394,7 +419,7 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
             checked={!!habit.optional}
             onChange={(e) => editHabit(habit.id, { optional: e.currentTarget.checked })}
             label="Bonus"
-            description="Earns XP when you do it; skipping it never hurts your score"
+            description="Earns XP when you do it; skipping it never hurts your score (past days included)"
           />
         )}
         <Switch color="pink" checked={!!habit.important} onChange={(e) => editHabit(habit.id, { important: e.currentTarget.checked })} label="Key habit" description="Marked with a ★ on your list" />

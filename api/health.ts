@@ -7,7 +7,7 @@
  */
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { SLEEP_TARGETS, clockLabel, sleepTargets } from '../src/lib/config.js';
+import { SLEEP_TARGETS, clockLabel, nightMinutes, sleepTargets } from '../src/lib/config.js';
 import type { Settings } from '../src/lib/types.js';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -116,12 +116,11 @@ const minutesOf = (hhmm: string) => {
 };
 
 /**
- * "Before 1am" = any time in the evening or after midnight but before 1am. "Before 9am" = woke before 09:00.
- * At the weekend the targets are later (2am / 10:30 by default).
+ * "Before 1am" = asleep earlier that night (the evening counts as before midnight). "Before 9am" = woke before 09:00.
+ * Works for targets before midnight too ("before 11:30pm" isn't met at 23:40). At the weekend the targets are later (2am / 10:30 by default).
  */
 export function judgeSleep(asleep: string, awake: string, targets: { sleep: string; wake: string } = SLEEP_TARGETS.weekday): { sleepOk: boolean; wakeOk: boolean } {
-  const a = minutesOf(asleep);
-  return { sleepOk: a >= 12 * 60 || a < minutesOf(targets.sleep), wakeOk: minutesOf(awake) < minutesOf(targets.wake) };
+  return { sleepOk: nightMinutes(asleep) < nightMinutes(targets.sleep), wakeOk: minutesOf(awake) < minutesOf(targets.wake) };
 }
 
 /**

@@ -52,6 +52,26 @@ describe('quick add in plain English', () => {
     expect(p('Watch tomorrow never dies', SUN, ['date']).date).toBeUndefined();
   });
 
+  it('only tidies the words next to what it took out', () => {
+    expect(p('Hand in essay')).toMatchObject({ title: 'Hand in essay' });
+    expect(p('Log in')).toMatchObject({ title: 'Log in' });
+    expect(p('Check in')).toMatchObject({ title: 'Check in' });
+    expect(p('This is important')).toMatchObject({ title: 'This is important' });
+    expect(p('Next steps for thesis')).toMatchObject({ title: 'Next steps for thesis' });
+    expect(p('In-N-Out with Tom')).toMatchObject({ title: 'In-N-Out with Tom' });
+    expect(p('Log in tomorrow')).toMatchObject({ title: 'Log in', date: '2026-10-05' });
+    expect(p('Check in at 3pm')).toMatchObject({ title: 'Check in', time: '15:00' });
+    expect(p('Hand in essay due by fri')).toMatchObject({ title: 'Hand in essay', date: '2026-10-09' });
+    expect(p('Gym sat 7am')).toMatchObject({ title: 'Gym', date: '2026-10-10', time: '07:00' });
+  });
+
+  it('"2:30" is the afternoon, like "at 2"', () => {
+    expect(p('Meeting at 2:30')).toMatchObject({ title: 'Meeting', time: '14:30' });
+    expect(p('Call at 4.45')).toMatchObject({ title: 'Call', time: '16:45' });
+    expect(p('Feed cat 02:30').time).toBe('02:30');
+    expect(p('Run 7:15').time).toBe('07:15');
+  });
+
   it('shows what it understood', () => {
     expect(p('Book dentist fri 3pm !').chips).toEqual([
       { kind: 'date', label: 'Friday' },

@@ -4,7 +4,7 @@
  * and at most once per day.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { caffeineCutoff, clockLabel, featureOn, habitLabel, reminderTimes, sleepTargets, weekdayTargets } from './config.js';
+import { caffeineCutoff, clockLabel, featureOn, habitLabel, nightMinutes, reminderTimes, sleepTargets, weekdayTargets } from './config.js';
 import { addDays, weekday, weekStart, type DateKey } from './dates.js';
 import { budgetStatus, money } from './budget.js';
 import { weekStats, type Summary } from './engine.js';
@@ -33,6 +33,8 @@ export interface Nudge {
   id: NudgeId;
   title: string;
   body: string;
+  /** The day to mark it sent against, when that isn't today (bedtime before midnight is about tomorrow's log). */
+  day?: DateKey;
 }
 
 /** Fine and lock-in warnings always come through; the rest share a daily allowance. */
@@ -134,12 +136,14 @@ export function dueNudges(args: {
     }
   }
 
-  // Tonight's target: a reminder after midnight is about the day that's just started, one before it about tomorrow.
-  const bedAt = toMin(r.bedtime);
-  const night = sleepTargets(s, bedAt < 12 * 60 ? date : addDays(date, 1));
-  const later = toMin(night.sleep) - toMin(weekdays.sleep);
-  if (due('bedtime', bedAt + later)) {
-    out.push({ id: 'bedtime', title: `🌙 Bed by ${clockLabel(night.sleep)}`, body: 'Phone down, face routine, lights off.' });
+  // Bedtime works on a noon-to-noon night, so 23:00 and 00:15 reminders (and 23:30 or 1am targets) behave the same.
+  // A night is logged on the day it ends, which is also how it's marked as sent — so it never goes out twice.
+  const nightOf = minutes < 12 * 60 ? date : addDays(date, 1);
+  const tonight = sleepTargets(s, nightOf);
+  const bedAt = nightMinutes(r.bedtime) + nightMinutes(tonight.sleep) - nightMinutes(weekdays.sleep);
+  const nowAt = nightMinutes(minutes);
+  if (s.notify?.bedtime !== false && sent.bedtime !== nightOf && nowAt >= bedAt && nowAt < bedAt + WINDOW_MIN) {
+    out.push({ id: 'bedtime', day: nightOf, title: `🌙 Bed by ${clockLabel(tonight.sleep)}`, body: 'Phone down, face routine, lights off.' });
   }
 
   if (summary.owed > 0 && due('fines', '12:00', 0)) {

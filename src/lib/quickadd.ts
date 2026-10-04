@@ -35,9 +35,19 @@ const NUMBERS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3,
 const pad = (n: number) => String(n).padStart(2, '0');
 const dayOf = (word: string) => DAYS.find(([re]) => re.test(word.toLowerCase()))?.[1] ?? null;
 const num = (s: string) => NUMBERS[s.toLowerCase()] ?? Number(s);
+/** "2:30" is the afternoon, like "at 2"; "02:30", "7:30" and "14:30" mean what they say. */
+const clock = (hh: string, mm: string) => {
+  const h = Number(hh);
+  return `${pad(hh.length === 1 && h >= 1 && h <= 6 ? h + 12 : h)}:${mm}`;
+};
 
 /** Little words that only made sense next to a date ("due", "on", "by"…), cleaned off the title. */
 const CUE = String.raw`(?:(?:on|by|due|before|for|from|at|this)\s+)?`;
+
+/** Marks where something was cut out, so only the words and commas around it get tidied ("Log in" stays "Log in"). */
+const CUT = '\u0001';
+/** One or more cuts with any commas or dashes around them. */
+const CUTS = new RegExp(String.raw`(?:[\s,;:–-]*\u0001)+[\s,;:–-]*`, 'g');
 
 function validDate(y: number, m: number, d: number): DateKey | null {
   if (m < 1 || m > 12 || d < 1 || d > 31) return null;
@@ -93,7 +103,7 @@ export function parseTodo(input: string, today: DateKey, lists: TodoList[] = [],
     const m = re.exec(text);
     if (!m) return;
     if (fn(m) === false) return;
-    text = `${text.slice(0, m.index)} ${text.slice(m.index + m[0].length)}`;
+    text = `${text.slice(0, m.index)} ${CUT} ${text.slice(m.index + m[0].length)}`;
   };
   const setDate = (d: DateKey | null) => {
     if (out.date !== undefined) return false;
@@ -164,10 +174,10 @@ export function parseTodo(input: string, today: DateKey, lists: TodoList[] = [],
   }
   if (!out.time) {
     // "15:30" anywhere; "15.30" only after "at" (so "version 2.10" stays a title)
-    take(/\b(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)\b(?![:/]\d)/, (m) => void (out.time = `${pad(Number(m[1]))}:${m[2]}`));
+    take(/\b(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)\b(?![:/]\d)/, (m) => void (out.time = clock(m[1], m[2])));
   }
   if (!out.time) {
-    take(/\bat\s+([01]?\d|2[0-3])\.([0-5]\d)\b(?![./]\d)/i, (m) => void (out.time = `${pad(Number(m[1]))}:${m[2]}`));
+    take(/\bat\s+([01]?\d|2[0-3])\.([0-5]\d)\b(?![./]\d)/i, (m) => void (out.time = clock(m[1], m[2])));
   }
   if (!out.time) {
     take(/\bat\s+(\d{1,2})\b(?!\s*(?:days?|weeks?|months?|[/:.]))/i, (m) => {
@@ -228,14 +238,13 @@ export function parseTodo(input: string, today: DateKey, lists: TodoList[] = [],
   take(new RegExp(String.raw`\s${CUE}(next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b`, 'i'), (m) => setDate(nextWeekday(today, dayOf(m[2])!, !!m[1])));
   const SHORT = String.raw`(mon|tues?|weds?|thu(?:rs?)?|fri|sat|sun)`;
   take(new RegExp(String.raw`\s(?:(?:on|by|due|this)\s+|(next)\s+)${SHORT}\.?(?=\W|$)`, 'i'), (m) => setDate(nextWeekday(today, dayOf(m[2])!, !!m[1])));
-  take(new RegExp(String.raw`\s${SHORT}\.?\s*$`, 'i'), (m) => setDate(nextWeekday(today, dayOf(m[1])!, false)));
+  take(new RegExp(String.raw`\s${SHORT}\.?(?=[\s\u0001]*$)`, 'i'), (m) => setDate(nextWeekday(today, dayOf(m[1])!, false))); // at the end, or before other bits
 
+  // Tidy only around what was cut: a "due" or "by" left hanging in front of it ("Form due by fri"), and stray commas.
   out.title = text
+    .replace(new RegExp(String.raw`(?:\s(?:on|by|due|before|for|from|at))+(?=\s*${CUT})`, 'gi'), '')
+    .replace(CUTS, (run, at: number, all: string) => (at === 0 || at + run.length === all.length ? '' : ' '))
     .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^(?:(?:on|by|due|before|for|from|at|in|this|next|every)\b\s*)+/i, '')
-    .replace(/(?:[\s,;–-]+(?:on|by|due|before|for|from|at|in|this|next|every))+$/i, '')
-    .replace(/[\s,;:–-]+$/, '')
     .trim();
 
   if (out.date !== undefined) out.chips.push({ kind: 'date', label: out.date ? dayLabel(out.date, today) : 'Someday' });

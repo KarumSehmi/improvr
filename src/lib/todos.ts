@@ -101,10 +101,11 @@ export function todoListsFor(settings: Pick<Settings, 'todoLists'>): TodoList[] 
 /** Quick reschedule choices: tomorrow, the weekend, next Monday, or someday. */
 export function snoozeOptions(today: DateKey): { label: string; date: DateKey | null }[] {
   const wd = weekday(today);
-  const toSat = (6 - wd + 7) % 7 || 7;
+  const toSat = 6 - wd;
   const toMon = (1 - wd + 7) % 7 || 7;
   const out: { label: string; date: DateKey | null }[] = [{ label: 'Tomorrow', date: addDays(today, 1) }];
-  if (toSat > 1) out.push({ label: 'This weekend', date: addDays(today, toSat) });
+  // Monday to Thursday only: on Friday it's tomorrow, and at the weekend "this weekend" is already here.
+  if (wd >= 1 && wd <= 4) out.push({ label: 'This weekend', date: addDays(today, toSat) });
   if (toMon > 1) out.push({ label: 'Next week', date: addDays(today, toMon) });
   out.push({ label: 'Someday', date: null });
   return out;

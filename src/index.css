@@ -1127,23 +1127,34 @@ body::before {
 }
 
 .sheet-bottom {
-  max-height: 94dvh;
+  /* Always leaves a strip at the top to tap away, below the status bar */
+  max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
   border-top-left-radius: 26px !important;
   border-top-right-radius: 26px !important;
 }
 
+/* Sits centred at the top of the header, with the ✕ on the right */
 .sheet-handle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
   width: 40px;
   height: 5px;
   border-radius: 9px;
   background: var(--line-strong);
-  margin: 8px auto 0;
-  flex-shrink: 0;
 }
 
 .sheet-header {
   min-height: 52px;
   padding: 6px 18px 4px;
+}
+
+/* No title: just the ✕ (and the handle on a phone) */
+.sheet-header-bare {
+  min-height: 42px;
+  padding-bottom: 0;
 }
 
 .sheet-title {

@@ -82,7 +82,17 @@ export function QuickAdd({ today, placeholder = 'Add a to-do…', date, list, au
     if (t.date !== today) notifications.show({ color: 'blue', title: 'Added', message: `${t.title} — ${t.date ? dayLabel(t.date, today) : 'someday'}` });
   };
   const more = () => {
-    useUi.setState({ todoEdit: { title: parsed.title || text, date: parsed.date !== undefined ? parsed.date : (date ?? today) } });
+    // Everything understood so far comes along, so nothing typed is lost.
+    useUi.setState({
+      todoEdit: {
+        title: parsed.title || text,
+        date: parsed.date !== undefined ? parsed.date : (date ?? today),
+        time: parsed.time,
+        repeat: parsed.repeat,
+        important: parsed.important,
+        list: parsed.list ?? list ?? undefined,
+      },
+    });
     setText('');
     setIgnore([]);
   };
@@ -190,7 +200,7 @@ export function TodoEditor() {
   if (key !== edit) {
     setKey(edit);
     setNewList(null);
-    setDraft(existing ? { ...existing } : edit ? { title: edit.title ?? '', date: edit.date === undefined ? today : edit.date } : {});
+    setDraft(existing ? { ...existing } : edit ? { ...edit, title: edit.title ?? '', date: edit.date === undefined ? today : edit.date } : {});
   }
   const close = () => useUi.setState({ todoEdit: null });
   const valid = !!draft.title?.trim();

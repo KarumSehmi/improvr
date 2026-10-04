@@ -51,7 +51,7 @@ export async function notifyUser(db: Firestore, uid: string, opts: { via: RunVia
     const server = (await t.get(serverRef)).data() ?? {};
     const sent: Record<string, string> = { ...(server.sent ?? {}) };
     const due = !canSend ? [] : opts.test ? [TEST_NUDGE] : dueNudges({ summary, date: today, minutes, sent, todos, spending });
-    if (!opts.test) for (const n of due) sent[n.id] = today;
+    if (!opts.test) for (const n of due) sent[n.id] = n.day ?? today;
     const at = Date.now();
     t.set(serverRef, { lastRun: at, ...(opts.via === 'cron' && { lastCron: at }), sent }, { merge: true });
     return due;

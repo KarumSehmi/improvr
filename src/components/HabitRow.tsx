@@ -54,12 +54,13 @@ function Row(props: {
   return (
     <div className="hrow" id={`row-${props.id}`} data-habit={props.id} data-state={props.state} data-focus={props.focus || undefined} style={accent(props.color)}>
       {props.onClick ? (
-        <Tap onClick={props.onClick} onLongPress={more} aria-label={props.label} aria-pressed={props.state === 'done'}>
+        <Tap key="tap" onClick={props.onClick} onLongPress={more} aria-label={props.label} aria-pressed={props.state === 'done'}>
           {main}
         </Tap>
       ) : (
-        // Rows with their own buttons still open the habit sheet when you hold the name.
-        <Tap onClick={() => {}} onLongPress={more} tabIndex={-1} role="group" style={{ cursor: 'default' }}>
+        // Rows with their own buttons still open the habit sheet when you hold the name. No haptic switch here:
+        // it would cover those buttons on iPhone (and the different key stops React reusing a row that had one).
+        <Tap key="group" haptic={false} onClick={() => {}} onLongPress={more} tabIndex={-1} role="group" style={{ cursor: 'default' }}>
           {main}
         </Tap>
       )}

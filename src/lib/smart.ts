@@ -3,7 +3,7 @@
  * that matter right now — instead of making you scan the whole list.
  */
 import { birthdaysOn, eventsOn } from './calendar';
-import { WATER_TARGET, WORKOUTS, caffeineCutoff, clockLabel, featureOn, habitLabel, scheduleLabel, sleepTargets } from './config';
+import { WATER_TARGET, WORKOUTS, caffeineCutoff, clockLabel, featureOn, habitLabel, nightMinutes, scheduleLabel, sleepTargets } from './config';
 import { addDays, fmt, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
@@ -252,10 +252,13 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     }
   }
 
-  // Tonight's bedtime (later on Friday and Saturday nights)
-  const bed = sleepTargets(data.settings, h < 4 ? date : addDays(date, 1)).sleep;
+  // Tonight's bedtime (later on Friday and Saturday nights; tonight is logged on tomorrow's date).
+  // From 9pm, or three hours before an earlier target, until the target — on a noon-to-noon night.
+  const bed = sleepTargets(data.settings, addDays(date, 1)).sleep;
   const [bh, bm] = bed.split(':').map(Number);
-  if (date === logicalNow(now).date && (h >= 21 || h < bh) && item('sleep')) {
+  const bedAt = nightMinutes(bed);
+  const nowAt = nightMinutes(h * 60 + now.getMinutes());
+  if (live && item('sleep') && nowAt >= Math.min(-180, bedAt - 180) && nowAt < bedAt) {
     const left = until(now, bh, bm);
     out.push({ id: 'bed', emoji: '🌙', title: `Asleep by ${clockLabel(bed)} — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
   }

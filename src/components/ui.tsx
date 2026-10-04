@@ -4,7 +4,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { IconCopy, IconMinus, IconPlus } from '@tabler/icons-react';
 import { hapticTrigger } from 'ios-haptics';
 import { AnimatePresence, motion } from 'motion/react';
-import { Children, useId, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { Children, useCallback, useId, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { fmt, type DateKey } from '../lib/dates';
 import { accent } from '../lib/style';
 import { useFloaters } from '../lib/feedback';
@@ -25,6 +25,8 @@ type TapProps = BoxProps &
     onClick: (e: MouseEvent) => void;
     /** Press and hold (or right-click on a computer) for more options. */
     onLongPress?: () => void;
+    /** Off for boxes that hold their own buttons: the invisible iPhone switch would sit on top of them. */
+    haptic?: boolean;
     children: ReactNode;
     style?: CSSProperties;
   };
@@ -34,18 +36,24 @@ type TapProps = BoxProps &
  * on iOS the tap lands on an invisible switch (that's what makes the haptic) and bubbles up to this box.
  * Taps that were really part of a scroll are ignored. Works with the keyboard too (Enter / Space).
  */
-export function Tap({ onClick, onLongPress, children, style, ...rest }: TapProps) {
+export function Tap({ onClick, onLongPress, haptic = true, children, style, ...rest }: TapProps) {
   const press = useRef<{ x: number; y: number; at: number; moved: boolean; long: boolean } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const el = useRef<HTMLDivElement | null>(null);
   const stopTimer = () => clearTimeout(timer.current);
+  // Stable, so the switch is added once rather than re-checked on every render.
+  const attach = useCallback(
+    (node: HTMLDivElement | null) => {
+      el.current = node;
+      if (haptic) hapticTrigger(node);
+      else node?.querySelector(':scope > [data-haptic-trigger]')?.remove();
+    },
+    [haptic],
+  );
 
   return (
     <Box
-      ref={(node: HTMLDivElement | null) => {
-        el.current = node;
-        hapticTrigger(node);
-      }}
+      ref={attach}
       onPointerDown={(e) => {
         press.current = { x: e.clientX, y: e.clientY, at: performance.now(), moved: false, long: false };
         if (onLongPress) {
@@ -364,14 +372,15 @@ export function Sheet({
       position={wide ? 'right' : 'bottom'}
       size={wide ? (size ?? 'md') : 'auto'}
       radius={wide ? 0 : undefined}
-      withCloseButton={!!title || !!wide}
-      title={title ? <span className="sheet-title">{title}</span> : undefined}
+      // Always a ✕: on a phone the only other way out is tapping above the sheet.
+      withCloseButton
+      closeButtonProps={{ 'aria-label': 'Close' }}
+      title={title ? <span className="sheet-title">{title}</span> : !wide ? <span className="sheet-handle" /> : undefined}
       zIndex={zIndex}
-      classNames={{ content: wide ? 'sheet-content' : 'sheet-content sheet-bottom', header: 'sheet-header', body: 'sheet-body' }}
+      classNames={{ content: wide ? 'sheet-content' : 'sheet-content sheet-bottom', header: title ? 'sheet-header' : 'sheet-header sheet-header-bare', body: 'sheet-body' }}
       transitionProps={{ duration: 220, timingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}
       lockScroll
     >
-      {!wide && !title && <div className="sheet-handle" />}
       {children}
     </Drawer>
   );

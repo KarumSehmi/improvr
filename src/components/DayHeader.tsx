@@ -2,7 +2,7 @@ import { Group, Stack, Text, UnstyledButton } from '@mantine/core';
 import { addDays, fmt, range, type DateKey } from '../lib/dates';
 import { featureOn } from '../lib/config';
 import { isOpen, type Summary } from '../lib/engine';
-import { goTo, openDay, openSos, useNow } from '../lib/hooks';
+import { goTo, logDate, openDay, openSos, useNow } from '../lib/hooks';
 import { daypart, logicalNow, type Daypart } from '../lib/moments';
 import { ScoreRing, Tap } from './ui';
 
@@ -75,6 +75,8 @@ export function DayHeader({ date, summary }: { date: DateKey; summary: Summary }
 /** The last 7 days with their scores. Tap one to fill it in; a dot means it still needs locking in. */
 export function WeekStrip({ selected, summary }: { selected: DateKey; summary: Summary }) {
   const { today } = summary;
+  // The day Today shows by itself (still last night just after midnight, if that isn't locked in yet).
+  const home = logDate(useNow(), summary);
   return (
     <div className="week" role="tablist" aria-label="Pick a day">
       {range(addDays(today, -6), today).map((d) => {
@@ -89,7 +91,7 @@ export function WeekStrip({ selected, summary }: { selected: DateKey; summary: S
             className="week-day"
             data-selected={d === selected || undefined}
             data-disabled={!e || undefined}
-            onClick={() => openDay(d === today ? null : d)}
+            onClick={() => openDay(d === home ? null : d)}
             role="tab"
             aria-selected={d === selected}
             aria-label={`${fmt(d, 'dddd D MMMM')}${e?.pct != null ? `, ${e.pct}%` : ''}${flag === 'warn' ? ', not locked in' : flag === 'bad' ? ', missed' : ''}`}

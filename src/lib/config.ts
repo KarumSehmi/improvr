@@ -377,6 +377,16 @@ function stripEmpty<T extends object>(o: T | undefined): Partial<T> {
 }
 
 /**
+ * Minutes on a noon-to-noon night, so times either side of midnight compare properly:
+ * '23:30' → -30, '00:15' → 15, '13:00' → -660.
+ */
+export function nightMinutes(time: string | number): number {
+  const [h, m] = typeof time === 'number' ? [0, time] : time.split(':').map(Number);
+  const t = h * 60 + m;
+  return t >= 12 * 60 ? t - 24 * 60 : t;
+}
+
+/**
  * The targets that apply to a day's "asleep" and "up" answers. Saturday and Sunday are the weekend:
  * that covers Friday and Saturday nights (sleep is about the night before) and both lie-ins.
  */

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { addDays, dateKey, type DateKey } from './dates';
 import { summarize, type Summary } from './engine';
 import { useApp } from './store';
-import type { AppData } from './types';
+import type { AppData, Todo } from './types';
 
 // ---------------------------------------------------------------------------
 // A clock that ticks every 30s (and when the app comes back to the foreground)
@@ -108,8 +108,8 @@ interface UiState {
   habitSheet: { id: string; date: DateKey | null } | null;
   /** Adding a new habit (Settings → Habits → Add). */
   addHabit: boolean;
-  /** The to-do editor (new or existing). */
-  todoEdit: { id?: string; date?: DateKey | null; title?: string } | null;
+  /** The to-do editor: an existing one by id, or a new one starting from whatever was typed. */
+  todoEdit: ({ id?: string } & Partial<Pick<Todo, 'title' | 'date' | 'time' | 'repeat' | 'important' | 'list'>>) | null;
   /** Update card spending. */
   cardOpen: boolean;
   /** Progress page tab. */

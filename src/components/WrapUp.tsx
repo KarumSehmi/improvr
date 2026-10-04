@@ -300,7 +300,8 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    // Focus starts here rather than on ✕, so Enter answers the first question instead of closing.
+    <div tabIndex={-1} data-autofocus style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', outline: 'none' }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top) + 10px) 16px 0', maxWidth: 520, width: '100%', margin: '0 auto' }}>
         <Group justify="space-between" wrap="nowrap" gap="sm">
           <ActionIcon variant="subtle" color="gray" size="lg" onClick={back} disabled={i === 0} aria-label="Back">

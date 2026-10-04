@@ -144,7 +144,13 @@ describe('to-dos: someday, lists and grouping', () => {
   });
 
   it('quick reschedule choices', () => {
-    expect(snoozeOptions(today).map((o) => o.label)).toEqual(['Tomorrow', 'This weekend', 'Someday']); // a Sunday: next week is tomorrow
+    expect(snoozeOptions(today).map((o) => o.label)).toEqual(['Tomorrow', 'Someday']); // a Sunday: next week is tomorrow
+    expect(snoozeOptions('2026-10-10')).toEqual([
+      { label: 'Tomorrow', date: '2026-10-11' },
+      { label: 'Next week', date: '2026-10-12' },
+      { label: 'Someday', date: null },
+    ]); // a Saturday: it's already the weekend
+    expect(snoozeOptions('2026-10-09').map((o) => o.label)).toEqual(['Tomorrow', 'Next week', 'Someday']); // Friday: tomorrow is the weekend
     expect(snoozeOptions('2026-10-07')).toEqual([
       { label: 'Tomorrow', date: '2026-10-08' },
       { label: 'This weekend', date: '2026-10-10' },
