@@ -90,6 +90,17 @@ describe('up next', () => {
     expect(ids).toContain('bed');
   });
 
+  it('filling in yesterday: no "tonight" nudges, just finish it off', () => {
+    const sum2 = summarize(d, addDays(today, 1));
+    const ids = suggestions(new Date(2026, 7, 4, 19, 30), today, sum2.evalByDate[today], sum2, d).map((x) => x.id);
+    expect(ids[0]).toBe('finish');
+    expect(ids).not.toContain('risk');
+    expect(ids).not.toContain('caffeine');
+    expect(ids).not.toContain('lock');
+    const finish = suggestions(new Date(2026, 7, 4, 19, 30), today, sum2.evalByDate[today], sum2, d)[0];
+    expect(finish).toMatchObject({ title: expect.stringMatching(/^Finish off Monday: \d+ left$/), action: { kind: 'wrap' } });
+  });
+
   it('puts open to-dos in the list, louder when one has been carried over', () => {
     const todos = {
       a: { id: 'a', title: 'Call the bank', date: today, createdAt: 0 },

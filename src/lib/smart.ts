@@ -62,22 +62,37 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     out.push({ id: 'chest', emoji: '🎁', title: `${e.perfect ? 'Golden chest' : 'Reward chest'} ready`, detail: 'Locked in on time — open it for bonus XP.', tone: 'good', priority: 105, action: { kind: 'chest', label: 'Open' } });
   }
 
+  // Filling in an earlier day: no "tonight" nudges — just finish it off.
+  const live = date === logicalNow(now).date;
+  if (!live && !e.closed && date < summary.today) {
+    const left = open.length;
+    out.push({
+      id: 'finish',
+      emoji: '⏳',
+      title: left ? `Finish off ${fmt(date, 'dddd')}: ${left} left` : `Lock in ${fmt(date, 'dddd')}`,
+      detail: left ? 'Go through them one at a time, then lock it in.' : 'Everything is answered.',
+      tone: 'warn',
+      priority: 110,
+      action: left ? { kind: 'wrap', label: 'Start' } : { kind: 'lock', label: 'Lock in' },
+    });
+  }
+
   if (e.perfect) {
     out.push({ id: 'perfect', emoji: '✨', title: 'Everything done. Proper day.', detail: 'You were better than yesterday.', tone: 'good', priority: 100 });
   }
 
   // Morning routine: one tap for the simple stuff (and a nudge later if it slipped)
-  if (h >= 5) {
+  if (h >= 5 || !live) {
     const morning = open.filter((i) => i.habit.section === 'morning');
     const quick = morning.filter((i) => i.habit.kind === 'check' || i.habit.kind === 'dose');
     if (morning.length) {
       out.push({
         id: 'morning',
         emoji: '🌅',
-        title: h < 12 ? 'Morning routine' : 'Still to do from this morning',
+        title: !live ? `${fmt(date, 'dddd')} morning` : h < 12 ? 'Morning routine' : 'Still to do from this morning',
         detail: list(morning.map((i) => habitLabel(i.habit, data.settings, date))),
-        tone: h < 12 ? 'info' : 'warn',
-        priority: h < 12 ? 90 : h < 21 ? 66 : 45,
+        tone: h < 12 && live ? 'info' : 'warn',
+        priority: !live ? 100 : h < 12 ? 90 : h < 21 ? 66 : 45,
         action: quick.length ? { kind: 'tick', label: `Done ${quick.length === morning.length ? 'all' : quick.length}`, habitIds: quick.map((i) => i.habit.id) } : undefined,
       });
     }
@@ -88,7 +103,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   const [ch, cm] = caffeineCutoff(data.settings).split(':').map(Number);
   const cutoffAt = ch + cm / 60;
   const hour = h + now.getMinutes() / 60;
-  if (caffeine && !caffeine.done && !caffeine.missed && hour >= cutoffAt - 4 && hour < cutoffAt) {
+  if (live && caffeine && !caffeine.done && !caffeine.missed && hour >= cutoffAt - 4 && hour < cutoffAt) {
     const left = until(now, ch, cm);
     out.push({ id: 'caffeine', emoji: '☕', title: `Caffeine cutoff in ${dur(left)}`, detail: 'Last coffee now if you want one.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 80 : 50 });
   }
@@ -96,7 +111,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   // Water
   const water = item('water');
   const bottles = e.log?.water ?? 0;
-  if (water && !water.done && !water.missed && h >= 11) {
+  if (water && !water.done && !water.missed && h >= 11 && live) {
     const left = (water.habit.target ?? WATER_TARGET) - bottles;
     out.push({
       id: 'water',
@@ -219,7 +234,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   }
 
   // Evening: nutrition, streaks at risk, bed, lock-in
-  if (h >= 18 || h < 4) {
+  if (live && (h >= 18 || h < 4)) {
     const food = open.filter((i) => i.habit.id === 'macro' || i.habit.id === 'protein');
     if (food.length) {
       out.push({ id: 'food', emoji: '📱', title: food.length === 2 ? 'Log MacroFactor & check protein' : food[0].habit.label, tone: 'info', priority: 54 });
@@ -245,7 +260,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     out.push({ id: 'bed', emoji: '🌙', title: `Asleep by ${clockLabel(bed)} — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
   }
 
-  if (!e.closed && (h >= 21 || h < 4)) {
+  if (live && !e.closed && (h >= 21 || h < 4)) {
     // Things left? Go through them one at a time, then lock in.
     out.push(
       open.length >= 2
