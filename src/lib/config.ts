@@ -81,6 +81,7 @@ export function sectionHour(settings: Pick<Settings, 'sectionHours'> | undefined
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
 const ADDED_MINOXIDIL = '2026-09-30';
+const ADDED_WASHING = '2026-10-05';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -118,7 +119,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
   { id: 'budCanvas', label: 'Fill out Bud + check Canvas', emoji: '📚', section: 'day', kind: 'chore', points: 20, schedule: { weekday: 2 } },
 
-  // Room — daily ones carry over, weekly ones are spread across the week
+  // Room — daily ones carry over; weekly ones get a day each, leaving Monday (football) and Friday free
   { id: 'clothes', label: 'Clothes in wardrobe, none on floor', emoji: '👕', section: 'room', kind: 'chore', points: 5, schedule: { every: 1 } },
   { id: 'glasses', label: 'No glasses in room', emoji: '🥛', section: 'room', kind: 'chore', points: 5, schedule: { every: 1 } },
   { id: 'rubbish', label: 'No rubbish lying around', emoji: '🧻', section: 'room', kind: 'chore', points: 5, schedule: { every: 1 } },
@@ -126,6 +127,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'surfaces', label: 'Wipe surfaces', emoji: '🧽', section: 'room', kind: 'chore', points: 15, schedule: { weekday: 3 } },
   { id: 'bathroom', label: 'Deep clean bathroom', emoji: '🛁', section: 'room', kind: 'chore', points: 25, schedule: { weekday: 4 } },
   { id: 'hoover', label: 'Hoover & mop floor', emoji: '🧹', section: 'room', kind: 'chore', points: 20, schedule: { weekday: 6 } },
+  { id: 'washing', label: 'Do the washing', emoji: '🧺', section: 'room', kind: 'chore', points: 20, hint: 'wash, dry, put away', schedule: { weekday: 0 }, since: ADDED_WASHING },
 
   // Night
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
@@ -205,6 +207,16 @@ export function scheduleLabel(s: ChoreSchedule | undefined): string {
   }
   const day = WEEKDAYS[s.weekday];
   return (s.everyWeeks ?? 1) > 1 ? `every other ${day}` : `${day}s`;
+}
+
+/**
+ * Easy days (0 Sun … 6 Sat): Room jobs that repeat every few days (like the bin) don't fall due on them —
+ * they wait for the next normal day. Monday is football and Friday is for chilling, unless you change them.
+ */
+export const DEFAULT_EASY_DAYS = [1, 5];
+
+export function easyDays(settings: Pick<Settings, 'easyDays'>): number[] {
+  return settings.easyDays ?? DEFAULT_EASY_DAYS;
 }
 
 /** Choices for "how often" on daily habits. */

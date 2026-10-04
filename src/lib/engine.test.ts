@@ -23,13 +23,53 @@ const at = (date: string, hour = 12) => startOfDay(date) + hour * 3_600_000;
 describe('chores carry over', () => {
   it('rolling chores are due every N days after they were last done', () => {
     const bin = HABIT_BY_ID.bin;
-    const t = trackChore(bin, data({ '2026-09-21': { done: { bin: true } }, '2026-09-26': { done: { bin: true } } }), '2026-09-30');
+    const t = trackChore(bin, data({ '2026-09-21': { done: { bin: true } }, '2026-09-26': { done: { bin: true } } }, { easyDays: [] }), '2026-09-30');
     expect(t.byDate['2026-09-21']).toMatchObject({ due: true, done: true });
     expect(t.byDate['2026-09-23'].due).toBe(false);
     expect(t.byDate['2026-09-24']).toMatchObject({ due: true, overdueDays: 0 });
     expect(t.byDate['2026-09-25']).toMatchObject({ due: true, overdueDays: 1 });
     expect(t.byDate['2026-09-26']).toMatchObject({ due: true, overdueDays: 2, done: true });
     expect(t.nextDue).toBe('2026-09-29');
+  });
+
+  it('room jobs every few days wait until after an easy day (football Monday, chilled Friday)', () => {
+    const bin = HABIT_BY_ID.bin;
+    // Started on a Monday: the first one waits until Tuesday.
+    const t = trackChore(bin, data({ '2026-09-22': { done: { bin: true } }, '2026-09-26': { done: { bin: true } } }), '2026-10-03');
+    expect(t.byDate['2026-09-21'].due).toBe(false);
+    expect(t.byDate['2026-09-22']).toMatchObject({ due: true, done: true });
+    // Tuesday + 3 = Friday, an easy day → Saturday.
+    expect(t.byDate['2026-09-25'].due).toBe(false);
+    expect(t.byDate['2026-09-26']).toMatchObject({ due: true, overdueDays: 0, done: true });
+    // Saturday + 3 = Tuesday, a normal day.
+    expect(t.byDate['2026-09-28'].due).toBe(false);
+    expect(t.byDate['2026-09-29'].due).toBe(true);
+    // Once it's late it still carries over, easy day or not.
+    expect(t.byDate['2026-10-02']).toMatchObject({ due: true, overdueDays: 3 });
+  });
+
+  it('easy days can be changed, and only move room jobs that repeat every few days', () => {
+    const bin = HABIT_BY_ID.bin;
+    const wed = trackChore(bin, data({}, { easyDays: [1, 2] }), '2026-09-24');
+    expect(wed.byDate['2026-09-22'].due).toBe(false);
+    expect(wed.byDate['2026-09-23'].due).toBe(true);
+    // Daily tidy-ups and the night-time skincare aren't moved.
+    expect(trackChore(HABIT_BY_ID.clothes, data(), '2026-09-21').byDate['2026-09-21'].due).toBe(true);
+    const paulas = trackChore(HABIT_BY_ID.paulas, data({ '2026-09-22': { done: { paulas: true } } }), '2026-09-26');
+    expect(paulas.byDate['2026-09-25'].due).toBe(true);
+    // Every day being an easy day doesn't stop it ever coming round.
+    expect(trackChore(bin, data({}, { easyDays: [0, 1, 2, 3, 4, 5, 6] }), '2026-09-21').byDate['2026-09-21'].due).toBe(true);
+  });
+
+  it('washing is on Sundays, and the week leaves Monday and Friday free of jobs', () => {
+    const t = trackChore(HABIT_BY_ID.washing, data({}, { startDate: '2026-10-01' }), '2026-10-12');
+    expect(t.byDate['2026-10-04']).toBeUndefined(); // added on 5 October
+    expect(t.byDate['2026-10-10'].due).toBe(false);
+    expect(t.byDate['2026-10-11']).toMatchObject({ due: true, overdueDays: 0 });
+    const weekly = Object.values(HABIT_BY_ID).filter((h) => h.kind === 'chore' && h.schedule && 'weekday' in h.schedule);
+    const days = weekly.map((h) => (h.schedule as { weekday: number }).weekday);
+    expect(days).not.toContain(1);
+    expect(days).not.toContain(5);
   });
 
   it('staggers rolling chores with an offset', () => {

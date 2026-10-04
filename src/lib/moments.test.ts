@@ -258,7 +258,7 @@ describe('sections close once everything is answered, done or not', () => {
   });
 
   it('a chore marked not done carries over to tomorrow', () => {
-    const s = summarize(data({ '2026-09-24': { missed: { bin: true } } }), t);
+    const s = summarize(data({ '2026-09-24': { missed: { bin: true } } }, { easyDays: [] }), t);
     expect(s.evalByDate['2026-09-24'].items.find((i) => i.habit.id === 'bin')).toMatchObject({ missed: true, done: false });
     expect(s.evalByDate[t].items.find((i) => i.habit.id === 'bin')).toMatchObject({ visible: true, overdueDays: 4, missed: false });
   });
