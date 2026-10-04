@@ -98,6 +98,7 @@ function WelcomeModal({ opened }: { opened: boolean }) {
             <Text size="sm">🔒 Lock in each day by midnight the next day.</Text>
             <Text size="sm">💷 Miss it and you owe £{settings.fineAmount} to charity. That's the only punishment.</Text>
             <Text size="sm">🏖️ One day off per week. Streaks freeze.</Text>
+            <Text size="sm">➕ Tap + to log anything from anywhere, and press and hold any habit to change it.</Text>
           </Stack>
         </Card>
         <TextInput label="What should I call you?" placeholder="Your name" value={name} onChange={(e) => setName(e.currentTarget.value)} />

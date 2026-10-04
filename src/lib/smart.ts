@@ -3,7 +3,7 @@
  * that matter right now — instead of making you scan the whole list.
  */
 import { birthdaysOn, eventsOn } from './calendar';
-import { WATER_TARGET, WORKOUTS, clockLabel, habitLabel, scheduleLabel, sleepTargets } from './config';
+import { WATER_TARGET, WORKOUTS, caffeineCutoff, clockLabel, featureOn, habitLabel, nightMinutes, scheduleLabel, sleepTargets } from './config';
 import { addDays, fmt, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
@@ -19,7 +19,9 @@ export type SuggestionAction =
   | { kind: 'lock'; label: string }
   | { kind: 'chest'; label: string }
   | { kind: 'workout'; label: string; workout: WorkoutType }
-  | { kind: 'scroll'; label: string; target: string };
+  | { kind: 'scroll'; label: string; target: string }
+  | { kind: 'card'; label: string }
+  | { kind: 'wrap'; label: string };
 
 export interface Suggestion {
   id: string;
@@ -56,8 +58,23 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     return [{ id: 'dayoff', emoji: '🏖️', title: 'Day off — enjoy it', detail: 'Streaks are frozen. Back at it tomorrow.', tone: 'good', priority: 100 }];
   }
 
-  if (chestReady(e, summary.today)) {
+  if (featureOn(data.settings, 'chest') && chestReady(e, summary.today)) {
     out.push({ id: 'chest', emoji: '🎁', title: `${e.perfect ? 'Golden chest' : 'Reward chest'} ready`, detail: 'Locked in on time — open it for bonus XP.', tone: 'good', priority: 105, action: { kind: 'chest', label: 'Open' } });
+  }
+
+  // Filling in an earlier day: no "tonight" nudges — just finish it off.
+  const live = date === logicalNow(now).date;
+  if (!live && !e.closed && date < summary.today) {
+    const left = open.length;
+    out.push({
+      id: 'finish',
+      emoji: '⏳',
+      title: left ? `Finish off ${fmt(date, 'dddd')}: ${left} left` : `Lock in ${fmt(date, 'dddd')}`,
+      detail: left ? 'Go through them one at a time, then lock it in.' : 'Everything is answered.',
+      tone: 'warn',
+      priority: 110,
+      action: left ? { kind: 'wrap', label: 'Start' } : { kind: 'lock', label: 'Lock in' },
+    });
   }
 
   if (e.perfect) {
@@ -65,34 +82,37 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   }
 
   // Morning routine: one tap for the simple stuff (and a nudge later if it slipped)
-  if (h >= 5) {
+  if (h >= 5 || !live) {
     const morning = open.filter((i) => i.habit.section === 'morning');
     const quick = morning.filter((i) => i.habit.kind === 'check' || i.habit.kind === 'dose');
     if (morning.length) {
       out.push({
         id: 'morning',
         emoji: '🌅',
-        title: h < 12 ? 'Morning routine' : 'Still to do from this morning',
+        title: !live ? `${fmt(date, 'dddd')} morning` : h < 12 ? 'Morning routine' : 'Still to do from this morning',
         detail: list(morning.map((i) => habitLabel(i.habit, data.settings, date))),
-        tone: h < 12 ? 'info' : 'warn',
-        priority: h < 12 ? 90 : h < 21 ? 66 : 45,
+        tone: h < 12 && live ? 'info' : 'warn',
+        priority: !live ? 100 : h < 12 ? 90 : h < 21 ? 66 : 45,
         action: quick.length ? { kind: 'tick', label: `Done ${quick.length === morning.length ? 'all' : quick.length}`, habitIds: quick.map((i) => i.habit.id) } : undefined,
       });
     }
   }
 
-  // Caffeine cutoff countdown
+  // Caffeine cutoff countdown (the 4 hours before it)
   const caffeine = item('caffeine');
-  if (caffeine && !caffeine.done && !caffeine.missed && h >= 10 && h < 14) {
-    const left = until(now, 14);
+  const [ch, cm] = caffeineCutoff(data.settings).split(':').map(Number);
+  const cutoffAt = ch + cm / 60;
+  const hour = h + now.getMinutes() / 60;
+  if (live && caffeine && !caffeine.done && !caffeine.missed && hour >= cutoffAt - 4 && hour < cutoffAt) {
+    const left = until(now, ch, cm);
     out.push({ id: 'caffeine', emoji: '☕', title: `Caffeine cutoff in ${dur(left)}`, detail: 'Last coffee now if you want one.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 80 : 50 });
   }
 
   // Water
   const water = item('water');
   const bottles = e.log?.water ?? 0;
-  if (water && !water.done && !water.missed && h >= 11) {
-    const left = WATER_TARGET - bottles;
+  if (water && !water.done && !water.missed && h >= 11 && live) {
+    const left = (water.habit.target ?? WATER_TARGET) - bottles;
     out.push({
       id: 'water',
       emoji: '🚰',
@@ -194,24 +214,27 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
       const carried = pending.filter((t) => carriedDays(t, date) > 0).sort((a, b) => carriedDays(b, date) - carriedDays(a, date));
       const oldest = carried[0];
       const late = oldest ? carriedDays(oldest, date) : 0;
+      const starred = pending.filter((t) => t.important);
       out.push({
         id: 'todos',
-        emoji: '📝',
+        emoji: starred.length ? '⭐' : '📝',
         title: pending.length === 1 ? pending[0].title : `${pending.length} to-dos still open`,
         detail: oldest
           ? `${carried.length === 1 ? `"${oldest.title}" has` : `${carried.length} have`} been carried over for ${late} day${late === 1 ? '' : 's'}.`
           : pending.length === 1
-            ? "On today's list."
+            ? pending[0].time
+              ? `Today at ${pending[0].time}.`
+              : "On today's list."
             : list(pending.map((t) => t.title)),
-        tone: oldest ? 'warn' : 'info',
-        priority: oldest ? 68 + Math.min(12, late * 3) : h >= 12 ? 57 : 44,
+        tone: oldest || starred.length ? 'warn' : 'info',
+        priority: oldest ? 68 + Math.min(12, late * 3) : starred.length ? 66 : h >= 12 ? 57 : 44,
         action: { kind: 'scroll', label: 'Show', target: 'todos' },
       });
     }
   }
 
   // Evening: nutrition, streaks at risk, bed, lock-in
-  if (h >= 18 || h < 4) {
+  if (live && (h >= 18 || h < 4)) {
     const food = open.filter((i) => i.habit.id === 'macro' || i.habit.id === 'protein');
     if (food.length) {
       out.push({ id: 'food', emoji: '📱', title: food.length === 2 ? 'Log MacroFactor & check protein' : food[0].habit.label, tone: 'info', priority: 54 });
@@ -229,27 +252,35 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     }
   }
 
-  // Tonight's bedtime (later on Friday and Saturday nights)
-  const bed = sleepTargets(data.settings, h < 4 ? date : addDays(date, 1)).sleep;
+  // Tonight's bedtime (later on Friday and Saturday nights; tonight is logged on tomorrow's date).
+  // From 9pm, or three hours before an earlier target, until the target — on a noon-to-noon night.
+  const bed = sleepTargets(data.settings, addDays(date, 1)).sleep;
   const [bh, bm] = bed.split(':').map(Number);
-  if (date === logicalNow(now).date && (h >= 21 || h < bh) && item('sleep')) {
+  const bedAt = nightMinutes(bed);
+  const nowAt = nightMinutes(h * 60 + now.getMinutes());
+  if (live && item('sleep') && nowAt >= Math.min(-180, bedAt - 180) && nowAt < bedAt) {
     const left = until(now, bh, bm);
     out.push({ id: 'bed', emoji: '🌙', title: `Asleep by ${clockLabel(bed)} — ${dur(left)} left`, detail: 'Phone down, face routine, lights off.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 88 : 78 });
   }
 
-  if (!e.closed && (h >= 21 || h < 4)) {
-    out.push({ id: 'lock', emoji: '🔒', title: 'Lock in before bed', detail: `Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'lock', label: 'Lock in' } });
+  if (live && !e.closed && (h >= 21 || h < 4)) {
+    // Things left? Go through them one at a time, then lock in.
+    out.push(
+      open.length >= 2
+        ? { id: 'lock', emoji: '🌙', title: `Wrap up: ${open.length} things left`, detail: `Two minutes, one at a time, then lock in. Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'wrap', label: 'Start' } }
+        : { id: 'lock', emoji: '🔒', title: 'Lock in before bed', detail: `Or it's £${data.settings.fineAmount} to charity after tomorrow.`, tone: 'warn', priority: 72, action: { kind: 'lock', label: 'Lock in' } },
+    );
   }
 
   // Credit card: weekly update, or a warning if you're over pace
-  if (date === summary.today && data.spending) {
+  if (date === summary.today && data.spending && featureOn(data.settings, 'budget')) {
     const card = budgetStatus(data.spending, data.settings, date);
     if (card.needsUpdate) {
-      out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'scroll', label: 'Update', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'card', label: 'Update' } });
     } else if (card.state === 'over-limit') {
-      out.push({ id: 'card', emoji: '💳', title: `${money(card.spent - card.limit)} over your ${money(card.limit)} card limit`, detail: 'Try not to use the card again this month.', tone: 'warn', priority: 62, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: `${money(card.spent - card.limit)} over your ${money(card.limit)} card limit`, detail: 'Try not to use the card again this month.', tone: 'warn', priority: 62, action: { kind: 'card', label: 'See' } });
     } else if (card.state === 'over-pace' && card.daysLeft) {
-      out.push({ id: 'card', emoji: '💳', title: `Card: ${money(card.perDay)} a day max`, detail: `${money(card.vsPace)} ahead of pace — that finishes under ${money(card.limit)}.`, tone: 'warn', priority: 52, action: { kind: 'scroll', label: 'See', target: 'budget' } });
+      out.push({ id: 'card', emoji: '💳', title: `Card: ${money(card.perDay)} a day max`, detail: `${money(card.vsPace)} ahead of pace — that finishes under ${money(card.limit)}.`, tone: 'warn', priority: 52, action: { kind: 'card', label: 'See' } });
     }
   }
 

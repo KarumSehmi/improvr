@@ -90,6 +90,27 @@ describe('up next', () => {
     expect(ids).toContain('bed');
   });
 
+  it('an earlier bedtime counts down in the evening, not all day', () => {
+    const d2 = { ...d, settings: { ...d.settings, weekday: { sleep: '23:30', wake: '07:30' } } };
+    const sum2 = summarize(d2, today);
+    const bed = (h: number, m = 0) => suggestions(at(h, m), today, sum2.evalByDate[today], sum2, d2).find((x) => x.id === 'bed');
+    expect(bed(10)).toBeUndefined();
+    expect(bed(17)).toBeUndefined();
+    expect(bed(22, 45)?.title).toBe('Asleep by 11:30pm — 45m left');
+    expect(bed(23, 45)).toBeUndefined();
+  });
+
+  it('filling in yesterday: no "tonight" nudges, just finish it off', () => {
+    const sum2 = summarize(d, addDays(today, 1));
+    const ids = suggestions(new Date(2026, 7, 4, 19, 30), today, sum2.evalByDate[today], sum2, d).map((x) => x.id);
+    expect(ids[0]).toBe('finish');
+    expect(ids).not.toContain('risk');
+    expect(ids).not.toContain('caffeine');
+    expect(ids).not.toContain('lock');
+    const finish = suggestions(new Date(2026, 7, 4, 19, 30), today, sum2.evalByDate[today], sum2, d)[0];
+    expect(finish).toMatchObject({ title: expect.stringMatching(/^Finish off Monday: \d+ left$/), action: { kind: 'wrap' } });
+  });
+
   it('puts open to-dos in the list, louder when one has been carried over', () => {
     const todos = {
       a: { id: 'a', title: 'Call the bank', date: today, createdAt: 0 },

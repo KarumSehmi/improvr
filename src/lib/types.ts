@@ -1,4 +1,4 @@
-import type { CheckinId, ChoreSchedule, Habit } from './config.js';
+import type { CheckinId, ChoreSchedule, FeatureId, Habit, HabitEdit, SectionId } from './config.js';
 import type { DateKey } from './dates.js';
 
 export type AvoidAnswer = 'clean' | 'slip';
@@ -16,6 +16,8 @@ export interface DayLog {
   /** Rough time (HH:mm) for sleep / wake when the target was missed. */
   times?: Record<string, string>;
   water?: number;
+  /** Count habits: how many so far (pages read, minutes…). */
+  counts?: Record<string, number>;
   /** Older versions logged a number here; it still counts as "weighed in". */
   weight?: number | null;
   finMl?: number | null;
@@ -57,8 +59,14 @@ export interface CalEvent {
 export interface Todo {
   id: string;
   title: string;
-  /** The day it's planned for. */
-  date: DateKey;
+  /** The day it's planned for (null = someday: no date, never carries over or nags). */
+  date: DateKey | null;
+  /** A time on that day, e.g. '15:00'. */
+  time?: string | null;
+  /** Which of your lists it's in (Settings → To-do lists). */
+  list?: string | null;
+  /** Starred: shows first and gets louder in Up next. */
+  important?: boolean;
   /** The day you ticked it off (missing = still to do). */
   doneOn?: DateKey | null;
   notes?: string;
@@ -67,6 +75,13 @@ export interface Todo {
   /** The next one, created when this was ticked off (removed again if you untick it). */
   next?: string | null;
   createdAt: number;
+}
+
+/** A list to sort to-dos into (Work & uni, Admin, Home…). */
+export interface TodoList {
+  id: string;
+  name: string;
+  emoji: string;
 }
 
 /** A weekly check of the credit card: what you'd spent so far this month (id = the date). */
@@ -106,6 +121,10 @@ export interface Settings {
 
   /** Habits you added in the app. */
   customHabits?: Habit[];
+  /** Your changes to built-in habits (name, emoji, section, XP, targets…). */
+  habitEdits?: Record<string, HabitEdit>;
+  /** Your order for habits inside their sections (ids, first to last). */
+  habitOrder?: string[];
   /** Built-in or custom habits you switched off. */
   hiddenHabits?: string[];
   /** Changed schedules for built-in chores (e.g. hoover on Sundays instead). */
@@ -121,6 +140,16 @@ export interface Settings {
   reasons?: Record<string, string>;
   /** Weekend targets (Sat & Sun): asleep before / up before, e.g. '02:00' and '10:30'. */
   weekend?: { sleep?: string; wake?: string };
+  /** Weekday targets (Mon–Fri mornings and the nights before): asleep before / up before ('01:00', '09:00'). */
+  weekday?: { sleep?: string; wake?: string };
+  /** No caffeine after this ('14:00'). */
+  caffeineCutoff?: string;
+  /** The hour each part of Today comes due (before that it's folded away as "later"). */
+  sectionHours?: Partial<Record<SectionId, number>>;
+  /** Parts of the app you've switched off (missing = on). */
+  features?: Partial<Record<FeatureId, boolean>>;
+  /** Your to-do lists (missing = the starter set). */
+  todoLists?: TodoList[];
   /** Most notifications to send in a day (0 = no limit). */
   notifyMax?: number;
   /** One-off data updates already applied. */
@@ -136,7 +165,8 @@ export interface Settings {
   seenLevel?: number;
   seenAchievements?: string[];
   onboarded?: boolean;
-  reminders?: ReminderSettings;
+  /** Only the reminder times you've changed (the rest follow the defaults and your targets). */
+  reminders?: Partial<ReminderSettings>;
 
   /** IANA time zone of your phone, so the notification server knows your local time. */
   timeZone?: string;

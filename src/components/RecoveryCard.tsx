@@ -1,9 +1,10 @@
-import { Button, Card, Group, NumberInput, Progress, Text, Textarea } from '@mantine/core';
+import { Button, Card, Group, NumberInput, Text, Textarea } from '@mantine/core';
 import { useState } from 'react';
 import { slipStats, type Summary } from '../lib/engine';
 import { openSos } from '../lib/hooks';
 import { NICOTINE_MILESTONES, recovery } from '../lib/recovery';
 import { updateSettings, useApp } from '../lib/store';
+import { Bar, PanelHead } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -22,25 +23,23 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
   const pct = r.next ? ((days - from) / (r.next.days - from)) * 100 : 100;
 
   return (
-    <Card p="sm" id="recovery">
-      <Group justify="space-between" wrap="nowrap" px={4}>
-        <div style={{ minWidth: 0 }}>
-          <Text fw={800} fz={17}>
-            🚭 Nicotine-free
-          </Text>
-          <Text size="xs" c="dimmed">
-            What stopping is doing for you
-          </Text>
-        </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <Text fw={900} fz={32} lh={1} c="teal.4">
-            {days}
-          </Text>
-          <Text size="xs" c="dimmed">
-            day{days === 1 ? '' : 's'}
-          </Text>
-        </div>
-      </Group>
+    <Card p="md" id="recovery">
+      <PanelHead
+        emoji="🚭"
+        color="teal"
+        title="Nicotine-free"
+        sub="What stopping is doing for you"
+        right={
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <Text fw={900} fz={32} lh={1} c="var(--good)" className="num">
+              {days}
+            </Text>
+            <Text size="xs" c="dimmed" fw={600}>
+              day{days === 1 ? '' : 's'}
+            </Text>
+          </div>
+        }
+      />
 
       <Group gap="sm" wrap="nowrap" mt="sm" px={4} align="flex-start">
         <Text fz={28} lh={1.1}>
@@ -66,7 +65,9 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
               in {plural(r.inDays, 'day')}
             </Text>
           </Group>
-          <Progress value={pct} color="teal" size="sm" radius="xl" mt={4} />
+          <div style={{ marginTop: 6 }}>
+            <Bar value={pct} color="teal" />
+          </div>
           <Text size="xs" c="dimmed" mt={4}>
             {r.next.text}
           </Text>
@@ -89,7 +90,7 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
 
       <div style={{ margin: '12px 4px 0' }}>
         {perWeek > 0 ? (
-          <Text size="sm" fw={700} c="teal.4">
+          <Text size="sm" fw={750} c="var(--good)">
             💰 £{stats?.saved ?? 0} kept in your pocket
             <Text span size="xs" c="dimmed" fw={500}>
               {' '}

@@ -4,7 +4,7 @@ import { notifications } from '@mantine/notifications';
 import { IconBell, IconBellOff, IconCalendarPlus } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { DEFAULT_REMINDERS } from '../lib/config';
+import { reminderTimes } from '../lib/config';
 import { useNow, useSummary } from '../lib/hooks';
 import { DEFAULT_NOTIFY_MAX, NUDGES } from '../lib/nudges';
 import { currentSubscription, pushEnvironment, subscribe } from '../lib/push';
@@ -22,8 +22,8 @@ export default function RemindersCard() {
   const devices = useApp((s) => s.pushDevices);
   const summary = useSummary();
   const now = useNow();
-  const r = { ...DEFAULT_REMINDERS, ...settings.reminders };
-  const set = (patch: Partial<ReminderSettings>) => updateSettings({ reminders: { ...r, ...patch } });
+  const r = reminderTimes(settings);
+  const set = (patch: Partial<ReminderSettings>) => updateSettings({ reminders: { ...settings.reminders, ...patch } });
   const env = pushEnvironment();
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -133,7 +133,7 @@ export default function RemindersCard() {
 
         {mode === 'cloud' &&
           (timerOk ? (
-            <Text size="xs" c="teal.4" fw={600}>
+            <Text size="xs" c="var(--good)" fw={600}>
               ✓ Timer running · last check {dayjs(server!.lastCron).format('HH:mm')} · {devices} device{devices === 1 ? '' : 's'}
             </Text>
           ) : (

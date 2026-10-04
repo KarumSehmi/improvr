@@ -71,7 +71,7 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
 // ---------------------------------------------------------------------------
 
 /** Kinds that can be set to "every N days". */
-export const FLEXIBLE_KINDS = ['check', 'water', 'dose'] as const;
+export const FLEXIBLE_KINDS = ['check', 'water', 'count', 'dose'] as const;
 
 /** Every how many days a habit is due on `date` (1 = daily). */
 export function everyOn(settings: Settings, habitId: string, date: DateKey): number {
@@ -108,7 +108,9 @@ export function isDone(h: Habit, log: DayLog | undefined): boolean {
   if (!log) return false;
   switch (h.kind) {
     case 'water':
-      return (log.water ?? 0) >= WATER_TARGET;
+      return (log.water ?? 0) >= (h.target ?? WATER_TARGET);
+    case 'count':
+      return (log.counts?.[h.id] ?? 0) >= Math.max(1, h.target ?? 1);
     case 'dose':
       return (log.finMl ?? 0) > 0;
     case 'avoid':

@@ -3,11 +3,11 @@
  * (the number on the app icon), racing yesterday's pace, the daily bonus quest and the reward chest.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { CHECKINS, QUESTS, REFLECTION_PROMPTS, SECTIONS, type CheckinId, type Quest, type SectionId } from './config.js';
+import { CHECKINS, QUESTS, REFLECTION_PROMPTS, sectionHour, type CheckinId, type Quest, type SectionId } from './config.js';
 import { addDays, dateKey, startOfDay, type DateKey } from './dates.js';
 import { isOpen, type DayEval, type ItemEval } from './engine.js';
 import { openTodos } from './todos.js';
-import type { DayLog, Todo } from './types.js';
+import type { DayLog, Settings, Todo } from './types.js';
 
 const HOUR = 3_600_000;
 
@@ -64,11 +64,9 @@ export function checkinStates(date: DateKey, log: DayLog | undefined, now: Date)
 // What's due right now
 // ---------------------------------------------------------------------------
 
-const SECTION_FROM = Object.fromEntries(SECTIONS.map((s) => [s.id, s.from])) as Record<SectionId, number>;
-
-/** Before its hour a section is "later" and folded away on Today. */
-export function sectionLater(id: SectionId, hour: number): boolean {
-  return hour < (SECTION_FROM[id] ?? 0);
+/** Before its hour a section is "later" and folded away on Today (you can move the hours in Settings). */
+export function sectionLater(id: SectionId, hour: number, settings?: Pick<Settings, 'sectionHours'>): boolean {
+  return hour < sectionHour(settings, id);
 }
 
 export interface SectionStatus {
@@ -95,14 +93,14 @@ export function sectionStatus(e: DayEval, id: SectionId): SectionStatus {
 }
 
 /** Still-open items whose part of the day has started. */
-export function dueNow(e: DayEval, hour: number): ItemEval[] {
+export function dueNow(e: DayEval, hour: number, settings?: Pick<Settings, 'sectionHours'>): ItemEval[] {
   if (e.dayOff || e.closed) return [];
-  return e.items.filter((i) => i.required && !i.done && !i.missed && !i.skipped && !sectionLater(i.habit.section, hour));
+  return e.items.filter((i) => i.required && !i.done && !i.missed && !i.skipped && !sectionLater(i.habit.section, hour, settings));
 }
 
 /** The number on the app icon: what could be done right now, plus open to-dos. */
-export function badgeCount(e: DayEval | undefined, hour: number, todos: Record<string, Todo>, today: DateKey): number {
-  return (e ? dueNow(e, hour).length : 0) + openTodos(todos, today).length;
+export function badgeCount(e: DayEval | undefined, hour: number, todos: Record<string, Todo>, today: DateKey, settings?: Pick<Settings, 'sectionHours'>): number {
+  return (e ? dueNow(e, hour, settings).length : 0) + openTodos(todos, today).length;
 }
 
 /** Days in a row with all three check-ins (today only counts once it's done). */

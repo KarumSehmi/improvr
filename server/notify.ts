@@ -51,7 +51,7 @@ export async function notifyUser(db: Firestore, uid: string, opts: { via: RunVia
     const server = (await t.get(serverRef)).data() ?? {};
     const sent: Record<string, string> = { ...(server.sent ?? {}) };
     const due = !canSend ? [] : opts.test ? [TEST_NUDGE] : dueNudges({ summary, date: today, minutes, sent, todos, spending });
-    if (!opts.test) for (const n of due) sent[n.id] = today;
+    if (!opts.test) for (const n of due) sent[n.id] = n.day ?? today;
     const at = Date.now();
     t.set(serverRef, { lastRun: at, ...(opts.via === 'cron' && { lastCron: at }), sent }, { merge: true });
     return due;
@@ -59,7 +59,7 @@ export async function notifyUser(db: Firestore, uid: string, opts: { via: RunVia
 
   // The number on the app icon: what's due right now (the notification updates it).
   const moment = logicalNow(now);
-  const badge = badgeCount(summary.evalByDate[moment.date], moment.hour, todos, today);
+  const badge = badgeCount(summary.evalByDate[moment.date], moment.hour, todos, today, settings);
 
   for (const n of nudges) {
     for (const sub of subs.docs) {

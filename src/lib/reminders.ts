@@ -3,7 +3,7 @@
  * Calendar app a set of repeating events with alerts. Calendar then does the notifying.
  */
 import { createEvents, type DateArray, type EventAttributes } from 'ics';
-import { DEFAULT_REMINDERS, habitsFor } from './config';
+import { caffeineCutoff, clockLabel, habitsFor, reminderTimes, weekdayTargets } from './config';
 import { addDays, dateKey, weekday, type DateKey } from './dates';
 import type { Summary } from './engine';
 import type { Birthday, Settings } from './types';
@@ -35,12 +35,12 @@ function daily(uid: string, title: string, description: string, time: string, to
 }
 
 export function buildReminders(settings: Settings, summary: Summary, birthdays: Record<string, Birthday>, today: DateKey = dateKey()): string {
-  const r = { ...DEFAULT_REMINDERS, ...settings.reminders };
+  const r = reminderTimes(settings);
   const events: EventAttributes[] = [
     daily('morning', '🌅 Morning check-in', 'Weigh in, pills, face wash. Open Improvr.', r.morning, today),
-    daily('caffeine', '☕ Caffeine cutoff at 2pm', 'Last coffee now.', r.caffeine, today),
+    daily('caffeine', `☕ Caffeine cutoff at ${clockLabel(caffeineCutoff(settings))}`, 'Last coffee now.', r.caffeine, today),
     daily('lockin', '🔒 Lock in today on Improvr', `Answer honestly, write your note, lock it in. Miss the deadline and it's £${settings.fineAmount} to charity.`, r.lockIn, today),
-    daily('bedtime', '🌙 Bed by 1am', 'Phone down. Face routine. Lights off.', r.bedtime, today),
+    daily('bedtime', `🌙 Bed by ${clockLabel(weekdayTargets(settings).sleep)}`, 'Phone down. Face routine. Lights off.', r.bedtime, today),
   ];
 
   if (r.weeklyJobs) {

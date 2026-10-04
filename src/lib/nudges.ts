@@ -4,7 +4,7 @@
  * and at most once per day.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { DEFAULT_REMINDERS, SLEEP_TARGETS, clockLabel, habitLabel, sleepTargets } from './config.js';
+import { caffeineCutoff, clockLabel, featureOn, habitLabel, nightMinutes, reminderTimes, sleepTargets, weekdayTargets } from './config.js';
 import { addDays, weekday, weekStart, type DateKey } from './dates.js';
 import { budgetStatus, money } from './budget.js';
 import { weekStats, type Summary } from './engine.js';
@@ -33,6 +33,8 @@ export interface Nudge {
   id: NudgeId;
   title: string;
   body: string;
+  /** The day to mark it sent against, when that isn't today (bedtime before midnight is about tomorrow's log). */
+  day?: DateKey;
 }
 
 /** Fine and lock-in warnings always come through; the rest share a daily allowance. */
@@ -65,7 +67,7 @@ export function dueNudges(args: {
 }): Nudge[] {
   const { summary, date, minutes, sent } = args;
   const s = summary.settings;
-  const r = { ...DEFAULT_REMINDERS, ...s.reminders };
+  const r = reminderTimes(s);
   const fine = `£${s.fineAmount}`;
   const today = summary.evalByDate[date];
   const yesterday = summary.evalByDate[addDays(date, -1)];
@@ -78,18 +80,20 @@ export function dueNudges(args: {
   };
   // Weekend lie-ins and later nights move the morning and bedtime reminders too.
   const targets = sleepTargets(s, date);
-  const lieIn = toMin(targets.wake) - toMin(SLEEP_TARGETS.weekday.wake);
+  const weekdays = weekdayTargets(s);
+  const lieIn = toMin(targets.wake) - toMin(weekdays.wake);
 
   if (today && !today.dayOff) {
     const morning = open.filter((i) => i.habit.section === 'morning');
     if (morning.length && due('morning', toMin(r.morning) + lieIn)) {
-      const checkin = today.log?.checkins?.am ? 'One tap in Up next.' : 'Check in for +5 XP.';
+      const checkin = today.log?.checkins?.am || !featureOn(s, 'checkins') ? 'One tap in Up next.' : 'Check in for +5 XP.';
       out.push({ id: 'morning', title: '🌅 Morning routine', body: `Still to do: ${names(morning.map((i) => habitLabel(i.habit, s, date)))}. ${checkin}` });
     }
 
     const caffeine = open.find((i) => i.habit.id === 'caffeine');
     if (caffeine && due('caffeine', r.caffeine)) {
-      out.push({ id: 'caffeine', title: '☕ Caffeine cutoff at 2pm', body: 'Last coffee now if you want one — nothing after 2.' });
+      const cutoff = clockLabel(caffeineCutoff(s));
+      out.push({ id: 'caffeine', title: `☕ Caffeine cutoff at ${cutoff}`, body: `Last coffee now if you want one — nothing after ${cutoff}.` });
     }
 
     if (!today.closed && due('lockin', r.lockIn)) {
@@ -100,8 +104,8 @@ export function dueNudges(args: {
   }
 
   // Check-ins: one tap for XP, with whatever's left right now
-  if (today) {
-    const left = [...dueNow(today, minutes / 60).map((i) => i.habit.label), ...openTodos(args.todos ?? {}, date).map((t) => t.title)];
+  if (today && featureOn(s, 'checkins')) {
+    const left = [...dueNow(today, minutes / 60, s).map((i) => i.habit.label), ...openTodos(args.todos ?? {}, date).map((t) => t.title)];
     const checkins = [
       ['afternoon', 'pm', '15:00', '☀️ Afternoon check-in'],
       ['evening', 'eve', '19:00', '🌆 Evening check-in'],
@@ -132,12 +136,14 @@ export function dueNudges(args: {
     }
   }
 
-  // Tonight's target: a reminder after midnight is about the day that's just started, one before it about tomorrow.
-  const bedAt = toMin(r.bedtime);
-  const night = sleepTargets(s, bedAt < 12 * 60 ? date : addDays(date, 1));
-  const later = toMin(night.sleep) - toMin(SLEEP_TARGETS.weekday.sleep);
-  if (due('bedtime', bedAt + later)) {
-    out.push({ id: 'bedtime', title: `🌙 Bed by ${clockLabel(night.sleep)}`, body: 'Phone down, face routine, lights off.' });
+  // Bedtime works on a noon-to-noon night, so 23:00 and 00:15 reminders (and 23:30 or 1am targets) behave the same.
+  // A night is logged on the day it ends, which is also how it's marked as sent — so it never goes out twice.
+  const nightOf = minutes < 12 * 60 ? date : addDays(date, 1);
+  const tonight = sleepTargets(s, nightOf);
+  const bedAt = nightMinutes(r.bedtime) + nightMinutes(tonight.sleep) - nightMinutes(weekdays.sleep);
+  const nowAt = nightMinutes(minutes);
+  if (s.notify?.bedtime !== false && sent.bedtime !== nightOf && nowAt >= bedAt && nowAt < bedAt + WINDOW_MIN) {
+    out.push({ id: 'bedtime', day: nightOf, title: `🌙 Bed by ${clockLabel(tonight.sleep)}`, body: 'Phone down, face routine, lights off.' });
   }
 
   if (summary.owed > 0 && due('fines', '12:00', 0)) {
@@ -146,7 +152,7 @@ export function dueNudges(args: {
 
   // Credit card: a weekly check-in, only if you haven't updated it this week
   const card = budgetStatus(args.spending ?? {}, s, date);
-  if (card.needsUpdate && due('spending', '18:00', 0)) {
+  if (featureOn(s, 'budget') && card.needsUpdate && due('spending', '18:00', 0)) {
     const last =
       card.state === 'over-limit'
         ? ` Last time you were ${money(card.spent - card.limit)} over ${money(card.limit)}.`

@@ -1,15 +1,16 @@
-import { Button, Card, Collapse, Group, Text, UnstyledButton } from '@mantine/core';
+import { Card, Collapse, Group, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { useUi } from '../lib/hooks';
 import type { SectionStatus } from '../lib/moments';
-import { ScoreRing, Tap, Tile } from './ui';
+import { Bar, Tap, Tile } from './ui';
+import { accent } from '../lib/style';
 
 interface Props {
   id: string;
   emoji: string;
   title: string;
-  subtitle: string;
+  subtitle: ReactNode;
   color: string;
   status: SectionStatus;
   quick?: { label: string; onClick: (e: MouseEvent) => void } | null;
@@ -19,15 +20,20 @@ interface Props {
   onCloseRest?: (() => void) | null;
   /** The day's locked in: everything folds away. */
   dayClosed?: boolean;
-  children: ReactNode;
+  /** Rows, so finished ones can be tucked away when "Hide done" is on. */
+  rows: { id: string; done: boolean; node: ReactNode }[];
+  /** Extra bits under the rows (e.g. the craving button). */
+  footer?: ReactNode;
 }
 
 /**
  * A checklist section. It folds itself away once everything in it is answered — done or not
  * (a missed bedtime shouldn't keep it open all day) — and until its time comes.
  */
-export default function SectionCard({ id, emoji, title, subtitle, color, status, quick, later, onCloseRest, dayClosed, children }: Props) {
+export default function SectionCard({ id, emoji, title, subtitle, color, status, quick, later, onCloseRest, dayClosed, rows, footer }: Props) {
   const { total, done, missed, open: left, complete, closed } = status;
+  const hideDone = useUi((s) => s.hideDone);
+  const [reveal, setReveal] = useState(false);
   const [override, setOverride] = useState<boolean | null>(null);
   const state = `${complete}|${closed}|${!!later}|${!!dayClosed}`;
   const [lastState, setLastState] = useState(state);
@@ -37,7 +43,7 @@ export default function SectionCard({ id, emoji, title, subtitle, color, status,
   }
   const open = override ?? (!closed && !later && !dayClosed);
 
-  // Tapped in the rail at the top: unfold.
+  // Tapped in the hero at the top: unfold.
   const wanted = useUi((s) => s.openSection === id);
   if (wanted && override !== true) setOverride(true);
   useEffect(() => {
@@ -47,60 +53,64 @@ export default function SectionCard({ id, emoji, title, subtitle, color, status,
   const line = complete
     ? 'All done — nice.'
     : closed
-      ? `Closed · ${missed} ${id === 'clean' ? 'slipped' : 'missed'}`
+      ? `Closed · ${missed} ${id === 'clean' ? 'slipped' : 'not done'}`
       : dayClosed
         ? `Locked in · ${left.length} not done`
         : later
           ? `Later · ${later}`
           : subtitle;
 
+  const shown = hideDone && !reveal ? rows.filter((r) => !r.done) : rows;
+  const tucked = rows.length - shown.length;
+  const toggle = () => setOverride(!open);
+
   return (
-    <Card
-      id={`section-${id}`}
-      p="sm"
-      className={later && !open ? 'later-card' : undefined}
-      style={complete ? { borderColor: 'var(--mantine-color-teal-outline)' } : undefined}
-    >
-      <Group justify="space-between" wrap="nowrap" gap="xs">
-        <UnstyledButton onClick={() => setOverride(!open)} style={{ flex: 1, minWidth: 0 }}>
-          <Group gap="sm" wrap="nowrap">
-            <Tile emoji={complete ? '✅' : emoji} color={complete ? 'teal' : color} size={42} dim={closed && !complete} />
+    <Card id={`section-${id}`} p="sm" px="md" className={later && !open ? 'later-card' : undefined} style={{ ...accent(color), scrollMarginTop: 90 }}>
+      <Group justify="space-between" wrap="nowrap" gap="xs" py={2}>
+        <UnstyledButton onClick={toggle} style={{ flex: 1, minWidth: 0 }} aria-expanded={open}>
+          <Group gap={12} wrap="nowrap">
+            <Tile emoji={complete ? '✅' : emoji} color={complete ? 'teal' : color} size={38} dim={closed && !complete} />
             <div style={{ minWidth: 0 }}>
-              <Text fw={800} fz={17} lh={1.2}>
-                {title}
-              </Text>
-              <Text size="xs" c="dimmed" truncate>
+              <div className="panel-title">{title}</div>
+              <Text className="panel-sub" truncate>
                 {line}
               </Text>
             </div>
           </Group>
         </UnstyledButton>
         {quick && open && (
-          <Tap onClick={quick.onClick}>
-            <Button component="div" size="compact-sm" variant="light" color="teal">
-              {quick.label}
-            </Button>
+          <Tap onClick={quick.onClick} className="chip" style={{ height: 30, color: 'var(--accent-text)', background: 'var(--accent-soft)' }}>
+            {quick.label}
           </Tap>
         )}
-        <UnstyledButton onClick={() => setOverride(!open)} aria-label={open ? 'Collapse' : 'Expand'}>
-          <Group gap={4} wrap="nowrap">
-            <ScoreRing value={total ? (done / total) * 100 : 0} size={40} stroke={4} color={complete ? 'teal' : 'violet'}>
-              <Text fz={11} fw={800}>
-                {done}/{total}
-              </Text>
-            </ScoreRing>
-            <IconChevronDown size={16} style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 200ms', opacity: 0.5 }} />
+        <UnstyledButton onClick={toggle} aria-label={open ? `Fold ${title}` : `Unfold ${title}`}>
+          <Group gap={6} wrap="nowrap">
+            <Text fz={13} fw={850} className="num" c={complete ? 'var(--good)' : 'dimmed'}>
+              {done}/{total}
+            </Text>
+            <IconChevronDown size={17} style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 200ms', opacity: 0.45 }} />
           </Group>
         </UnstyledButton>
       </Group>
+      <div style={{ margin: '8px 0 2px' }}>
+        <Bar value={total ? (done / total) * 100 : 0} color={complete ? 'teal' : color} h={4} />
+      </div>
       <Collapse expanded={open}>
-        <div style={{ marginTop: 6 }}>{children}</div>
+        <div style={{ marginTop: 4 }}>{shown.map((r) => r.node)}</div>
+        {tucked > 0 && (
+          <UnstyledButton onClick={() => setReveal(true)} w="100%" py={8}>
+            <Text size="xs" fw={750} c="dimmed" ta="center">
+              ✓ {tucked} done · show
+            </Text>
+          </UnstyledButton>
+        )}
+        {footer}
         {onCloseRest && (
-          <Group justify="center" mt={4}>
-            <Button size="compact-xs" variant="subtle" color="gray" onClick={onCloseRest}>
+          <UnstyledButton onClick={onCloseRest} w="100%" pt={6} pb={4}>
+            <Text size="xs" fw={700} c="dimmed" ta="center">
               Didn't do the rest? Close it
-            </Button>
-          </Group>
+            </Text>
+          </UnstyledButton>
         )}
       </Collapse>
     </Card>

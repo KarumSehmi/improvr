@@ -6,44 +6,69 @@ Your daily checklist, streaks, calendar and accountability app. Built as a websi
 
 ## What's in it
 
-- **Today** – your daily checklist, grouped into Morning / Through the day / Room / Night / Stayed clean. Takes about 2 minutes, and you can fill it in bit by bit through the day. It follows the clock: the sky changes from dawn to night, and sections that aren't due yet (Night in the morning, say) fold away as "later" until their time.
-  - **☀️ Three check-ins a day** – morning, afternoon and evening. Open the app in each window and tap how your energy is: +5 XP each, +15 bonus for all three (a *hat-trick*). Miss the window and it's gone.
-  - **🏁 Race yesterday-you** – "2 ahead of yesterday" means you've ticked off more than you had by this exact time yesterday. The yellow dot on the ring is yesterday-you, moving through the day.
-  - **🎲 Bonus quest** – one small optional challenge a day (a walk, 10 pages, a cold finish to your shower…) for +15 XP. You can swap it once.
-  - **🎁 Reward chest** – lock the day in on time and you open a chest: 10, 20, 40 or (rarely) 75 XP. A perfect day gets a golden chest with better odds.
-  - **Rings at the top** show every section at a glance. Tap one to jump to it.
-  - **App icon badge** – the Home Screen icon shows how many things are due right now (with notifications switched on).
-  - **⚡ Up next** looks at the time and tells you what matters *now*: one tap for the whole morning routine, a countdown to the 2pm caffeine cutoff, water reminders, "need 2 more gym sessions in 3 days", overdue jobs, open to-dos (carried-over ones get louder the longer they wait), streaks at risk tonight, time left until 1am, and what's on tomorrow.
-  - **One-tap "All ✓" / "All clean"** per section, with **Undo**.
-  - Weigh-in, sleep before 1am and up before 9am — **2am and 10:30 at the weekend** (Friday & Saturday nights, Saturday & Sunday mornings; change them in Settings) — (tap ✕ to enter a rough time from your Apple Watch), pills, teeth morning and night, AM/PM face routine, finasteride every 3 days (ml → mg worked out for you; − / + to change any day's amount, one tap to make it your usual; change how often in More → Settings), 2 water bottles, MacroFactor, protein, creatine.
-  - Room chores **carry over** in orange until you do them: clothes, glasses, rubbish (daily), bin (every 3 days), surfaces (Wed), bathroom deep clean (Thu), hoover & mop (Sat). Bud + Canvas on Tuesdays, pill organiser refill every other Sunday.
-  - Paula's Choice every 3 days, skip it whenever you like.
-  - Stayed clean: nicotine, porn, alcohol, caffeine after 2pm — answer *Clean* or *Slipped* honestly.
-  - Training: aim for 3 sessions a week. Gym gives the most XP, home workouts and football count too. Football Mondays are optional.
-  - **Reflect**: a one-tap mood and a "how can I be better tomorrow?" note, which shows up the next morning. The prompt changes each day ("What got in the way today?", "What would tomorrow-you thank you for?"…).
-  - When a streak breaks, the row shows your best run (🏁 best 12) — a number to beat, not a blank.
-  - The score ring has a yellow dot for **yesterday's score**. The goal is always to beat it.
-- **Dopamine** – animated checks, iPhone haptic taps, little sounds (the silent switch mutes them; turn them off in Settings), "+XP" pop-ups, confetti, a 🔥 streak on every habit, level-ups and 36 badges to unlock.
-- **🧠 Insights** – patterns found in your own data. For example: "after nights asleep before 1am you get 86% of your list done vs 61%", "nicotine slips are 3x more likely after a late night", "most alcohol slips land on Saturdays", "you feel better on training days", and "your best day is Tuesday".
-- **📊 Weekly review** – every Monday you get a report card for last week (grade, vs the week before, what you smashed and what needs work), and you pick **one focus habit** for the week, which gets pinned on Today. The next review follows up on it: how it went against the week before, and whether it's worth another week (if so, it's suggested again).
-- **Calendar** – add any events, plus friends' birthdays (they show on the calendar and on Today when they're coming up).
-- **💳 Card spending** – once a week, type in what you've spent on your credit card so far this month (+10 XP). It shows a bar against your **£800 limit** (well under £1,000) with a pace marker, and tells you straight: on track and what you can spend a day/week, or how far ahead of pace you are, what to keep it to, and how much a week to cut to make it to the end of the month. Sunday evening reminder if you haven't updated it. Change the limit or the day your card's month starts in More → Settings.
-- **📝 To-dos** – jobs on the calendar. Anything not done on its day carries over to today (and shows how many days late) until you tick it off. They can **repeat** (e.g. the haircut every 2 weeks: tick it off and the next one comes up 14 days later). Add them from Today or the Calendar.
-- **Progress** – insights, this week vs last week, badges, slip counts, gym sessions per week, sleep, finasteride, your notes.
-  - **📈 Better than last month?** – a 7-day average of your daily score over the last 8 weeks, with last month's average as a line to beat, plus your personal bests (best day, best week, longest logging streak). The score heatmap sits underneath.
-  - **Habit streaks** – every habit shows its **last 7 days as dots** (done, missed, still open, day off), how often you've done it in the last 30 days, and your best run.
-- **🔔 Reminders** – adds repeating alerts to your iPhone Calendar (morning check-in, caffeine cutoff, lock-in, bedtime, weekly jobs, birthdays), since websites can't send iPhone notifications without a server.
-- **✏️ Your habits** – add your own habits, switch any off, move chore days, and set how often daily ones are due (every day, every 3 days, weekly…), all inside the app (More → Your habits). Changing how often never rewrites past days.
-- **🔔 Smart notifications** – when something needs doing: morning routine not done, to-dos still open at midday, afternoon and evening check-ins (with what's left right now), caffeine cutoff coming, today not locked in (with streaks at risk), yesterday not logged, last call before a fine, bedtime, fines owed, weekly review. Each one can be switched off, there are at most 4 reminders a day (fine and lock-in warnings always come through), opening the app clears them, and a new one replaces the last so they never pile up.
-- **🆘 Craving SOS** – the red button on Today. When a craving hits it starts a 10-minute timer with a breathing guide (in 4, hold 4, out 6), one thing to do instead at a time, *your own* reason for quitting, and your streak and money saved. "It passed" logs the win (+5 XP); "I slipped" logs it honestly. It keeps the screen on, and after a few it tells you when your cravings usually hit.
-- **💪 Urges beaten + 💰 money saved** – tap "beat an urge" when a craving passes (+5 XP). Set what nicotine etc. costs you per week and see £ saved.
-- **🍺 Alcohol allowance** – 1 drinking night a week is allowed by default (change it in Your habits). The second one counts as a slip. On Friday and Saturday evenings (and any other night you've drunk on twice lately), Up next says whether tonight's allowed, with a bed-by time; if it's already used it says which night. The morning after, it tells you to drink water first.
-- **🚭 Nicotine-free timeline** – Progress → Habits shows how many days you've been nicotine-free, what that usually means for your body (3 days: withdrawal peaks; 2 weeks: breathing improves; 1 month; 3 months; a year…) and how long until the next one. Up next calls each milestone out on the day, the SOS shows the next one, and the card spending tracker shows how much staying off it kept in your pocket this month. Your reason for quitting shows on Today.
-- **⚽ Monday football** – on Monday afternoons Up next asks if you're playing, with one tap to log it once you have.
-- **📆 Weekly review** – also shows your week the way you care about it: days nicotine-free and cravings beaten, drinking nights used, average bedtime, wake time and sleep from the Watch, and where the card is this month.
-- **⌚ Apple Watch sleep** – an iPhone Shortcut fills in "asleep before 1am / up before 9am" every morning with the actual times and how long you slept; Progress shows your average sleep and bedtime.
-- **More** – a short menu: fines (with a one-tap donate link), notifications, your habits, Apple Watch, settings, the rules, sync and backup. Each opens in a sheet.
-- **Progress** is split into tabs: Overview, Habits, History and Badges. Tap the tab you're on to jump back to the top of any page.
+Four tabs and a **+** in the middle:
+
+| | |
+|---|---|
+| **Today** | Log the day. Everything you need now, in the order you need it. |
+| **Plan** | To-dos, the calendar, birthdays and what's coming up. |
+| **+** | Log anything from anywhere in two taps. |
+| **Progress** | Are you getting better? Stats, streaks, trends, money and badges. |
+| **Settings** | Your habits, targets and times, what shows on Today, notifications, sync. |
+
+On a computer the tabs sit in a sidebar (keys **1–4** switch pages, **L** opens the log) and Today spreads over two columns: your overview on the left, your checklist on the right.
+
+### Today
+
+- **The last 7 days** across the top, each with its score ring. Tap one to fill it in — a dot means it still needs locking in (orange) or missed its deadline (red). Up past midnight, Today shows yesterday until 4am if it isn't locked in.
+- **The hero**: your score with a yellow notch for yesterday-you, XP today, and how far ahead or behind yesterday you are by this time of day. Underneath, **one ring per part of the day** (Morning, Day, Room, Night, Clean, Gym) — tap one to jump to it. Then the **three check-ins** (morning, afternoon, evening: +5 XP each, +15 for all three) and your streak pills.
+- **One-line heads-ups** only when they matter: money owed, a day still to lock in, a birthday today.
+- **⚡ Up next** looks at the time and tells you the 2–3 things that matter now, with one tap to do them: the whole morning routine, the caffeine countdown, water, "need 2 more gym sessions in 3 days", overdue jobs, to-dos (louder when carried over or starred), streaks at risk, bedtime, card spending, the morning after a drinking night, Monday football, nicotine-free milestones, and at night **Wrap up**.
+- **📝 To-dos** for today (carried-over ones say how late), with a plain-English add box.
+- **Your list**: Morning / Through the day / Room / Night / Stayed clean, each tinted its own colour (ticks included). Sections fold away when everything's answered, and before their time ("later · from 8pm"). **All ✓** / **All clean** per section with Undo, **"Didn't do the rest? Close it"**, and a **Hide done** switch to keep the list short as the day goes on.
+- **Press and hold any habit** (or right-click on a computer) for its sheet: done / not done / skip this one for that day, its streak, best run, last 2 weeks, and every setting it has.
+- Weigh-in, sleep and wake (tap ✕ to enter a rough time; the Apple Watch fills these in), pills, teeth, face routine, finasteride every 3 days (− / + for any day's amount, one tap to make it your usual), water bottles, MacroFactor, protein, creatine, minoxidil, a bonus 15-minute home workout. Room jobs **carry over** in orange until done. Stayed clean is answered honestly: *Clean* or *Slipped* (1 drinking night a week is allowed by default).
+- **Training**: gym sessions against your weekly target (football and home workouts earn XP but don't count).
+- **🎲 Bonus quest**: one small optional challenge a day (+15 XP), swappable once.
+- **🌙 Wrap up**: mood, "how can I be better tomorrow?" (it shows up the next morning), and **Lock in** — on time earns +10 XP and a **reward chest**. Before the evening it's one compact line.
+
+### ➕ Log
+
+The + opens a sheet: water, gym, the quest, card spending, craving SOS, "beat an urge", Wrap up and today's check-in as one-tap tiles; add a to-do in plain English; then everything still open — **due now first**, later today and bonuses folded underneath — with the same controls as Today. Search finds any habit or to-do.
+
+### 🌙 Wrap up
+
+The quickest way to log a whole day: everything that's still open, **one big card at a time** — Done / Not done, Clean / Slipped, Yes / No — then today's to-dos (done, tomorrow or someday), your mood and note, and Lock in. About a minute. Arrow keys work on a computer.
+
+### 🗓️ Plan
+
+- **To-dos** grouped into Overdue, Today, Tomorrow, Next 7 days, Later and **Someday** (no date — never nags), plus what you finished this week. Filter by **list** (Work & uni, Admin, Home, Health, Social, Shopping — rename, add or remove your own).
+- **Add in plain English**: *"dentist fri 3pm"*, *"essay due 12 oct !"* (★ starred), *"haircut every 2 weeks #home"*, *"new headphones someday"*. It shows what it understood as chips — tap ✕ on one if it got the wrong idea. The ⚙️ button opens the full editor (day shortcuts, time, repeat, list, star, notes).
+- Anything not done on its day **carries over** to today until you tick it off. Repeating ones bring up the next one when you tick them.
+- **Calendar**: a month with your daily score as colour, dots for events, to-dos and birthdays, the selected day's agenda (with "Do early" for jobs coming up) and the week ahead.
+- **Birthdays**: they show on the calendar, in Coming up and on Today.
+
+### 📈 Progress
+
+- **Overview**: days logged in a row, nicotine-free, average score, gym weeks, perfect days, fines; **🧠 insights** from your own data ("after nights asleep before 1am you get 86% done vs 61%", "nicotine slips are 3x more likely after a late night", "you feel better on training days"…); this week vs the same point last week, and last week's review.
+- **Habits**: the 🚭 nicotine-free timeline (what stopping is doing for you and what's next), staying-clean stats, every habit's last 7 days as dots with its 30-day rate and best run (tap one for its sheet), gym sessions per week.
+- **Trends**: "better than last month?" (a 7-day average against last month), personal bests, the score heatmap, sleep from the Watch, notes to self.
+- **Money**: 💳 card spending against your **£800 limit** (pace marker, what you can spend a day, how much to cut), 💰 money kept by staying clean, and 💷 charity fines with one-tap donating.
+- **Badges**: 36 to unlock, nearest first.
+
+### ⚙️ Settings
+
+- **Habits**: every habit by part of the day — switch any off, **Reorder**, or tap one to change **anything**: name, emoji, part of the day, XP, how often (every day, every 3 days, weekly…), job schedules (every N days, or a weekday every 1–4 weeks), **days off from it**, bonus or key, targets, finasteride amount and strength, stay-clean allowance, what it cost you and why you're quitting. Built-in habits can be reset. **Add your own**: a tick, a **count** (e.g. read 10 pages), a stay-clean habit or a job.
+- **Targets & times**: weekday and weekend bed and wake times, the caffeine cutoff, water bottles, gym sessions a week (0 hides Training), and when each part of Today comes due. Labels, Up next, insights, notifications and the Apple Watch all follow them.
+- **Today page**: switch off check-ins, the bonus quest, the reward chest, racing yesterday, the craving SOS or card spending if you don't want them.
+- Charity fines, the rules, card spending, 🔔 notifications, ⌚ Apple Watch sleep, ☁️ sync & backup, your name and start date, theme (dark, light, auto) and sounds.
+
+### Also
+
+- **🆘 Craving SOS** (top of Today): a 10-minute timer with a breathing guide, one thing to do instead, your own reason for quitting and your streak and money saved. "It passed" logs the win (+5 XP).
+- **📊 Weekly review** every Monday: a grade, vs the week before, what you smashed and what needs work, your nicotine/drinking/sleep/card week, and **one focus habit** for the week (pinned on Today, followed up next week).
+- **🔔 Smart notifications** only when something needs doing — at most 4 a day (fine and lock-in warnings always come through), they replace each other and opening the app clears them. Each can be switched off.
+- **Dopamine**: animated ticks, iPhone haptics, little sounds, "+XP" pop-ups, confetti, level-ups, streak milestones and the reward chest.
 
 ## The rules (lenient but strict)
 
@@ -75,7 +100,7 @@ At this point it works in **local mode**: your data is saved on that one device 
 
 The Firebase config values aren't secret. Your data is protected by your login plus the rules from step 4. (Optional: once you've made your account, you can switch off new sign-ups under Authentication → Settings → User actions.)
 
-If you already logged some days in local mode, use **More → Export backup** before switching over, then **Import backup** once you're signed in.
+If you already logged some days in local mode, use **Settings → Sync & backup → Export backup** before switching over, then **Import backup** once you're signed in.
 
 ### 3. Install it on your iPhone
 
@@ -106,7 +131,7 @@ These need one "server key" from Firebase. Get it once and paste it in two place
 ### 🔔 Smart notifications
 
 1. Vercel → your project → **Settings → Environment Variables** → add `FIREBASE_SERVICE_ACCOUNT` with the whole JSON (skip if you've done it for Apple Watch sleep) → **Redeploy**.
-2. On your iPhone, open Improvr **from the Home Screen icon** → More → Notifications → **Turn on notifications** → Allow.
+2. On your iPhone, open Improvr **from the Home Screen icon** → Settings → Notifications → **Turn on notifications** → Allow.
 3. Same card → **Set up the timer** → copy your timer link. At [cron-job.org](https://cron-job.org) (free) → **Create cronjob** → paste it as the URL → every **5 minutes** → Create. The card turns green within 5 minutes.
 
 Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secrets and variables → Actions** → `FIREBASE_SERVICE_ACCOUNT`) and the **Notify** workflow also checks every 15 minutes — GitHub often runs it hours late, which is why cron-job.org is the main one. Both at once is fine; nothing gets sent twice. To test: Actions → **Notify** → **Run workflow** → tick *Send a test notification*.
@@ -116,7 +141,7 @@ Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secr
 ### ⌚ Apple Watch sleep (Vercel)
 
 1. Vercel → your project → **Settings → Environment Variables** → add `FIREBASE_SERVICE_ACCOUNT` with the same JSON → Save → **Deployments → ⋯ → Redeploy**.
-2. In the app: More → Apple Watch sleep → **Set it up** (it shows your personal key and URL to copy), then build this 2-action Shortcut:
+2. In the app: Settings → Apple Watch sleep → **Set it up** (it shows your personal key and URL to copy), then build this 2-action Shortcut:
    - **Find Health Samples**: Type *is Sleep*, Start Date *is in the last 1 day* (it picks out last night itself, ignoring naps and yesterday's lie-in).
    - **Get Contents of URL**: the URL, Method **POST**, Request Body **JSON**, three Text fields: `key` → your key · `asleep` → Health Samples → **Start Date** · `awake` → Health Samples → **End Date**.
    - Automation → Alarm *Is Stopped* → Run Immediately.
@@ -125,7 +150,7 @@ Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secr
 
 ## Changing things
 
-Most things can be changed inside the app: **More → Your habits** (add, switch off, move chore days, how often) and **More → Settings** (fine amount, charity, donate link, gym target, card limit, finasteride). The built-in habits and their XP values live in **[`src/lib/config.ts`](src/lib/config.ts)** if you want to change those.
+Almost everything can be changed inside the app: **Settings → Habits** (edit any habit, reorder, switch off, add your own), **Settings → Targets & times** (bed and wake times, caffeine cutoff, water, gym target, when each part of the day starts), **Settings → Today page** (switch features off) and the rest of Settings (fines, card limit, notifications). The built-in habits and their starting values live in **[`src/lib/config.ts`](src/lib/config.ts)**.
 
 ## Running locally
 
@@ -133,8 +158,9 @@ Needs Node **20.19+** or **22.12+** (`node -v` to check). Run `npm install` once
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm test         # logic tests (streaks, fines, day off, insights, badges, notifications, sleep)
+npm run dev        # http://localhost:5173
+npm run dev:local  # same, but local mode (no sign-in) — try things without touching your real data
+npm test           # logic tests (streaks, fines, day off, insights, badges, notifications, sleep, quick add)
 npm run build
 ```
 

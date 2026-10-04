@@ -28,7 +28,7 @@ export default function SleepSyncCard() {
         Shortcut. The Watch's times take over when it syncs; you can still change them by hand after.
       </Text>
       {last && (
-        <Text size="xs" c="teal.4" fw={600} mt="xs">
+        <Text size="xs" c="var(--good)" fw={600} mt="xs">
           ✓ Last synced {dayjs(last.at).format('ddd HH:mm')}: asleep {last.asleep}, up {last.awake}
         </Text>
       )}
