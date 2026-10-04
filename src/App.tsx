@@ -7,6 +7,7 @@ import ChestModal from './components/ChestModal';
 import CravingSOS from './components/CravingSOS';
 import { CardSheet } from './components/BudgetCard';
 import HabitSheet from './components/HabitSheet';
+import { AddHabitSheet } from './components/HabitsEditor';
 import Overlays from './components/Overlays';
 import QuickLog from './components/QuickLog';
 import { TodoEditor } from './components/Todos';
@@ -208,6 +209,7 @@ function Shell() {
       <QuickLog />
       <WrapUp />
       <HabitSheet />
+      <AddHabitSheet />
       <TodoEditor />
       <CardSheet />
     </AppShell>

@@ -171,7 +171,7 @@ export default function HabitSheet() {
   const habit = sheet ? allHabits(settings).find((h) => h.id === sheet.id) : undefined;
   const close = () => useUi.setState({ habitSheet: null });
   return (
-    <Sheet opened={!!sheet && !!habit} onClose={close} size="md">
+    <Sheet opened={!!sheet && !!habit} onClose={close} size="md" zIndex={310}>
       {habit && sheet && <Body key={habit.id} habit={habit} date={sheet.date} summaryHabits={summary.habits} />}
     </Sheet>
   );

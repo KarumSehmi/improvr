@@ -372,7 +372,7 @@ export function Sheet({
       position={wide ? 'right' : 'bottom'}
       size={wide ? (size ?? 'md') : 'auto'}
       radius={wide ? 0 : undefined}
-      withCloseButton={!!title}
+      withCloseButton={!!title || !!wide}
       title={title ? <span className="sheet-title">{title}</span> : undefined}
       zIndex={zIndex}
       classNames={{ content: wide ? 'sheet-content' : 'sheet-content sheet-bottom', header: 'sheet-header', body: 'sheet-body' }}
