@@ -345,7 +345,7 @@ export default function CalendarPage() {
                   <Fragment key={t.id}>
                     {laterTodos[i - 1]?.date !== t.date && (
                       <Text size="xs" c="dimmed" fw={700} px={4} mt={6}>
-                        {relativeDay(t.date, today)}
+                        {relativeDay(t.date!, today)}
                       </Text>
                     )}
                     <TodoRow todo={t} today={today} onEdit={editTodo} />

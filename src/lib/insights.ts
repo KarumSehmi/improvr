@@ -2,7 +2,7 @@
  * Patterns in your own data, written as plain sentences. Each insight only appears once there's
  * enough data behind it to mean something.
  */
-import { CHECKINS, WEEKDAYS } from './config';
+import { CHECKINS, WEEKDAYS, clockLabel, weekdayTargets } from './config';
 import { cravingPeak } from './cravings';
 import { addDays, diffDays, weekday, weekStart } from './dates';
 import { habitRates, slipStats, weekStats, type DayEval, type Summary } from './engine';
@@ -85,9 +85,10 @@ export function insights(summary: Summary): Insight[] {
 
   // Sleep & wake → how the rest of the day goes
   const sleepSet = new Set(['sleep', 'wake']);
+  const targets = weekdayTargets(summary.settings);
   for (const [id, good, bad] of [
-    ['sleep', 'After nights asleep before 1am', 'after late nights'],
-    ['wake', 'On days you’re up before 9am', 'when you sleep in'],
+    ['sleep', `After nights asleep before ${clockLabel(targets.sleep)}`, 'after late nights'],
+    ['wake', `On days you’re up before ${clockLabel(targets.wake)}`, 'when you sleep in'],
   ] as const) {
     if (!has(id)) continue;
     const r = compare(
@@ -171,7 +172,7 @@ export function insights(summary: Summary): Insight[] {
       withEnergy.filter((e) => e.log?.done?.sleep === false).map((e) => dayEnergy(e)!),
     );
     if (r && r.a - r.b >= 0.4) {
-      out.push({ id: 'energy-sleep', emoji: '🔋', tone: 'tip', weight: 79, text: `After a night asleep before 1am your energy is ${r.a.toFixed(1)}/5, vs ${r.b.toFixed(1)} after a late one.` });
+      out.push({ id: 'energy-sleep', emoji: '🔋', tone: 'tip', weight: 79, text: `After a night asleep before ${clockLabel(targets.sleep)} your energy is ${r.a.toFixed(1)}/5, vs ${r.b.toFixed(1)} after a late one.` });
     }
   }
 

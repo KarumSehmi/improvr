@@ -2,7 +2,7 @@ import { List, Stack, Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { burst } from './celebrate';
-import { BONUS } from './config';
+import { BONUS, featureOn } from './config';
 import type { DateKey } from './dates';
 import type { DayEval } from './engine';
 import { useUi } from './hooks';
@@ -22,7 +22,7 @@ export function lockDay(date: DateKey, e: DayEval, open: boolean) {
       message: open ? `+${BONUS.loggedOnTime} XP for logging on time` : `The ${fine} fine still applies for this day.`,
     });
     // On time → your reward chest
-    if (open && !e.dayOff) setTimeout(() => useUi.setState({ chestDate: date }), 900);
+    if (open && !e.dayOff && featureOn(useApp.getState().settings, 'chest')) setTimeout(() => useUi.setState({ chestDate: date }), 900);
   };
 
   const unanswered = e.items.filter((i) => i.visible && i.habit.kind === 'avoid' && !i.done && !i.missed);

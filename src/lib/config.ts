@@ -11,6 +11,7 @@ export type HabitKind =
   | 'check' // simple tick
   | 'time' // yes/no with a rough time if you missed it (sleep / wake)
   | 'water' // tap bottles
+  | 'count' // count up to a target (10 pages, 20 mins…)
   | 'dose' // finasteride ml
   | 'avoid' // stayed clean / slipped
   | 'chore'; // recurring, carries over every day until done
@@ -39,19 +40,31 @@ export interface Habit {
   optional?: boolean;
   /** Stay-clean habits only: slips allowed per Mon–Sun week before it counts as a miss. */
   weeklyLimit?: number;
+  /** Water and count habits: how many make it done (2 bottles, 10 pages…). */
+  target?: number;
+  /** Count habits: what you're counting ("pages", "mins"). */
+  unit?: string;
   custom?: boolean;
 }
 
+/** What you can change about any habit, built-in or your own (Settings → Habits). The kind never changes. */
+export type HabitEdit = Partial<Pick<Habit, 'label' | 'emoji' | 'section' | 'points' | 'hint' | 'important' | 'optional' | 'restDays' | 'target' | 'unit'>>;
+
 /** `from` = the hour a section becomes relevant (before that it's folded away as "later" on Today). */
-export const SECTIONS: { id: SectionId; title: string; emoji: string; subtitle: string; color: string; from: number }[] = [
-  { id: 'morning', title: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
-  { id: 'day', title: 'Through the day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
-  { id: 'room', title: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
-  { id: 'night', title: 'Night', emoji: '🌙', subtitle: 'Teeth, skin, finasteride & minoxidil', color: 'indigo', from: 20 },
-  { id: 'clean', title: 'Stayed clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
+export const SECTIONS: { id: SectionId; title: string; short: string; emoji: string; subtitle: string; color: string; from: number }[] = [
+  { id: 'morning', title: 'Morning', short: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
+  { id: 'day', title: 'Through the day', short: 'Day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
+  { id: 'room', title: 'Room', short: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
+  { id: 'night', title: 'Night', short: 'Night', emoji: '🌙', subtitle: 'Teeth, skin, finasteride & minoxidil', color: 'indigo', from: 20 },
+  { id: 'clean', title: 'Stayed clean', short: 'Clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
 export const SECTION_BY_ID = Object.fromEntries(SECTIONS.map((s) => [s.id, s])) as Record<SectionId, (typeof SECTIONS)[number]>;
+
+/** The hour a section comes due on Today (you can move these in Settings → Targets & times). */
+export function sectionHour(settings: Pick<Settings, 'sectionHours'> | undefined, id: SectionId): number {
+  return settings?.sectionHours?.[id] ?? SECTION_BY_ID[id].from;
+}
 
 /** Teeth, creatine, minoxidil and the home workout were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
@@ -88,7 +101,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'pillRefill', label: 'Refill pill organiser', emoji: '🗓️', section: 'morning', kind: 'chore', points: 15, schedule: { weekday: 0, everyWeeks: 2 } },
 
   // Through the day
-  { id: 'water', label: '2 bottles of water', emoji: '🚰', section: 'day', kind: 'water', points: 10 },
+  { id: 'water', label: '2 bottles of water', emoji: '🚰', section: 'day', kind: 'water', points: 10, target: 2 },
   { id: 'macro', label: 'Logged on MacroFactor', emoji: '📱', section: 'day', kind: 'check', points: 10 },
   { id: 'protein', label: 'Hit protein', emoji: '🍗', section: 'day', kind: 'check', points: 15 },
   { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
@@ -143,19 +156,42 @@ export const BUILT_IN_BY_ID = Object.fromEntries(BUILT_IN_HABITS.map((h) => [h.i
 
 const cache = new WeakMap<Settings, Habit[]>();
 
-/** The habits you're actually tracking: built-ins (minus hidden, with your schedule changes) plus your own. */
+/** A built-in habit with your changes (name, emoji, section, XP, schedule, targets…), before hiding. */
+export function editedHabit(h: Habit, settings: Settings): Habit {
+  const edit = h.custom ? {} : (settings.habitEdits?.[h.id] ?? {});
+  const schedule = settings.scheduleOverrides?.[h.id];
+  const limit = settings.weeklyLimits?.[h.id];
+  const out: Habit = { ...h, ...edit, id: h.id, kind: h.kind };
+  if (schedule && !h.custom) out.schedule = schedule;
+  if (h.kind === 'avoid' && limit != null) out.weeklyLimit = limit;
+  // Names that mention a target follow it, unless you've renamed them.
+  if (!edit.label && !h.custom) {
+    if (h.id === 'water' && out.target != null && out.target !== h.target) out.label = `${out.target} bottle${out.target === 1 ? '' : 's'} of water`;
+    if (h.id === 'caffeine') out.label = `No caffeine after ${clockLabel(caffeineCutoff(settings))}`;
+    if (h.id === 'sleep') out.label = `Asleep before ${clockLabel(weekdayTargets(settings).sleep)}`;
+    if (h.id === 'wake') out.label = `Up before ${clockLabel(weekdayTargets(settings).wake)}`;
+  }
+  return out;
+}
+
+/** Every habit there is, switched on or not: built-ins (with your changes) plus your own, in your order. */
+export function allHabits(settings: Settings): Habit[] {
+  const builtIn = BUILT_IN_HABITS.map((h) => editedHabit(h, settings));
+  const custom = (settings.customHabits ?? []).map((h) => editedHabit({ ...h, custom: true }, settings));
+  // Sections in their usual order; inside a section, your order first, then the rest as they were added.
+  const sectionIdx = Object.fromEntries(SECTIONS.map((s, i) => [s.id, i])) as Record<SectionId, number>;
+  const order = new Map((settings.habitOrder ?? []).map((id, i) => [id, i]));
+  const all = [...builtIn, ...custom];
+  const rank = new Map(all.map((h, i) => [h.id, order.get(h.id) ?? 10_000 + i]));
+  return all.sort((a, b) => sectionIdx[a.section] - sectionIdx[b.section] || rank.get(a.id)! - rank.get(b.id)!);
+}
+
+/** The habits you're actually tracking: built-ins (minus hidden, with your changes) plus your own. */
 export function habitsFor(settings: Settings): Habit[] {
   const hit = cache.get(settings);
   if (hit) return hit;
   const hidden = new Set(settings.hiddenHabits ?? []);
-  const overrides = settings.scheduleOverrides ?? {};
-  const limits = settings.weeklyLimits ?? {};
-  const withLimit = (h: Habit) => (h.kind === 'avoid' && limits[h.id] != null ? { ...h, weeklyLimit: limits[h.id] } : h);
-  const builtIn = BUILT_IN_HABITS.filter((h) => !hidden.has(h.id)).map((h) => withLimit(overrides[h.id] ? { ...h, schedule: overrides[h.id] } : h));
-  const custom = (settings.customHabits ?? []).filter((h) => !hidden.has(h.id)).map((h) => withLimit({ ...h, custom: true }));
-  // Keep section order stable: each custom habit goes after the built-ins of its section.
-  const order = SECTIONS.map((s) => s.id);
-  const all = [...builtIn, ...custom].sort((a, b) => order.indexOf(a.section) - order.indexOf(b.section));
+  const all = allHabits(settings).filter((h) => !hidden.has(h.id));
   cache.set(settings, all);
   return all;
 }
@@ -176,6 +212,7 @@ export function scheduleLabel(s: ChoreSchedule | undefined): string {
 /** Choices for "how often" on daily habits. */
 export const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 7].map((n) => ({ value: String(n), label: n === 1 ? 'Every day' : n === 7 ? 'Weekly' : `Every ${n} days` }));
 
+/** Default bottles of water a day (change it on the habit). */
 export const WATER_TARGET = 2;
 
 /** Only gym counts towards the weekly target — football is extra. */
@@ -314,6 +351,20 @@ export const SLEEP_TARGETS = {
   weekend: { sleep: '02:00', wake: '10:30' },
 };
 
+/** Weekday targets (Sunday–Thursday nights, Monday–Friday mornings), with your changes. */
+export function weekdayTargets(settings: Pick<Settings, 'weekday'>): { sleep: string; wake: string } {
+  return { ...SLEEP_TARGETS.weekday, ...stripEmpty(settings.weekday) };
+}
+
+/** Weekend targets (Friday & Saturday nights, Saturday & Sunday mornings), with your changes. */
+export function weekendTargets(settings: Pick<Settings, 'weekend'>): { sleep: string; wake: string } {
+  return { ...SLEEP_TARGETS.weekend, ...stripEmpty(settings.weekend) };
+}
+
+function stripEmpty<T extends object>(o: T | undefined): Partial<T> {
+  return Object.fromEntries(Object.entries(o ?? {}).filter(([, v]) => v)) as Partial<T>;
+}
+
 /**
  * The targets that apply to a day's "asleep" and "up" answers. Saturday and Sunday are the weekend:
  * that covers Friday and Saturday nights (sleep is about the night before) and both lie-ins.
@@ -321,7 +372,27 @@ export const SLEEP_TARGETS = {
 export function sleepTargets(settings: Settings, date: DateKey): { sleep: string; wake: string; weekend: boolean } {
   const wd = weekday(date);
   const weekend = wd === 6 || wd === 0;
-  return weekend ? { ...SLEEP_TARGETS.weekend, ...settings.weekend, weekend } : { ...SLEEP_TARGETS.weekday, weekend };
+  return weekend ? { ...weekendTargets(settings), weekend } : { ...weekdayTargets(settings), weekend };
+}
+
+/** No caffeine after this time (2pm unless you change it). */
+export const DEFAULT_CAFFEINE_CUTOFF = '14:00';
+
+export function caffeineCutoff(settings: Pick<Settings, 'caffeineCutoff'>): string {
+  return settings.caffeineCutoff || DEFAULT_CAFFEINE_CUTOFF;
+}
+
+const shiftClock = (hhmm: string, mins: number) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  const t = (((h * 60 + m + mins) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+};
+
+/** Reminder times with your changes. The caffeine warning follows your cutoff (15 minutes before) unless you've set it. */
+export function reminderTimes(settings: Pick<Settings, 'reminders' | 'caffeineCutoff'>): ReminderSettings {
+  const r = { ...DEFAULT_REMINDERS, ...settings.reminders };
+  if (!settings.reminders?.caffeine) r.caffeine = shiftClock(caffeineCutoff(settings), -15);
+  return r;
 }
 
 /** '01:00' → '1am', '10:30' → '10:30am'. */
@@ -332,9 +403,29 @@ export function clockLabel(hhmm: string): string {
 
 /** Habit name for a day ("Asleep before 2am" on a Saturday). */
 export function habitLabel(h: Habit, settings: Settings, date: DateKey): string {
-  if (h.id !== 'sleep' && h.id !== 'wake') return h.label;
+  if ((h.id !== 'sleep' && h.id !== 'wake') || h.custom || settings.habitEdits?.[h.id]?.label) return h.label;
   const t = sleepTargets(settings, date);
   return h.id === 'sleep' ? `Asleep before ${clockLabel(t.sleep)}` : `Up before ${clockLabel(t.wake)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Parts of the app you can switch off (Settings → Today page)
+// ---------------------------------------------------------------------------
+
+export const FEATURES = [
+  { id: 'checkins', emoji: '⚡', label: 'Check-ins', detail: 'Morning, afternoon and evening energy taps, +5 XP each' },
+  { id: 'quest', emoji: '🎲', label: 'Bonus quest', detail: 'One small optional challenge a day, +15 XP' },
+  { id: 'chest', emoji: '🎁', label: 'Reward chest', detail: 'Lock in on time to open a chest of bonus XP' },
+  { id: 'race', emoji: '🏁', label: 'Race yesterday-you', detail: 'How far ahead or behind yesterday you are by now' },
+  { id: 'sos', emoji: '🆘', label: 'Craving SOS', detail: 'The 10-minute craving timer button' },
+  { id: 'budget', emoji: '💳', label: 'Card spending', detail: 'Weekly card update and pace against your limit' },
+] as const;
+
+export type FeatureId = (typeof FEATURES)[number]['id'];
+
+/** Everything's on unless you switch it off. */
+export function featureOn(settings: Pick<Settings, 'features'>, id: FeatureId): boolean {
+  return settings.features?.[id] !== false;
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {

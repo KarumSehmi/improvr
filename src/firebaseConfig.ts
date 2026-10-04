@@ -15,4 +15,5 @@ export const firebaseConfig = {
   measurementId: "G-LEFJ9EYH87"
 };
 
-export const cloudEnabled = firebaseConfig.apiKey.trim() !== '';
+// `npm run dev:local` forces local mode (no sign-in), handy for trying changes without touching your real data.
+export const cloudEnabled = firebaseConfig.apiKey.trim() !== '' && import.meta.env.VITE_LOCAL_ONLY !== '1';

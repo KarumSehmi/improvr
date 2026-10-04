@@ -46,7 +46,7 @@ export function TodoRow({ todo, today, onEdit }: { todo: Todo; today: DateKey; o
               </div>
               {late > 0 && (
                 <Text size="xs" c="orange.4" fw={600}>
-                  ↪ Carried over from {fmt(todo.date, 'ddd D MMM')} · {late} day{late === 1 ? '' : 's'}
+                  ↪ Carried over from {fmt(todo.date!, 'ddd D MMM')} · {late} day{late === 1 ? '' : 's'}
                 </Text>
               )}
               {!!todo.repeat && !done && (

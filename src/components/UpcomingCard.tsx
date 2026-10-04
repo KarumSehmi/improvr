@@ -64,7 +64,7 @@ export default function UpcomingCard({ today, summary }: { today: DateKey; summa
               📝 {t.title}
             </Text>
             <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
-              {relativeDay(t.date, today)}
+              {relativeDay(t.date!, today)}
             </Text>
           </Group>
         ))}

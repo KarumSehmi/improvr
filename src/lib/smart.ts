@@ -3,7 +3,7 @@
  * that matter right now — instead of making you scan the whole list.
  */
 import { birthdaysOn, eventsOn } from './calendar';
-import { WATER_TARGET, WORKOUTS, clockLabel, habitLabel, scheduleLabel, sleepTargets } from './config';
+import { WATER_TARGET, WORKOUTS, caffeineCutoff, clockLabel, featureOn, habitLabel, scheduleLabel, sleepTargets } from './config';
 import { addDays, fmt, weekday, weekStart, type DateKey } from './dates';
 import type { DayEval, Summary } from './engine';
 import { budgetStatus, money } from './budget';
@@ -56,7 +56,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     return [{ id: 'dayoff', emoji: '🏖️', title: 'Day off — enjoy it', detail: 'Streaks are frozen. Back at it tomorrow.', tone: 'good', priority: 100 }];
   }
 
-  if (chestReady(e, summary.today)) {
+  if (featureOn(data.settings, 'chest') && chestReady(e, summary.today)) {
     out.push({ id: 'chest', emoji: '🎁', title: `${e.perfect ? 'Golden chest' : 'Reward chest'} ready`, detail: 'Locked in on time — open it for bonus XP.', tone: 'good', priority: 105, action: { kind: 'chest', label: 'Open' } });
   }
 
@@ -81,10 +81,13 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
     }
   }
 
-  // Caffeine cutoff countdown
+  // Caffeine cutoff countdown (the 4 hours before it)
   const caffeine = item('caffeine');
-  if (caffeine && !caffeine.done && !caffeine.missed && h >= 10 && h < 14) {
-    const left = until(now, 14);
+  const [ch, cm] = caffeineCutoff(data.settings).split(':').map(Number);
+  const cutoffAt = ch + cm / 60;
+  const hour = h + now.getMinutes() / 60;
+  if (caffeine && !caffeine.done && !caffeine.missed && hour >= cutoffAt - 4 && hour < cutoffAt) {
+    const left = until(now, ch, cm);
     out.push({ id: 'caffeine', emoji: '☕', title: `Caffeine cutoff in ${dur(left)}`, detail: 'Last coffee now if you want one.', tone: left < 3_600_000 ? 'warn' : 'info', priority: left < 3_600_000 ? 80 : 50 });
   }
 
@@ -92,7 +95,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   const water = item('water');
   const bottles = e.log?.water ?? 0;
   if (water && !water.done && !water.missed && h >= 11) {
-    const left = WATER_TARGET - bottles;
+    const left = (water.habit.target ?? WATER_TARGET) - bottles;
     out.push({
       id: 'water',
       emoji: '🚰',
@@ -194,17 +197,20 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
       const carried = pending.filter((t) => carriedDays(t, date) > 0).sort((a, b) => carriedDays(b, date) - carriedDays(a, date));
       const oldest = carried[0];
       const late = oldest ? carriedDays(oldest, date) : 0;
+      const starred = pending.filter((t) => t.important);
       out.push({
         id: 'todos',
-        emoji: '📝',
+        emoji: starred.length ? '⭐' : '📝',
         title: pending.length === 1 ? pending[0].title : `${pending.length} to-dos still open`,
         detail: oldest
           ? `${carried.length === 1 ? `"${oldest.title}" has` : `${carried.length} have`} been carried over for ${late} day${late === 1 ? '' : 's'}.`
           : pending.length === 1
-            ? "On today's list."
+            ? pending[0].time
+              ? `Today at ${pending[0].time}.`
+              : "On today's list."
             : list(pending.map((t) => t.title)),
-        tone: oldest ? 'warn' : 'info',
-        priority: oldest ? 68 + Math.min(12, late * 3) : h >= 12 ? 57 : 44,
+        tone: oldest || starred.length ? 'warn' : 'info',
+        priority: oldest ? 68 + Math.min(12, late * 3) : starred.length ? 66 : h >= 12 ? 57 : 44,
         action: { kind: 'scroll', label: 'Show', target: 'todos' },
       });
     }
@@ -242,7 +248,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
   }
 
   // Credit card: weekly update, or a warning if you're over pace
-  if (date === summary.today && data.spending) {
+  if (date === summary.today && data.spending && featureOn(data.settings, 'budget')) {
     const card = budgetStatus(data.spending, data.settings, date);
     if (card.needsUpdate) {
       out.push({ id: 'card', emoji: '💳', title: 'Update your card spending', detail: 'What have you spent this month so far? +10 XP.', tone: 'info', priority: weekday(date) === 0 ? 70 : 42, action: { kind: 'scroll', label: 'Update', target: 'budget' } });
