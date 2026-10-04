@@ -373,7 +373,7 @@ export function summarize(data: AppData, today: DateKey): Summary {
   });
   const logStreak = runStreak(evals.map((e, i) => logOutcome(e, openFlags[i])));
 
-  // Training: X gym sessions per Mon–Sun week. Football and home workouts are extra.
+  // Training: X gym sessions per Mon–Sun week. The 15 min workout and football are extra.
   const target = data.settings.workoutTarget;
   const weeks: WeekTraining[] = [];
   if (evals.length) {
