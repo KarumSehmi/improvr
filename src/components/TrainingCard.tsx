@@ -9,14 +9,14 @@ import { accent } from '../lib/style';
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** Gym sessions this week against your target. Football and home workouts are extra. */
+/** Gym sessions this week against your target, plus the 15 min workout and football as extras. */
 export default function TrainingCard({ date, streak }: { date: DateKey; streak: Streak }) {
   const days = useApp((s) => s.days);
   const target = useApp((s) => s.settings.workoutTarget);
   const workouts = days[date]?.workouts ?? [];
   const ws = weekStart(date);
   const week = LETTERS.map((_, i) => addDays(ws, i));
-  // Only the gym counts towards the target; football is extra.
+  // Only the gym counts towards the target; the 15 min workout and football are extra.
   const sessions = week.filter((d) => days[d]?.workouts?.includes('gym')).length;
   const hit = sessions >= target;
   const left = target - sessions;
@@ -46,7 +46,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
       </div>
 
       <Group gap={8} mt={12} wrap="wrap">
-        {WORKOUTS.filter((w) => !w.legacy || workouts.includes(w.id)).map((w) => {
+        {WORKOUTS.map((w) => {
           const on = workouts.includes(w.id);
           return (
             <Tap key={w.id} className="chip" data-active={on || undefined} onClick={(e) => toggleWorkout(date, w.id, e)} aria-pressed={on}>

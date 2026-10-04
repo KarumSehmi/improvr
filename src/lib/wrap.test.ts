@@ -23,7 +23,6 @@ describe('wrap up', () => {
     expect(ids).not.toContain('weigh'); // done
     expect(ids).not.toContain('protein'); // already answered "not done"
     expect(ids).not.toContain('vape'); // answered
-    expect(ids).not.toContain('homeWorkout'); // a bonus, never required
     expect(ids.slice(-4)).toEqual(['caffeine', 'a', 'reflect', 'lock']);
     expect(ids).not.toContain('b'); // someday to-dos don't nag
   });
@@ -36,11 +35,12 @@ describe('wrap up', () => {
   });
 
   it('quick log splits what is due now from later today', () => {
-    const thu = '2026-10-01'; // the home workout (a bonus) exists from 30 Sep
-    const s = summarize(data(), thu);
+    const thu = '2026-10-01';
+    const stretch = { id: 'c_stretch', label: 'Stretch', emoji: '🧘', section: 'day' as const, kind: 'check' as const, points: 5, optional: true };
+    const s = summarize({ ...data(), settings: { ...defaultSettings(START), customHabits: [stretch] } }, thu);
     const { now, later, bonus } = openNowAndLater(s.evalByDate[thu], 9, true, s.settings);
     expect(now.every((i) => i.habit.section === 'morning')).toBe(true);
     expect(later.some((i) => i.habit.section === 'night')).toBe(true);
-    expect(bonus.map((i) => i.habit.id)).toEqual(['homeWorkout']);
+    expect(bonus.map((i) => i.habit.id)).toEqual(['c_stretch']);
   });
 });

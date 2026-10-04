@@ -81,6 +81,8 @@ function Body({ close }: { close: () => void }) {
   const { now: dueNow, later, bonus } = openNowAndLater(e, moment.hour, live, settings);
   const water = e.items.find((i) => i.habit.kind === 'water' && i.visible);
   const gym = log?.workouts?.includes('gym');
+  const home = WORKOUTS.find((w) => w.id === 'home')!;
+  const homeDone = log?.workouts?.includes('home');
   const football = WORKOUTS.find((w) => w.id === 'football')!;
   const states = checkinStates(date, log, new Date(now));
   const cur = currentCheckin(new Date(now));
@@ -166,6 +168,7 @@ function Body({ close }: { close: () => void }) {
               />
             )}
             {settings.workoutTarget > 0 && <Tile emoji="🏋️" label="Gym" sub={gym ? 'logged ✓' : `+${WORKOUTS[0].points} XP`} done={gym} onClick={(ev) => toggleWorkout(date, 'gym', ev)} />}
+            <Tile emoji={home.emoji} label="Workout" sub={homeDone ? 'logged ✓' : `15 min · +${home.points}`} done={homeDone} onClick={(ev) => toggleWorkout(date, 'home', ev)} />
             {(weekday(date) === 1 || log?.workouts?.includes('football')) && (
               <Tile emoji="⚽" label="Football" sub={log?.workouts?.includes('football') ? 'logged ✓' : `+${football.points} XP`} done={log?.workouts?.includes('football')} onClick={(ev) => (log?.workouts?.includes('football') ? toggleWorkout(date, 'football') : logWorkout(date, 'football', ev))} />
             )}

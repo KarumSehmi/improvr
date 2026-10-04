@@ -212,7 +212,7 @@ function RulesCard() {
       </List.Item>
       {settings.workoutTarget > 0 && (
         <List.Item>
-          <b>Gym is weekly:</b> {settings.workoutTarget}+ sessions Mon–Sun. Football and home workouts earn XP but don't count towards the target.
+          <b>Gym is weekly:</b> {settings.workoutTarget}+ sessions Mon–Sun. The 15 min workout and football earn XP but don't count towards the target.
         </List.Item>
       )}
       <List.Item>
