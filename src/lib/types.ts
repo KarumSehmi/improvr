@@ -144,6 +144,8 @@ export interface Settings {
   weekday?: { sleep?: string; wake?: string };
   /** No caffeine after this ('14:00'). */
   caffeineCutoff?: string;
+  /** Days kept light: Room jobs that repeat every few days wait for the next normal day (missing = Monday and Friday). */
+  easyDays?: number[];
   /** The hour each part of Today comes due (before that it's folded away as "later"). */
   sectionHours?: Partial<Record<SectionId, number>>;
   /** Parts of the app you've switched off (missing = on). */

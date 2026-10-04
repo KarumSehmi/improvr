@@ -2,7 +2,7 @@
  * Pure logic: what's due, scores, streaks, fines, XP. No React, no storage — easy to test.
  */
 // .js endings because this file also runs on the server (server/notify.ts).
-import { BONUS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, habitsFor, type Habit } from './config.js';
+import { BONUS, LEVEL_TITLES, WATER_TARGET, WORKOUTS, easyDays, habitsFor, type Habit } from './config.js';
 import { addDays, diffDays, fromNum, logDeadline, maxKey, toNum, weekday, weekStart, type DateKey } from './dates.js';
 import type { AppData, DayLog, Settings } from './types.js';
 
@@ -43,8 +43,14 @@ export function trackChore(h: Habit, data: AppData, until: DateKey): ChoreTrack 
   let nextDue: DateKey;
   let advance: (doneOn: DateKey, due: DateKey) => DateKey;
   if ('every' in s) {
-    nextDue = addDays(start, s.offset ?? 0);
-    advance = (doneOn) => addDays(doneOn, s.every);
+    // Room jobs every few days skip your easy days (football Monday, chilled Friday) and land on the next normal day.
+    const easy = new Set(s.every > 1 && h.section === 'room' ? easyDays(settings) : []);
+    const land = (d: DateKey) => {
+      for (let i = 0; i < 7; i++) if (!easy.has(weekday(addDays(d, i)))) return addDays(d, i);
+      return d;
+    };
+    nextDue = land(addDays(start, s.offset ?? 0));
+    advance = (doneOn) => land(addDays(doneOn, s.every));
   } else {
     const period = 7 * (s.everyWeeks ?? 1);
     const anchor = weeklyAnchor(h, settings, s.weekday, start);

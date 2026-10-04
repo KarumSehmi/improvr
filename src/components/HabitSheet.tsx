@@ -8,7 +8,7 @@ import { modals } from '@mantine/modals';
 import { useState, type ReactNode } from 'react';
 import { answerClean, answerTime, beatUrge, deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped } from '../lib/actions';
 import { FLEXIBLE_KINDS, completionRate, everyOn } from '../lib/engine';
-import { FREQUENCY_OPTIONS, KIND_LABEL, SECTIONS, WEEKDAYS, allHabits, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
+import { FREQUENCY_OPTIONS, KIND_LABEL, SECTIONS, WEEKDAYS, allHabits, easyDays, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
 import { dateKey, relativeDay, weekday } from '../lib/dates';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { habitHistory } from '../lib/trend';
@@ -39,6 +39,7 @@ function Field({ label, hint, children }: { label: string; hint?: ReactNode; chi
 /** Repeating jobs: every N days after you last did it, or on a day of the week (every week or every few weeks). */
 function ScheduleEditor({ habit }: { habit: Habit }) {
   const anchors = useApp((s) => s.settings.anchors);
+  const easy = useApp((s) => easyDays(s.settings));
   const s = habit.schedule!;
   const rolling = 'every' in s;
   const set = (next: ChoreSchedule) => setSchedule(habit.id, next);
@@ -82,6 +83,11 @@ function ScheduleEditor({ habit }: { habit: Habit }) {
             allowDeselect={false}
             aria-label="How many weeks"
           />
+          {easy.includes(s.weekday) && (
+            <Text size="xs" c="dimmed">
+              🛋️ {WEEKDAYS[s.weekday]} is one of your easy days (Settings → Targets & times). Fine if you want it here — it just won't be as light.
+            </Text>
+          )}
           {(s.everyWeeks ?? 1) > 1 && (
             <DatePickerInput
               label="Next one on"

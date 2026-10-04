@@ -13,11 +13,14 @@ import { accent } from '../lib/style';
 import { editHabit } from '../lib/actions';
 import { budgetSettings } from '../lib/budget';
 import { pop } from '../lib/celebrate';
-import { FEATURES, SECTIONS, caffeineCutoff, clockLabel, featureOn, sectionHour, weekdayTargets, weekendTargets } from '../lib/config';
+import { FEATURES, SECTIONS, WEEKDAYS, caffeineCutoff, clockLabel, easyDays, featureOn, sectionHour, weekdayTargets, weekendTargets } from '../lib/config';
 import { dateKey } from '../lib/dates';
 import { goTo, setHideDone, useSummary, useUi } from '../lib/hooks';
 import { getData, importData, updateSettings, useApp } from '../lib/store';
 import type { AppData } from '../lib/types';
+
+/** ['Monday', 'Wednesday', 'Friday'] → 'Monday, Wednesday and Friday'. */
+const listOf = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}` : (xs[0] ?? ''));
 
 const HOURS = Array.from({ length: 20 }, (_, i) => i + 4).map((h) => ({ value: String(h), label: `from ${h % 12 || 12}${h < 12 || h === 24 ? 'am' : 'pm'}` }));
 
@@ -58,6 +61,7 @@ function TargetsCard() {
   const wk = weekdayTargets(settings);
   const we = weekendTargets(settings);
   const water = habits.find((h) => h.kind === 'water');
+  const easy = new Set(easyDays(settings));
   const time = (value: string, onChange: (v: string) => void, label: string) => <TimeInput label={label} value={value} onChange={(e) => e.currentTarget.value && onChange(e.currentTarget.value)} />;
   return (
     <Stack gap="lg">
@@ -85,6 +89,36 @@ function TargetsCard() {
           onChange={(v) => Number(v) >= 0 && v !== '' && updateSettings({ workoutTarget: Number(v) })}
         />
       </SimpleGrid>
+      <div>
+        <Text fw={800}>🛋️ Easy days</Text>
+        <Text size="xs" c="dimmed" mb="sm">
+          {easy.size ? `${listOf([...easy].sort().map((d) => WEEKDAYS[d]))} stay light: ` : 'Pick days to keep light (e.g. football Monday): '}
+          room jobs that repeat every few days, like the bin, wait for the next normal day. Daily tidy-ups still show, and anything late still carries over.
+        </Text>
+        <Group gap={6} wrap="nowrap">
+          {WEEKDAYS.map((d, i) => {
+            const on = easy.has(i);
+            return (
+              <Tap
+                key={d}
+                className="chip"
+                data-active={on || undefined}
+                aria-label={`${d}: ${on ? 'easy day' : 'normal'}`}
+                aria-pressed={on}
+                onClick={() => {
+                  const next = new Set(easy);
+                  if (on) next.delete(i);
+                  else next.add(i);
+                  updateSettings({ easyDays: [...next].sort() });
+                }}
+                style={{ width: 38, padding: 0, justifyContent: 'center' }}
+              >
+                {d[0]}
+              </Tap>
+            );
+          })}
+        </Group>
+      </div>
       <div>
         <Text fw={800}>🕒 When each part of Today comes due</Text>
         <Text size="xs" c="dimmed" mb="sm">
