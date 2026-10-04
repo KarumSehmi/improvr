@@ -105,7 +105,7 @@ function TodoGroup({ title, todos, today, tone, showDate, collapsed, emoji }: { 
         <Group justify="space-between" py={4}>
           <Group gap={8}>
             <Text fz={16}>{emoji}</Text>
-            <Text fw={800} fz={15} c={tone ? `var(--mantine-color-${tone}-4)` : undefined}>
+            <Text fw={800} fz={15} c={tone === 'orange' ? 'var(--warn)' : tone ? `var(--mantine-color-${tone}-light-color)` : undefined}>
               {title}
             </Text>
             <Text fw={800} fz={13} c="dimmed" className="num">

@@ -382,7 +382,7 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && beatUrge(date, habit)}
                   aria-label="I beat another urge"
-                  style={{ color: 'var(--mantine-color-grape-4)', fontWeight: 750, cursor: 'pointer' }}
+                  style={{ color: 'var(--urge)', fontWeight: 750, cursor: 'pointer' }}
                 >
                   💪 {urges} beaten
                 </span>

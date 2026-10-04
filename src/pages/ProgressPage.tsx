@@ -100,7 +100,7 @@ function CleanCard({ summary }: { summary: Summary }) {
                 <Text fw={750}>
                   {s.habit.emoji} {s.habit.label}
                 </Text>
-                <Text fw={850} c="var(--mantine-color-orange-4)" className="num">
+                <Text fw={850} c="var(--streak)" className="num">
                   <span className="flame">🔥</span> {streak.current}d
                 </Text>
               </Group>
@@ -124,7 +124,7 @@ function CleanCard({ summary }: { summary: Summary }) {
               {(s.urgesAll > 0 || s.saved != null) && (
                 <Group gap="md" mt={6}>
                   {s.urgesAll > 0 && (
-                    <Text size="xs" fw={700} c="grape.4">
+                    <Text size="xs" fw={700} c="var(--urge)">
                       💪 {s.urges7} urges beaten this week ({s.urgesAll} total)
                     </Text>
                   )}
@@ -169,7 +169,7 @@ function HabitList({ summary }: { summary: Summary }) {
                   </div>
                   <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
                     <WeekDots days={week} color={color} />
-                    <Text size="xs" fw={850} c={streak.current >= 2 ? 'var(--mantine-color-orange-4)' : 'dimmed'} lh={1} className="num">
+                    <Text size="xs" fw={850} c={streak.current >= 2 ? 'var(--streak)' : 'dimmed'} lh={1} className="num">
                       {streak.current >= 1 ? (
                         <>
                           <span className="flame">🔥</span> {streak.current}

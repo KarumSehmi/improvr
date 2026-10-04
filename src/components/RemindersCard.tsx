@@ -133,7 +133,7 @@ export default function RemindersCard() {
 
         {mode === 'cloud' &&
           (timerOk ? (
-            <Text size="xs" c="teal.4" fw={600}>
+            <Text size="xs" c="var(--good)" fw={600}>
               ✓ Timer running · last check {dayjs(server!.lastCron).format('HH:mm')} · {devices} device{devices === 1 ? '' : 's'}
             </Text>
           ) : (

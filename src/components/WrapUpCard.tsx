@@ -119,7 +119,7 @@ export default function WrapUpCard({ date, evaluation: e, early }: { date: DateK
   const dayOffLink = !e.dayOff && open && (
     <UnstyledButton onClick={() => !usedOn && takeDayOff(date, label)} disabled={!!usedOn} style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: usedOn ? 0.5 : 1 }}>
       <IconBeach size={15} color="var(--mantine-color-blue-4)" />
-      <Text size="xs" fw={750} c="blue.4">
+      <Text size="xs" fw={750} c="var(--info)">
         {usedOn ? `Day off used this week (${fmt(usedOn, 'ddd')})` : 'Take your day off instead (1 a week)'}
       </Text>
     </UnstyledButton>

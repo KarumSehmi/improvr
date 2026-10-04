@@ -34,7 +34,7 @@ export default function TrainingCard({ date, streak }: { date: DateKey; streak: 
               {sessions}/{target}
             </Text>
             {streak.current >= 1 && (
-              <Text fz={11.5} fw={800} c="var(--mantine-color-orange-4)">
+              <Text fz={11.5} fw={800} c="var(--streak)">
                 <span className="flame">🔥</span> {streak.current} wk
               </Text>
             )}
