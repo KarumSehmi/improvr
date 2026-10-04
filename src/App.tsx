@@ -149,7 +149,7 @@ function Shell() {
 
   return (
     <AppShell navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: true } }} padding="md">
-      <AppShell.Navbar p="md" className="side">
+      <AppShell.Navbar p="md" className="side" data-hidden-mobile>
         <Group gap={8} mb="lg" px={6} mt={4}>
           <Text fz={26} lh={1}>
             🔥
