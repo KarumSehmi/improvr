@@ -7,7 +7,8 @@ import type { DayEval, Summary } from '../lib/engine';
 import { useNow, useUi } from '../lib/hooks';
 import { suggestions, type Suggestion } from '../lib/smart';
 import { useApp } from '../lib/store';
-import { PanelHead, Tap, Tile, accent } from './ui';
+import { PanelHead, Tap, Tile } from './ui';
+import { accent } from '../lib/style';
 
 const TONE = { info: 'violet', warn: 'orange', good: 'teal' } as const;
 

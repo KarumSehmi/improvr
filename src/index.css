@@ -487,13 +487,46 @@ body::before {
   display: none;
 }
 
-/* Edge-to-edge horizontal scrollers inside the page gutter */
-.bleed {
-  margin-left: calc(var(--gutter) * -1);
-  margin-right: calc(var(--gutter) * -1);
-  padding-left: var(--gutter);
-  padding-right: var(--gutter);
-  scroll-padding-left: var(--gutter);
+/* Edge-to-edge horizontal scrollers inside the page gutter (phones) */
+@media (max-width: 47.99em) {
+  .bleed {
+    margin-left: calc(var(--gutter) * -1);
+    margin-right: calc(var(--gutter) * -1);
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    scroll-padding-left: var(--gutter);
+  }
+}
+
+@media (min-width: 48em) {
+  .bleed {
+    flex-wrap: wrap;
+  }
+}
+
+/* Today: one column on phones; overview + checklist side by side on big screens */
+.today-grid,
+.today-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* Below the two-column size, Today keeps the comfortable reading width */
+@media (max-width: 74.99em) {
+  .today-container {
+    max-width: 720px !important;
+  }
+}
+
+@media (min-width: 75em) {
+  .today-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    align-items: start;
+    gap: 22px;
+  }
 }
 
 .flash {
@@ -1058,6 +1091,10 @@ body::before {
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   border-radius: 14px;
   font-weight: 700;
   font-size: 15px;

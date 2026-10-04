@@ -6,17 +6,9 @@ import { hapticTrigger } from 'ios-haptics';
 import { AnimatePresence, motion } from 'motion/react';
 import { Children, useId, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { fmt, type DateKey } from '../lib/dates';
+import { accent } from '../lib/style';
 import { useFloaters } from '../lib/feedback';
 import type { HistoryState } from '../lib/trend';
-
-/** CSS variables for an accent colour (a Mantine colour name), used by tiles, checks, bars and chips. */
-export function accent(color: string): CSSProperties {
-  return {
-    '--accent': `var(--mantine-color-${color}-filled)`,
-    '--accent-soft': `var(--mantine-color-${color}-light)`,
-    '--accent-text': `var(--mantine-color-${color}-light-color)`,
-  } as CSSProperties;
-}
 
 // Scrolling on a phone often ends on a row. Anything that moved, or landed during or just after a
 // scroll (e.g. the tap that stops a flick), isn't a real tap.

@@ -2,7 +2,7 @@ import { AppShell, Button, Center, Container, Group, Kbd, Loader, Stack, Text } 
 import { useHotkeys } from '@mantine/hooks';
 import { IconCalendarEvent, IconChartBar, IconChecklist, IconPlus, IconSettings } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, type ComponentType } from 'react';
+import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import ChestModal from './components/ChestModal';
 import CravingSOS from './components/CravingSOS';
 import { CardSheet } from './components/BudgetCard';
@@ -19,10 +19,12 @@ import { clearDelivered } from './lib/push';
 import { badgeCount, daypart, logicalNow } from './lib/moments';
 import { updateSettings, useApp } from './lib/store';
 import LoginPage from './pages/LoginPage';
-import PlanPage from './pages/PlanPage';
-import ProgressPage from './pages/ProgressPage';
-import SettingsPage from './pages/SettingsPage';
 import TodayPage from './pages/TodayPage';
+
+// Loaded when first opened (charts and calendars are big); the app still works offline.
+const PlanPage = lazy(() => import('./pages/PlanPage'));
+const ProgressPage = lazy(() => import('./pages/ProgressPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 type Icon = ComponentType<{ size?: number; stroke?: number }>;
 
@@ -163,7 +165,7 @@ function Shell() {
           {TABS.map((t, i) => {
             const active = page === t.id;
             return (
-              <button key={t.id} type="button" className="side-link" data-active={active || undefined} onClick={() => goTo(t.id)}>
+              <button key={t.id} type="button" className="side-link" data-active={active || undefined} onClick={() => goTo(t.id)} aria-label={t.label} aria-current={active ? 'page' : undefined}>
                 <t.icon size={21} stroke={active ? 2.2 : 1.8} />
                 <span style={{ flex: 1, textAlign: 'left' }}>{t.label}</span>
                 {t.id === 'today' && badge ? (
@@ -185,10 +187,18 @@ function Shell() {
       </AppShell.Navbar>
 
       <AppShell.Main className="safe-top main-pad">
-        <Container size={page === 'today' ? 720 : 680} px={0}>
+        <Container size={page === 'today' ? 1120 : 680} px={0} className={page === 'today' ? 'today-container' : undefined}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={page} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
-              <Page />
+              <Suspense
+                fallback={
+                  <Center py={80}>
+                    <Loader type="dots" color="violet" />
+                  </Center>
+                }
+              >
+                <Page />
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </Container>

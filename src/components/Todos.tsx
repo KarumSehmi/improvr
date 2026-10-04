@@ -12,7 +12,8 @@ import { dayLabel, parseTodo, repeatLabel, timeLabel, type ChipKind } from '../l
 import { newId, updateSettings, upsert, useApp } from '../lib/store';
 import { carriedDays, openTodos, snoozeOptions, todoListsFor, todosOn } from '../lib/todos';
 import type { Todo } from '../lib/types';
-import { CheckCircle, M, Meta, PanelHead, Sheet, Tap, accent } from './ui';
+import { CheckCircle, M, Meta, PanelHead, Sheet, Tap } from './ui';
+import { accent } from '../lib/style';
 
 function tick(todo: Todo, today: DateKey, e: MouseEvent) {
   if (!toggle(todo, today)) return;

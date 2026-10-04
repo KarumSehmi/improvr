@@ -3,18 +3,16 @@ import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconBottle, IconBottleFilled, IconCheck, IconMinus, IconPlus, IconX } from '@tabler/icons-react';
 import type { MouseEvent, ReactNode } from 'react';
-import { answerClean, answerTime, bump, setDone, setSkipped, targetOf } from '../lib/actions';
-import { BONUS, habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
-import { pop } from '../lib/celebrate';
+import { answerClean, answerTime, beatUrge, bump, setDone, setSkipped, targetOf } from '../lib/actions';
+import { habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import type { DateKey } from '../lib/dates';
 import { everyOn, type ItemEval, type Streak } from '../lib/engine';
-import { floatXp } from '../lib/feedback';
 import { openHabit } from '../lib/hooks';
-import { logUrge } from '../lib/cravings';
 import { formatDuration, sleepMinutes } from '../lib/sleep';
 import { updateDay, updateSettings, useApp } from '../lib/store';
 import type { DayLog } from '../lib/types';
-import { CheckCircle, M, Meta, Seg, Stepper, Tap, Tile, accent } from './ui';
+import { CheckCircle, M, Meta, Seg, Stepper, Tap, Tile } from './ui';
+import { accent } from '../lib/style';
 
 interface Props {
   item: ItemEval;
@@ -357,12 +355,6 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
         }
         answerClean(date, habit, next, e);
       };
-      const beatUrge = (e: MouseEvent) => {
-        if (urges < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
-        pop(e);
-        updateDay(date, (l) => logUrge(l, id, Date.now()));
-        notifications.show({ color: 'teal', title: `💪 Urge beaten${urges ? ` (${urges + 1} today)` : ''}`, message: 'Cravings peak and pass in about 10 minutes. Ride it out.' });
-      };
       return (
         <Row
           id={id}
@@ -379,20 +371,22 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                   {allowance.used}/{allowance.limit} this week
                 </M>
               )}
-              <StreakBits streak={streak} atRisk={atRisk} />
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  beatUrge(e);
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && beatUrge(e as unknown as MouseEvent)}
-                aria-label="I beat an urge"
-                style={{ color: 'var(--mantine-color-grape-4)', fontWeight: 750, cursor: 'pointer' }}
-              >
-                💪 {urges ? `${urges} urge${urges === 1 ? '' : 's'} beaten` : 'beat an urge'}
-              </span>
+              {streak.current >= 2 && <StreakBits streak={streak} atRisk={atRisk} />}
+              {urges > 0 && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    beatUrge(date, habit, e);
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && beatUrge(date, habit)}
+                  aria-label="I beat another urge"
+                  style={{ color: 'var(--mantine-color-grape-4)', fontWeight: 750, cursor: 'pointer' }}
+                >
+                  💪 {urges} beaten
+                </span>
+              )}
             </Meta>
           }
           right={

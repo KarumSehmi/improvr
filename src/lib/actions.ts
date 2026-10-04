@@ -7,6 +7,7 @@ import { notifications } from '@mantine/notifications';
 import { floatXp, notifyUndo } from './feedback';
 import { burst, fireworks, pop } from './celebrate';
 import { BONUS, CHECKINS, WATER_TARGET, WORKOUTS, allHabits, type CheckinId, type ChoreSchedule, type Habit, type HabitEdit } from './config';
+import { logUrge } from './cravings';
 import { sound } from './sound';
 import type { DayLog, Settings, Todo, WorkoutType } from './types';
 import type { DateKey } from './dates';
@@ -94,6 +95,15 @@ export function answerClean(date: DateKey, h: Habit, value: 'clean' | 'slip' | n
     pop(e);
     floatXp(e, `+${h.points}`);
   }
+}
+
+/** A craving came and went without giving in: +5 XP (up to a few a day), and it remembers when. */
+export function beatUrge(date: DateKey, h: Habit, e?: At) {
+  const before = useApp.getState().days[date]?.urges?.[h.id] ?? 0;
+  updateDay(date, (l) => logUrge(l, h.id, Date.now()));
+  pop(e);
+  if (before < BONUS.urgeCap) floatXp(e, `+${BONUS.urge}`);
+  notifications.show({ color: 'teal', title: `💪 Urge beaten${before ? ` (${before + 1} today)` : ''}`, message: 'Cravings peak and pass in about 10 minutes. Ride it out.' });
 }
 
 /** Sleep / wake: yes, an honest no (pre-filled with the Watch's time if there is one), or unanswered. */

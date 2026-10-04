@@ -5,7 +5,7 @@
 import { ActionIcon, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconCheck, IconLock, IconX } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { answerClean, answerTime, bump, moveTodo, setDone, setMissed, setSkipped, targetOf, toggleTodo } from '../lib/actions';
 import { pop } from '../lib/celebrate';
 import { SECTION_BY_ID, habitLabel, scheduleLabel } from '../lib/config';
@@ -18,7 +18,8 @@ import { dayLabel, repeatLabel, timeLabel } from '../lib/quickadd';
 import { useApp } from '../lib/store';
 import { carriedDays } from '../lib/todos';
 import { wrapQueue, type WrapStep } from '../lib/wrap';
-import { ScoreRing, Stepper, Tap, accent } from './ui';
+import { ScoreRing, Stepper, Tap } from './ui';
+import { accent } from '../lib/style';
 import { MoodPicker, NoteField } from './WrapUpCard';
 
 export default function WrapUp() {
@@ -72,7 +73,8 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
   const [steps] = useState<WrapStep[]>(() => (e ? wrapQueue(e, todos, today) : []));
   const [i, setI] = useState(0);
   const [dir, setDir] = useState(1);
-  const actions = useRef<{ yes?: () => void; no?: () => void }>({});
+  // What → / ← do for the card on screen (filled in below, read by the key handler after render).
+  const keys: { yes?: () => void; no?: () => void } = {};
   const step = steps[i];
   const log = days[date];
 
@@ -90,9 +92,12 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
   // Keyboard: → or Enter = yes / done, ← = no, Backspace = back, Esc = close
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if ((ev.target as HTMLElement).closest('textarea, input')) return;
-      if (ev.key === 'ArrowRight' || ev.key === 'Enter') actions.current.yes?.();
-      else if (ev.key === 'ArrowLeft') actions.current.no?.();
+      const target = ev.target as HTMLElement;
+      if (target.closest('textarea, input')) return;
+      // Enter on a focused button already presses it.
+      if (ev.key === 'Enter' && target.closest('button, [role="button"]')) return;
+      if (ev.key === 'ArrowRight' || ev.key === 'Enter') keys.yes?.();
+      else if (ev.key === 'ArrowLeft') keys.no?.();
       else if (ev.key === 'Backspace') back();
       else return;
       ev.preventDefault();
@@ -103,13 +108,18 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
 
   if (!e || !step) return null;
   const open = isOpen(date, today);
-  actions.current = {};
 
   let body: ReactNode = null;
   if (step.kind === 'habit') {
     const item = e.items.find((x) => x.habit.id === step.id);
     if (!item) {
-      body = null;
+      Object.assign(keys, { yes: next });
+      body = (
+        <Stack gap="lg" align="center">
+          <Text c="dimmed">That one isn't on your list any more.</Text>
+          <Button onClick={next}>Next</Button>
+        </Stack>
+      );
     } else {
       const h = item.habit;
       const sec = SECTION_BY_ID[h.section];
@@ -127,37 +137,37 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
       let buttons: ReactNode;
       if (h.kind === 'avoid') {
         const allowed = !!item.allowance && item.allowance.used < item.allowance.limit;
-        actions.current = { yes: () => (answerClean(date, h, 'clean'), next()), no: () => (answerClean(date, h, 'slip'), next()) };
+        Object.assign(keys, { yes: () => (answerClean(date, h, 'clean'), next()), no: () => (answerClean(date, h, 'slip'), next()) });
         buttons = (
           <>
-            <Answer tone={allowed ? 'warn' : 'bad'} onClick={actions.current.no!}>
+            <Answer tone={allowed ? 'warn' : 'bad'} onClick={keys.no!}>
               {h.weeklyLimit ? (h.id === 'alcohol' ? 'Drank' : 'Did it') : 'Slipped'}
             </Answer>
-            <Answer tone="good" onClick={actions.current.yes!}>
+            <Answer tone="good" onClick={keys.yes!}>
               <IconCheck size={20} stroke={3} /> Clean
             </Answer>
           </>
         );
       } else if (h.kind === 'time') {
-        actions.current = { yes: () => (answerTime(date, h, true), next()), no: () => (answerTime(date, h, false), next()) };
+        Object.assign(keys, { yes: () => (answerTime(date, h, true), next()), no: () => (answerTime(date, h, false), next()) });
         buttons = (
           <>
-            <Answer tone="bad" onClick={actions.current.no!}>
+            <Answer tone="bad" onClick={keys.no!}>
               <IconX size={20} stroke={3} /> No
             </Answer>
-            <Answer tone="good" onClick={actions.current.yes!}>
+            <Answer tone="good" onClick={keys.yes!}>
               <IconCheck size={20} stroke={3} /> Yes
             </Answer>
           </>
         );
       } else {
-        actions.current = { yes: () => (setDone(date, h, true), next()), no: () => (setMissed(date, h, true), next()) };
+        Object.assign(keys, { yes: () => (setDone(date, h, true), next()), no: () => (setMissed(date, h, true), next()) });
         buttons = (
           <>
-            <Answer tone="bad" onClick={actions.current.no!}>
+            <Answer tone="bad" onClick={keys.no!}>
               <IconX size={20} stroke={3} /> {h.kind === 'chore' ? 'Not today' : 'Not done'}
             </Answer>
-            <Answer tone="good" onClick={actions.current.yes!}>
+            <Answer tone="good" onClick={keys.yes!}>
               <IconCheck size={20} stroke={3} /> Done
             </Answer>
           </>
@@ -192,7 +202,7 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
       const late = carriedDays(t, today);
       const sub = [late ? `↪ carried over ${late} day${late === 1 ? '' : 's'}` : t.date ? dayLabel(t.date, today) : null, t.time ? timeLabel(t.time) : null, t.repeat ? `↻ ${repeatLabel(t.repeat)}` : null].filter(Boolean).join(' · ');
       const done = !!t.doneOn;
-      actions.current = {
+      Object.assign(keys, {
         yes: () => {
           if (!done) {
             toggleTodo(t, today);
@@ -202,13 +212,13 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
           next();
         },
         no: () => (moveTodo(t, addDays(today, 1), 'tomorrow'), next()),
-      };
+      });
       body = (
         <Stack gap="lg">
           <Card color="blue" eyebrow="📝 To-do" emoji={t.important ? '⭐' : '📝'} title={t.title} sub={sub || undefined} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Answer onClick={actions.current.no!}>→ Tomorrow</Answer>
-            <Answer tone="good" onClick={actions.current.yes!}>
+            <Answer onClick={keys.no!}>→ Tomorrow</Answer>
+            <Answer tone="good" onClick={keys.yes!}>
               <IconCheck size={20} stroke={3} /> Done
             </Answer>
           </div>
@@ -222,9 +232,17 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
           </Group>
         </Stack>
       );
+    } else {
+      Object.assign(keys, { yes: next });
+      body = (
+        <Stack gap="lg" align="center">
+          <Text c="dimmed">That to-do has gone.</Text>
+          <Button onClick={next}>Next</Button>
+        </Stack>
+      );
     }
   } else if (step.kind === 'reflect') {
-    actions.current = { yes: next };
+    Object.assign(keys, { yes: next });
     body = (
       <Stack gap="lg">
         <div className="run-card" style={accent('violet')}>
@@ -247,7 +265,7 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
       close();
       lockDay(date, e, open);
     };
-    actions.current = { yes: lock };
+    Object.assign(keys, { yes: lock });
     body = (
       <Stack gap="lg" align="stretch">
         <div className="run-card" style={accent('violet')}>

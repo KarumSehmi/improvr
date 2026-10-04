@@ -9,7 +9,8 @@ import { useNow, useUi } from '../lib/hooks';
 import { dayProgress, daypart, hatTrickStreak, logicalNow, pace, sectionLater, sectionStatus } from '../lib/moments';
 import { useApp } from '../lib/store';
 import CheckinStrip from './Checkins';
-import { ScoreRing, Tap, accent } from './ui';
+import { ScoreRing, Tap } from './ui';
+import { accent } from '../lib/style';
 
 interface Props {
   date: DateKey;

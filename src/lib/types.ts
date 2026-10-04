@@ -165,7 +165,8 @@ export interface Settings {
   seenLevel?: number;
   seenAchievements?: string[];
   onboarded?: boolean;
-  reminders?: ReminderSettings;
+  /** Only the reminder times you've changed (the rest follow the defaults and your targets). */
+  reminders?: Partial<ReminderSettings>;
 
   /** IANA time zone of your phone, so the notification server knows your local time. */
   timeZone?: string;

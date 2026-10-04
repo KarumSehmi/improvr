@@ -47,6 +47,17 @@ export interface Habit {
   custom?: boolean;
 }
 
+/** What each kind of habit is, in a few words. */
+export const KIND_LABEL: Record<HabitKind, string> = {
+  check: 'Daily tick',
+  chore: 'Repeating job · carries over until done',
+  time: 'Yes / no, with a rough time',
+  water: 'Bottles of water',
+  count: 'Count up to a target',
+  dose: 'Measured dose',
+  avoid: 'Stay clean · answered honestly',
+};
+
 /** What you can change about any habit, built-in or your own (Settings → Habits). The kind never changes. */
 export type HabitEdit = Partial<Pick<Habit, 'label' | 'emoji' | 'section' | 'points' | 'hint' | 'important' | 'optional' | 'restDays' | 'target' | 'unit'>>;
 
@@ -391,7 +402,9 @@ const shiftClock = (hhmm: string, mins: number) => {
 /** Reminder times with your changes. The caffeine warning follows your cutoff (15 minutes before) unless you've set it. */
 export function reminderTimes(settings: Pick<Settings, 'reminders' | 'caffeineCutoff'>): ReminderSettings {
   const r = { ...DEFAULT_REMINDERS, ...settings.reminders };
-  if (!settings.reminders?.caffeine) r.caffeine = shiftClock(caffeineCutoff(settings), -15);
+  // Older versions saved every time, so the default 13:45 there still means "not changed".
+  const own = settings.reminders?.caffeine;
+  if (!own || own === DEFAULT_REMINDERS.caffeine) r.caffeine = shiftClock(caffeineCutoff(settings), -15);
   return r;
 }
 

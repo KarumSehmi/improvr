@@ -118,7 +118,7 @@ export default function CravingSOS() {
             <Group gap={6}>
               {habits.map((h) => (
                 <Chip key={h.id} value={h.id} size="sm" variant="light">
-                  {h.emoji} {h.label.replace(/^No /, '')}
+                  {h.emoji} {h.label.replace(/^No /, '').replace(/^\w/, (c) => c.toUpperCase())}
                 </Chip>
               ))}
             </Group>

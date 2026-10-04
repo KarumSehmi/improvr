@@ -12,7 +12,8 @@ import TodoCard from '../components/Todos';
 import TrainingCard from '../components/TrainingCard';
 import UpNextCard from '../components/UpNextCard';
 import WrapUpCard from '../components/WrapUpCard';
-import { Tap, accent } from '../components/ui';
+import { Tap } from '../components/ui';
+import { accent } from '../lib/style';
 import { markNotDone, tickAll } from '../lib/actions';
 import { birthdaysOn } from '../lib/calendar';
 import { QUOTE, SECTIONS, STREAK_MILESTONES, featureOn, sectionHour } from '../lib/config';
@@ -125,131 +126,139 @@ export default function TodayPage() {
   const sos = featureOn(settings, 'sos');
 
   return (
-    <Stack gap={14}>
-      {header}
+    <div className="today-grid">
+      <div className="today-col">
+        {header}
 
-      {outside && <Notice emoji="📅" color="violet" title={`Viewing ${fmt(date, 'dddd D MMM YYYY')}`} action={{ label: 'Today', onClick: () => openDay(null) }} />}
-      {summary.owed > 0 && (
-        <Notice
-          emoji="💷"
-          color="red"
-          title={`You owe £${summary.owed} to ${settings.charity}`}
-          sub={`${summary.fineDays.length} day${summary.fineDays.length === 1 ? '' : 's'} not locked in on time`}
-          action={{ label: 'Pay', onClick: () => goTo('progress', { progressTab: 'money' }) }}
-        />
-      )}
-      {otherPending.map((d) => (
-        <Notice
-          key={d}
-          emoji="⏳"
-          title={`${relativeDay(d, today)} isn't locked in`}
-          sub={`${formatCountdown(logDeadline(d) - now)} left before it costs £${settings.fineAmount}`}
-          action={{ label: 'Log it', onClick: () => openDay(d) }}
-        />
-      ))}
-      {bdays.length > 0 && <Notice emoji="🎂" color="pink" title={`It's ${bdays.map((b) => b.name).join(' & ')}'s birthday today`} sub="Send a message!" />}
+        {outside && <Notice emoji="📅" color="violet" title={`Viewing ${fmt(date, 'dddd D MMM YYYY')}`} action={{ label: 'Today', onClick: () => openDay(null) }} />}
+        {summary.owed > 0 && (
+          <Notice
+            emoji="💷"
+            color="red"
+            title={`You owe £${summary.owed} to ${settings.charity}`}
+            sub={`${summary.fineDays.length} day${summary.fineDays.length === 1 ? '' : 's'} not locked in on time`}
+            action={{ label: 'Pay', onClick: () => goTo('progress', { progressTab: 'money' }) }}
+          />
+        )}
+        {otherPending.map((d) => (
+          <Notice
+            key={d}
+            emoji="⏳"
+            title={`${relativeDay(d, today)} isn't locked in`}
+            sub={`${formatCountdown(logDeadline(d) - now)} left before it costs £${settings.fineAmount}`}
+            action={{ label: 'Log it', onClick: () => openDay(d) }}
+          />
+        ))}
+        {bdays.length > 0 && <Notice emoji="🎂" color="pink" title={`It's ${bdays.map((b) => b.name).join(' & ')}'s birthday today`} sub="Send a message!" />}
 
-      <HeroCard date={date} evaluation={e} yesterdayPct={yesterdayPct} summary={summary} focus={focus} />
-      <StatPills summary={summary} />
+        <HeroCard date={date} evaluation={e} yesterdayPct={yesterdayPct} summary={summary} focus={focus} />
+        <StatPills summary={summary} />
 
-      {prevNote && (
-        <div style={{ ...accent('violet'), borderLeft: '3px solid var(--accent)', padding: '2px 0 2px 12px' }}>
-          <div className="eyebrow">Note from {date === today ? 'yesterday' : 'the day before'}</div>
-          <Text size="sm" fw={650} mt={2}>
-            {prevNote}
-          </Text>
-        </div>
-      )}
-
-      {open && <UpNextCard date={date} evaluation={e} summary={summary} onLock={() => lockDay(date, e, open)} />}
-
-      {date === today && <TodoCard today={today} />}
-
-      {!e.dayOff && (
-        <Group justify="space-between" mt={4} px={2}>
-          <div className="eyebrow">
-            Your list · {e.completed}/{e.required}
+        {prevNote && (
+          <div style={{ ...accent('violet'), borderLeft: '3px solid var(--accent)', padding: '2px 0 2px 12px' }}>
+            <div className="eyebrow">Note from {date === today ? 'yesterday' : 'the day before'}</div>
+            <Text size="sm" fw={650} mt={2}>
+              {prevNote}
+            </Text>
           </div>
-          <Group gap={6}>
-            {open && left > 0 && (
-              <Tap className="chip" data-small onClick={() => useUi.setState({ wrapDate: date })}>
-                <IconPlayerPlayFilled size={11} /> Go through {left}
+        )}
+
+        {open && <UpNextCard date={date} evaluation={e} summary={summary} onLock={() => lockDay(date, e, open)} />}
+
+        {date === today && <TodoCard today={today} />}
+      </div>
+
+      <div className="today-col">
+        {!e.dayOff && (
+          <Group justify="space-between" mt={4} px={2}>
+            <div className="eyebrow">
+              Your list · {e.completed}/{e.required}
+            </div>
+            <Group gap={6}>
+              {open && left > 0 && (
+                <Tap className="chip" data-small onClick={() => useUi.setState({ wrapDate: date })}>
+                  <IconPlayerPlayFilled size={11} /> Go through {left}
+                </Tap>
+              )}
+              <Tap className="chip" data-small data-active={hideDone || undefined} onClick={() => setHideDone(!hideDone)} aria-pressed={hideDone}>
+                {hideDone ? <IconEyeOff size={13} /> : <IconEye size={13} />} {hideDone ? 'Done hidden' : 'Hide done'}
               </Tap>
-            )}
-            <Tap className="chip" data-small data-active={hideDone || undefined} onClick={() => setHideDone(!hideDone)} aria-pressed={hideDone}>
-              {hideDone ? <IconEyeOff size={13} /> : <IconEye size={13} />} {hideDone ? 'Done hidden' : 'Hide done'}
-            </Tap>
+            </Group>
           </Group>
-        </Group>
-      )}
+        )}
 
-      {SECTIONS.map((sec) => {
-        const status = sectionStatus(e, sec.id);
-        const { items, open: left } = status;
-        if (!items.length) return null;
-        const quickable = left.filter((i) => (sec.id === 'clean' ? i.habit.kind === 'avoid' : ['check', 'chore', 'dose'].includes(i.habit.kind) && !i.habit.skippable));
-        // Stayed clean always needs an honest answer, so it can't just be closed.
-        const closable = left.length > 0 && left.every((i) => i.habit.kind !== 'avoid');
-        const reason = sec.id === 'clean' && summary.habits.some((h) => h.id === 'vape') ? settings.reasons?.vape : null;
-        return (
-          <Stack key={sec.id} gap={14}>
-            <SectionCard
-              id={sec.id}
-              emoji={sec.emoji}
-              title={sec.title}
-              subtitle={reason ? `🚭 ${reason}` : sec.subtitle}
-              color={sec.color}
-              status={status}
-              quick={
-                quickable.length >= 2
-                  ? { label: sec.id === 'clean' ? 'All clean' : 'All ✓', onClick: (ev) => tickAll(date, quickable.map((i) => i.habit), ev) }
-                  : null
-              }
-              later={live && !status.closed && sectionLater(sec.id, moment.hour, settings) ? `from ${hourLabel(sectionHour(settings, sec.id))}` : null}
-              onCloseRest={closable ? () => markNotDone(date, left.map((i) => i.habit)) : null}
-              dayClosed={e.closed}
-              rows={items.map((item) => {
-                const streak = summary.habitStreaks[item.habit.id];
-                return {
-                  id: item.habit.id,
-                  done: item.done || item.skipped,
-                  node: (
-                    <HabitRow
-                      key={item.habit.id}
-                      item={item}
-                      date={date}
-                      log={e.log}
-                      streak={streak}
-                      color={sec.color}
-                      focus={item.habit.id === focusId}
-                      atRisk={live && moment.hour >= 18 && streak.current >= 3 && !item.done && !item.missed && item.required}
-                    />
-                  ),
-                };
-              })}
-              footer={
-                sec.id === 'clean' && sos ? (
-                  <Tap onClick={() => openSos()} className="chip" style={{ ...accent('red'), width: '100%', justifyContent: 'center', marginTop: 8, color: 'var(--accent-text)', background: 'var(--accent-soft)' }}>
-                    🆘 Craving? Ride it out for 10 minutes
-                  </Tap>
-                ) : null
-              }
-            />
-            {sec.id === 'day' && settings.workoutTarget > 0 && <TrainingCard date={date} streak={summary.trainingStreak} />}
-          </Stack>
-        );
-      })}
+        {SECTIONS.map((sec) => {
+          const status = sectionStatus(e, sec.id);
+          const { items, open: left } = status;
+          if (!items.length) return null;
+          const quickable = left.filter((i) => (sec.id === 'clean' ? i.habit.kind === 'avoid' : ['check', 'chore', 'dose'].includes(i.habit.kind) && !i.habit.skippable));
+          // Stayed clean always needs an honest answer, so it can't just be closed.
+          const closable = left.length > 0 && left.every((i) => i.habit.kind !== 'avoid');
+          const reason = sec.id === 'clean' && summary.habits.some((h) => h.id === 'vape') ? settings.reasons?.vape : null;
+          return (
+            <Stack key={sec.id} gap={14}>
+              <SectionCard
+                id={sec.id}
+                emoji={sec.emoji}
+                title={sec.title}
+                subtitle={reason ? `🚭 ${reason}` : sec.subtitle}
+                color={sec.color}
+                status={status}
+                quick={
+                  quickable.length >= 2
+                    ? { label: sec.id === 'clean' ? 'All clean' : 'All ✓', onClick: (ev) => tickAll(date, quickable.map((i) => i.habit), ev) }
+                    : null
+                }
+                later={live && !status.closed && sectionLater(sec.id, moment.hour, settings) ? `from ${hourLabel(sectionHour(settings, sec.id))}` : null}
+                onCloseRest={closable ? () => markNotDone(date, left.map((i) => i.habit)) : null}
+                dayClosed={e.closed}
+                rows={items.map((item) => {
+                  const streak = summary.habitStreaks[item.habit.id];
+                  return {
+                    id: item.habit.id,
+                    done: item.done || item.skipped,
+                    node: (
+                      <HabitRow
+                        key={item.habit.id}
+                        item={item}
+                        date={date}
+                        log={e.log}
+                        streak={streak}
+                        color={sec.color}
+                        focus={item.habit.id === focusId}
+                        atRisk={live && moment.hour >= 18 && streak.current >= 3 && !item.done && !item.missed && item.required}
+                      />
+                    ),
+                  };
+                })}
+                footer={
+                  sec.id === 'clean' && sos ? (
+                    <Tap
+                      onClick={() => openSos()}
+                      className="chip"
+                      style={{ ...accent('red'), width: '100%', justifyContent: 'center', marginTop: 8, color: 'var(--accent-text)', background: 'var(--accent-soft)' }}
+                    >
+                      🆘 Craving? Ride it out for 10 minutes
+                    </Tap>
+                  ) : null
+                }
+              />
+              {sec.id === 'day' && settings.workoutTarget > 0 && <TrainingCard date={date} streak={summary.trainingStreak} />}
+            </Stack>
+          );
+        })}
 
-      {featureOn(settings, 'quest') && open && !e.dayOff && <QuestCard date={date} log={e.log} />}
+        {featureOn(settings, 'quest') && open && !e.dayOff && <QuestCard date={date} log={e.log} />}
 
-      <WrapUpCard date={date} evaluation={e} early={!evening} />
+        <WrapUpCard date={date} evaluation={e} early={!evening} />
 
-      <Text size="xs" c="dimmed" ta="center" fs="italic" mt="sm">
-        “{QUOTE}”
-      </Text>
-      <Text size="xs" c="dimmed" ta="center" mt={-8} style={{ opacity: 0.7 }}>
-        Tip: press and hold anything for more options
-      </Text>
-    </Stack>
+        <Text size="xs" c="dimmed" ta="center" fs="italic" mt="sm">
+          “{QUOTE}”
+        </Text>
+        <Text size="xs" c="dimmed" ta="center" mt={-8} style={{ opacity: 0.7 }}>
+          Tip: press and hold anything for more options
+        </Text>
+      </div>
+    </div>
   );
 }

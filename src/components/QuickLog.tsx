@@ -6,7 +6,7 @@ import { Collapse, Group, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks';
 import { IconChevronDown, IconSearch, IconX } from '@tabler/icons-react';
 import { useState, type MouseEvent, type ReactNode } from 'react';
-import { bump, checkIn, logWorkout, toggleQuest, toggleWorkout, targetOf } from '../lib/actions';
+import { beatUrge, bump, checkIn, logWorkout, toggleQuest, toggleWorkout, targetOf } from '../lib/actions';
 import { CHECKINS, SECTION_BY_ID, WORKOUTS, featureOn } from '../lib/config';
 import { addDays, fmt, weekday } from '../lib/dates';
 import type { ItemEval } from '../lib/engine';
@@ -69,6 +69,7 @@ function Body({ close }: { close: () => void }) {
   const settings = useApp((s) => s.settings);
   const wide = useMediaQuery('(min-width: 48em)');
   const [q, setQ] = useState('');
+  const [urgeOpen, setUrgeOpen] = useState(false);
   const date = logDate(now, summary);
   const e = summary.evalByDate[date];
   const log = days[date];
@@ -86,7 +87,9 @@ function Body({ close }: { close: () => void }) {
   const checkinOpen = featureOn(settings, 'checkins') && cur.date === date && states[cur.id] === 'open';
   const quest = questFor(date, log?.quest?.swap ?? 0);
   const questOn = featureOn(settings, 'quest') && !e.dayOff;
-  const hasAvoid = summary.habits.some((h) => h.kind === 'avoid');
+  const avoid = summary.habits.filter((h) => h.kind === 'avoid');
+  const hasAvoid = avoid.length > 0;
+  const urges = Object.values(log?.urges ?? {}).reduce((a, b) => a + b, 0);
   const todosOpen = date === today ? openTodos(todos, today) : [];
 
   const row = (i: ItemEval) => (
@@ -189,6 +192,15 @@ function Body({ close }: { close: () => void }) {
                 }}
               />
             )}
+            {hasAvoid && (
+              <Tile
+                emoji="💪"
+                label="Beat an urge"
+                sub={urges ? `${urges} today` : '+5 XP'}
+                done={urgeOpen}
+                onClick={(ev) => (avoid.length === 1 ? beatUrge(date, avoid[0], ev) : setUrgeOpen(!urgeOpen))}
+              />
+            )}
             {!e.closed && (
               <Tile
                 emoji="🌙"
@@ -212,6 +224,29 @@ function Body({ close }: { close: () => void }) {
               />
             ) : null}
           </div>
+
+          {urgeOpen && avoid.length > 1 && (
+            <div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>
+                💪 Which craving did you beat?
+              </div>
+              <div className="chip-row" style={{ flexWrap: 'wrap' }}>
+                {avoid.map((h) => (
+                  <Tap
+                    key={h.id}
+                    className="chip"
+                    onClick={(ev) => {
+                      beatUrge(date, h, ev);
+                      setUrgeOpen(false);
+                    }}
+                  >
+                    {h.emoji} {h.label.replace(/^No /, '').replace(/^\w/, (c) => c.toUpperCase())}
+                    {log?.urges?.[h.id] ? <span style={{ opacity: 0.6 }}>{log.urges[h.id]}</span> : null}
+                  </Tap>
+                ))}
+              </div>
+            </div>
+          )}
 
           {checkinOpen && (
             <div>

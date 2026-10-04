@@ -9,7 +9,8 @@ import { everyOn } from '../lib/engine';
 import { openHabit, useUi } from '../lib/hooks';
 import { useApp } from '../lib/store';
 import type { Settings } from '../lib/types';
-import { Sheet, Tap, Tile, accent } from './ui';
+import { Sheet, Tap, Tile } from './ui';
+import { accent } from '../lib/style';
 
 /** One line about how a habit works: "every 3 days · 10 XP", "Saturdays · 20 XP", "bonus · 20 XP". */
 function describe(h: Habit, settings: Settings): string {

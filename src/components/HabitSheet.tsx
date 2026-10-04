@@ -6,24 +6,15 @@ import { Button, Divider, Group, NumberInput, SegmentedControl, Select, SimpleGr
 import { DatePickerInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { useState, type ReactNode } from 'react';
-import { deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped, answerClean, answerTime } from '../lib/actions';
+import { answerClean, answerTime, beatUrge, deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped } from '../lib/actions';
 import { FLEXIBLE_KINDS, completionRate, everyOn } from '../lib/engine';
-import { FREQUENCY_OPTIONS, SECTIONS, WEEKDAYS, allHabits, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type HabitKind, type SectionId } from '../lib/config';
+import { FREQUENCY_OPTIONS, KIND_LABEL, SECTIONS, WEEKDAYS, allHabits, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
 import { dateKey, relativeDay, weekday } from '../lib/dates';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { habitHistory } from '../lib/trend';
 import { updateSettings, useApp } from '../lib/store';
-import { Sheet, Tap, Tile, WeekDots, accent } from './ui';
-
-export const KIND_LABEL: Record<HabitKind, string> = {
-  check: 'Daily tick',
-  chore: 'Repeating job · carries over until done',
-  time: 'Yes / no, with a rough time',
-  water: 'Bottles of water',
-  count: 'Count up to a target',
-  dose: 'Measured dose',
-  avoid: 'Stay clean · answered honestly',
-};
+import { Sheet, Tap, Tile, WeekDots } from './ui';
+import { accent } from '../lib/style';
 
 const POINTS = [5, 10, 15, 20, 25, 30, 40];
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -155,6 +146,20 @@ function DayActions({ habit, date }: { habit: Habit; date: string }) {
       <SimpleGrid cols={buttons.length} spacing="xs">
         {buttons}
       </SimpleGrid>
+      {habit.kind === 'avoid' && (
+        <Button
+          mt="xs"
+          fullWidth
+          variant="light"
+          color="grape"
+          onClick={() => {
+            beatUrge(date, habit);
+            close();
+          }}
+        >
+          💪 I beat an urge{log?.urges?.[habit.id] ? ` (${log.urges[habit.id]} today)` : ''} · +5 XP
+        </Button>
+      )}
       {habit.kind === 'chore' && !item.done && (
         <Text size="xs" c="dimmed" mt={6}>
           {item.skipped ? 'Skipped — it comes round again on its schedule.' : '"Skip this one" moves it on to its next time without counting against you.'}

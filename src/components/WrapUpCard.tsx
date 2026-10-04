@@ -12,7 +12,8 @@ import { useNow, useToday, useUi } from '../lib/hooks';
 import { lockDay } from '../lib/lock';
 import { chestReady, chestTier, reflectionPrompt } from '../lib/moments';
 import { updateDay, useApp } from '../lib/store';
-import { PanelHead, Tap, accent } from './ui';
+import { PanelHead, Tap } from './ui';
+import { accent } from '../lib/style';
 
 /** 😫 → 🤩, one tap (tap again to clear). */
 export function MoodPicker({ date, mood, size = 46 }: { date: DateKey; mood: number | undefined; size?: number }) {

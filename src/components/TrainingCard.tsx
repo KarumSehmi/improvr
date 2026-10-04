@@ -4,7 +4,8 @@ import { WORKOUTS } from '../lib/config';
 import { addDays, weekday, weekStart, type DateKey } from '../lib/dates';
 import type { Streak } from '../lib/engine';
 import { useApp } from '../lib/store';
-import { Bar, PanelHead, Tap, accent } from './ui';
+import { Bar, PanelHead, Tap } from './ui';
+import { accent } from '../lib/style';
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 

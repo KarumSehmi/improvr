@@ -73,7 +73,9 @@ describe('targets and times', () => {
     expect(caffeineCutoff(s)).toBe('15:00');
     expect(find(s, 'caffeine').label).toBe('No caffeine after 3pm');
     expect(reminderTimes(s).caffeine).toBe('14:45');
-    expect(reminderTimes({ ...s, reminders: { ...reminderTimes(s), caffeine: '12:00' } }).caffeine).toBe('12:00');
+    expect(reminderTimes({ ...s, reminders: { caffeine: '12:00' } }).caffeine).toBe('12:00');
+    // Older versions saved the default 13:45 along with everything else — that still follows the cutoff.
+    expect(reminderTimes({ ...s, reminders: { caffeine: '13:45', morning: '08:00' } })).toMatchObject({ caffeine: '14:45', morning: '08:00' });
     const d = data({}, s);
     const sum = summarize(d, TUE);
     const at = new Date(startOfDay(TUE) + (14 * 60 + 20) * 60_000);

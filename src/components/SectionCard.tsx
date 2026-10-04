@@ -3,7 +3,8 @@ import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { useUi } from '../lib/hooks';
 import type { SectionStatus } from '../lib/moments';
-import { Bar, Tap, Tile, accent } from './ui';
+import { Bar, Tap, Tile } from './ui';
+import { accent } from '../lib/style';
 
 interface Props {
   id: string;

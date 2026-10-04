@@ -32,7 +32,7 @@ export function DayHeader({ date, summary }: { date: DateKey; summary: Summary }
           {live ? `${emoji} ` : ''}
           {fmt(date, 'dddd')} {d} {fmt(date, 'MMMM')}
         </div>
-        <Text component="h1" className="page-title" mt={4} truncate>
+        <Text component="h1" className="page-title" mt={4} fz={title.length > 15 ? 25 : undefined} lineClamp={2}>
           {title}
         </Text>
       </div>

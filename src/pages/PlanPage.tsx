@@ -5,7 +5,8 @@ import { IconCake, IconCalendarPlus, IconChecklist, IconChevronDown, IconPlus, I
 import { useState, type ReactNode } from 'react';
 import Notice from '../components/Notice';
 import { QuickAdd, TodoRow } from '../components/Todos';
-import { M, Meta, Sheet, Tap, Tile, accent } from '../components/ui';
+import { M, Meta, Sheet, Tap, Tile } from '../components/ui';
+import { accent } from '../lib/style';
 import { setDone } from '../lib/actions';
 import { EVENT_COLORS, birthdaysOn, eventsBetween, eventsOn, upcomingBirthdays } from '../lib/calendar';
 import { addDays, diffDays, fmt, maxKey, range, relativeDay, type DateKey } from '../lib/dates';

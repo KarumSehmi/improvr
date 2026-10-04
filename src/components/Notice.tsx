@@ -1,6 +1,7 @@
 import { Text } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { Tap, accent } from './ui';
+import { Tap } from './ui';
+import { accent } from '../lib/style';
 
 /** A one-line heads-up with an optional button: fines owed, a day still to lock in, a birthday. */
 export default function Notice({ emoji, title, sub, color = 'orange', action }: { emoji: string; title: ReactNode; sub?: ReactNode; color?: string; action?: { label: string; onClick: () => void } }) {
