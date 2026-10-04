@@ -27,14 +27,14 @@ On a computer the tabs sit in a sidebar (keys **1–4** switch pages, **L** open
 - **📝 To-dos** for today (carried-over ones say how late), with a plain-English add box.
 - **Your list**: Morning / Through the day / Room / Night / Stayed clean, each tinted its own colour (ticks included). Sections fold away when everything's answered, and before their time ("later · from 8pm"). **All ✓** / **All clean** per section with Undo, **"Didn't do the rest? Close it"**, and a **Hide done** switch to keep the list short as the day goes on.
 - **Press and hold any habit** (or right-click on a computer) for its sheet: done / not done / skip this one for that day, its streak, best run, last 2 weeks, and every setting it has.
-- Weigh-in, sleep and wake (tap ✕ to enter a rough time; the Apple Watch fills these in), pills, teeth, face routine, finasteride every 3 days (− / + for any day's amount, one tap to make it your usual), water bottles, MacroFactor, protein, creatine, minoxidil, a bonus 15-minute home workout. Room jobs **carry over** in orange until done, and the weekly ones get a day each so no day gets too much: Bud + Canvas Tuesday, surfaces Wednesday, bathroom Thursday, hoover Saturday, **washing Sunday** (pill refill every other Sunday). Monday (football) and Friday stay free, and the bin never lands on them either. Stayed clean is answered honestly: *Clean* or *Slipped* (1 drinking night a week is allowed by default).
-- **Training**: gym sessions against your weekly target (football and home workouts earn XP but don't count).
+- Weigh-in, sleep and wake (tap ✕ to enter a rough time; the Apple Watch fills these in), pills and minoxidil, teeth, face routine, finasteride every 3 days (− / + for any day's amount, one tap to make it your usual), water bottles, MacroFactor, protein, creatine. Room jobs **carry over** in orange until done, and the weekly ones get a day each so no day gets too much: Bud + Canvas Tuesday, surfaces Wednesday, bathroom Thursday, hoover Saturday, **washing Sunday** (pill refill every other Sunday). Monday (football) and Friday stay free, and the bin never lands on them either. Stayed clean is answered honestly: *Clean* or *Slipped* (1 drinking night a week is allowed by default).
+- **Training**: gym sessions against your weekly target, with the 15-minute workout (Peloton) and football alongside — they earn XP but don't count towards it.
 - **🎲 Bonus quest**: one small optional challenge a day (+15 XP), swappable once.
 - **🌙 Wrap up**: mood, "how can I be better tomorrow?" (it shows up the next morning), and **Lock in** — on time earns +10 XP and a **reward chest**. Before the evening it's one compact line.
 
 ### ➕ Log
 
-The + opens a sheet: water, gym, the quest, card spending, craving SOS, "beat an urge", Wrap up and today's check-in as one-tap tiles; add a to-do in plain English; then everything still open — **due now first**, later today and bonuses folded underneath — with the same controls as Today. Search finds any habit or to-do.
+The + opens a sheet: water, gym, the 15-minute workout, the quest, card spending, craving SOS, "beat an urge", Wrap up and today's check-in as one-tap tiles; add a to-do in plain English; then everything still open — **due now first**, later today and bonuses folded underneath — with the same controls as Today. Search finds any habit or to-do.
 
 ### 🌙 Wrap up
 

@@ -63,10 +63,10 @@ export type HabitEdit = Partial<Pick<Habit, 'label' | 'emoji' | 'section' | 'poi
 
 /** `from` = the hour a section becomes relevant (before that it's folded away as "later" on Today). */
 export const SECTIONS: { id: SectionId; title: string; short: string; emoji: string; subtitle: string; color: string; from: number }[] = [
-  { id: 'morning', title: 'Morning', short: 'Morning', emoji: '🌅', subtitle: 'Weigh in, meds, teeth, face', color: 'orange', from: 4 },
+  { id: 'morning', title: 'Morning', short: 'Morning', emoji: '🌅', subtitle: 'Weigh in, pills & minoxidil, teeth, face', color: 'orange', from: 4 },
   { id: 'day', title: 'Through the day', short: 'Day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
   { id: 'room', title: 'Room', short: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
-  { id: 'night', title: 'Night', short: 'Night', emoji: '🌙', subtitle: 'Teeth, skin, finasteride & minoxidil', color: 'indigo', from: 20 },
+  { id: 'night', title: 'Night', short: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
   { id: 'clean', title: 'Stayed clean', short: 'Clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
@@ -77,11 +77,10 @@ export function sectionHour(settings: Pick<Settings, 'sectionHours'> | undefined
   return settings?.sectionHours?.[id] ?? SECTION_BY_ID[id].from;
 }
 
-/** Teeth, creatine, minoxidil and the home workout were added part-way through, so earlier days don't count them. */
+/** Teeth, creatine and minoxidil were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
 const ADDED_MINOXIDIL = '2026-09-30';
-const ADDED_HOME_WORKOUT = '2026-09-30';
 const ADDED_WASHING = '2026-10-05';
 
 export const BUILT_IN_HABITS: Habit[] = [
@@ -108,6 +107,7 @@ export const BUILT_IN_HABITS: Habit[] = [
     missPrompt: 'Roughly when did you get up?',
   },
   { id: 'pills', label: 'Took all my pills', emoji: '💊', section: 'morning', kind: 'check', points: 10 },
+  { id: 'minoxidil', label: 'Took minoxidil', emoji: '💆', section: 'morning', kind: 'check', points: 10, hint: 'with pills', since: ADDED_MINOXIDIL },
   { id: 'teethAm', label: 'Brushed teeth', emoji: '🪥', section: 'morning', kind: 'check', points: 5, hint: 'AM', since: ADDED_TEETH },
   { id: 'faceAm', label: 'Face wash + moisturiser', emoji: '🧴', section: 'morning', kind: 'check', points: 5, hint: 'AM' },
   { id: 'pillRefill', label: 'Refill pill organiser', emoji: '🗓️', section: 'morning', kind: 'chore', points: 15, schedule: { weekday: 0, everyWeeks: 2 } },
@@ -117,18 +117,6 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'macro', label: 'Logged on MacroFactor', emoji: '📱', section: 'day', kind: 'check', points: 10 },
   { id: 'protein', label: 'Hit protein', emoji: '🍗', section: 'day', kind: 'check', points: 15 },
   { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
-  {
-    id: 'homeWorkout',
-    label: '15 min home workout',
-    emoji: '🚴',
-    section: 'day',
-    kind: 'check',
-    points: 20,
-    hint: 'Peloton',
-    optional: true, // not every day — a bonus when you do it
-    restDays: [1], // Monday is football
-    since: ADDED_HOME_WORKOUT,
-  },
   { id: 'budCanvas', label: 'Fill out Bud + check Canvas', emoji: '📚', section: 'day', kind: 'chore', points: 20, schedule: { weekday: 2 } },
 
   // Room — daily ones carry over; weekly ones get a day each, leaving Monday (football) and Friday free
@@ -145,7 +133,6 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
   { id: 'facePm', label: 'Face wash + moisturiser', emoji: '🫧', section: 'night', kind: 'check', points: 5, hint: 'PM' },
   { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'night', kind: 'dose', points: 10 },
-  { id: 'minoxidil', label: 'Took minoxidil', emoji: '💆', section: 'night', kind: 'check', points: 10, since: ADDED_MINOXIDIL },
   {
     id: 'paulas',
     label: "Paula's Choice",
@@ -238,11 +225,10 @@ export const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 7].map((n) => ({ value: String(
 /** Default bottles of water a day (change it on the habit). */
 export const WATER_TARGET = 2;
 
-/** Only gym counts towards the weekly target — football is extra. */
-export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: number; legacy?: boolean }[] = [
+/** Everything you log in Training. Only gym counts towards the weekly target — the 15 min workout and football are extra. */
+export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: number }[] = [
   { id: 'gym', label: 'Gym', emoji: '🏋️', points: 40 },
-  // Now a daily habit; kept so days that logged it here still score.
-  { id: 'home', label: 'Home workout', emoji: '🏠', points: 20, legacy: true },
+  { id: 'home', label: '15 min workout', emoji: '🚴', points: 20 },
   { id: 'football', label: 'Football', emoji: '⚽', points: 30 },
 ];
 

@@ -45,6 +45,37 @@ describe('toothbrush and haircut', () => {
   });
 });
 
+describe('minoxidil and the 15 min workout', () => {
+  it('minoxidil is on the morning list, straight after pills', () => {
+    expect(BUILT_IN_BY_ID.minoxidil.section).toBe('morning');
+    const s = summarize(data(), '2026-10-04');
+    const morning = s.evalByDate['2026-10-04'].items.filter((i) => i.visible && i.habit.section === 'morning').map((i) => i.habit.id);
+    expect(morning.indexOf('minoxidil')).toBe(morning.indexOf('pills') + 1);
+    expect(s.evalByDate['2026-09-29'].items.find((i) => i.habit.id === 'minoxidil')?.visible).toBe(false); // before it was added
+  });
+
+  it('moves 15 min workouts ticked on the old list into Training, keeping their XP', () => {
+    const days: Record<string, DayLog> = {
+      '2026-09-30': { done: { homeWorkout: true, weigh: true }, doneAt: { homeWorkout: 1, weigh: 1 } },
+      '2026-10-01': { done: { homeWorkout: true }, workouts: ['gym'] },
+      '2026-10-02': { done: { homeWorkout: false } },
+      '2026-10-03': { done: { weigh: true } },
+    };
+    useApp.setState({ days, todos: {}, spending: {}, settings: { ...defaultSettings(START), migrations: ['haircut-todo', 'fin-every-3', 'dentist-todo'] } });
+    runMigrations();
+    const after = useApp.getState().days;
+    expect(after['2026-09-30']).toMatchObject({ done: { weigh: true }, doneAt: { weigh: 1 }, workouts: ['home'] });
+    expect(after['2026-09-30'].done).not.toHaveProperty('homeWorkout');
+    expect(after['2026-09-30'].doneAt).not.toHaveProperty('homeWorkout');
+    expect(after['2026-10-01'].workouts).toEqual(['gym', 'home']);
+    expect(after['2026-10-02']).toMatchObject({ done: {} });
+    expect(after['2026-10-02'].workouts).toBeUndefined();
+    expect(after['2026-10-03']).toBe(days['2026-10-03']); // nothing to move
+    runMigrations(); // only once
+    expect(useApp.getState().days['2026-10-01'].workouts).toEqual(['gym', 'home']);
+  });
+});
+
 describe('repeating to-dos', () => {
   beforeEach(() => useApp.setState({ todos: {}, spending: {}, settings: defaultSettings(START) }));
   const haircut: Todo = { id: 'h', title: 'Haircut', date: '2026-09-24', repeat: 14, createdAt: 0 };

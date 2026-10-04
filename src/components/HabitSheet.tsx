@@ -315,7 +315,7 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
       )}
 
       {restable && (
-        <Field label="Days off from it" hint={`${rest.size ? `Not shown (or counted) on ${[...rest].sort().map((d) => WEEKDAYS[d]).join(', ')}.` : 'Tap a day to skip it every week (e.g. no home workout on football Mondays).'} Applies to past days too.`}>
+        <Field label="Days off from it" hint={`${rest.size ? `Not shown (or counted) on ${[...rest].sort().map((d) => WEEKDAYS[d]).join(', ')}.` : 'Tap a day to skip it every week (e.g. nothing on football Mondays).'} Applies to past days too.`}>
           <Group gap={6} wrap="nowrap">
             {DAY_LETTERS.map((l, i) => {
               const off = rest.has(i);

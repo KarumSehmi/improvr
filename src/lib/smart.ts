@@ -150,7 +150,7 @@ export function suggestions(now: Date, date: DateKey, e: DayEval, summary: Summa
         id: 'train',
         emoji: '🏋️',
         title: tight ? `Need ${needed} more gym session${needed === 1 ? '' : 's'} in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` : `${sessions}/${target} gym sessions this week`,
-        detail: tight ? 'Go today — only the gym counts towards the target.' : 'Football and home workouts are extra — the gym is what counts.',
+        detail: tight ? 'Go today — only the gym counts towards the target.' : 'The 15 min workout and football are extra — the gym is what counts.',
         tone: tight ? 'warn' : 'info',
         priority: tight ? 76 : 35,
         action: { kind: 'scroll', label: 'Log it', target: 'training' },
