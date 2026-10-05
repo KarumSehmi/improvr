@@ -54,7 +54,7 @@ describe('score trend', () => {
 describe('personal bests', () => {
   it('finds the best day (most recent on a tie), best full week and longest log streak', () => {
     const days: Record<string, DayLog> = {};
-    const full = { done: { pills: true, faceAm: true, macro: true, protein: true, facePm: true, weigh: true, sleep: true, wake: true }, water: 2, finMl: 1, avoid: { vape: 'clean', porn: 'clean', alcohol: 'clean', caffeine: 'clean' } } as DayLog;
+    const full = { done: { pills: true, faceAm: true, macro: true, protein: true, facePm: true, weigh: true, sleep: true, wake: true }, water: 3, finMl: 1, avoid: { vape: 'clean', porn: 'clean', alcohol: 'clean', caffeine: 'clean' } } as DayLog;
     for (let i = 0; i < 14; i++) days[addDays(START, i)] = locked(addDays(START, i), i % 7 === 3 ? { done: { pills: true } } : structuredClone(full));
     days[addDays(START, 14)] = structuredClone(full); // today: not locked in yet, so it doesn't count
     const s = summarize(data(days), addDays(START, 14));

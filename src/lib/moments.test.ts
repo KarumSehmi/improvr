@@ -229,7 +229,7 @@ describe('ticking remembers when', () => {
     updateDay('2026-09-25', (l) => void (l.done = { pills: true }));
     const first = useApp.getState().days['2026-09-25'].doneAt!;
     expect(first.pills).toBeTypeOf('number');
-    updateDay('2026-09-25', (l) => void (l.water = 2));
+    updateDay('2026-09-25', (l) => void (l.water = 3));
     expect(useApp.getState().days['2026-09-25'].doneAt).toMatchObject({ pills: first.pills, water: expect.any(Number) });
     updateDay('2026-09-25', (l) => void (l.done = { pills: false }));
     expect(useApp.getState().days['2026-09-25'].doneAt?.pills).toBeUndefined();
