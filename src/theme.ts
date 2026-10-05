@@ -45,6 +45,9 @@ export const theme = createTheme({
     NumberInput: { defaultProps: { radius: 'md' } },
     Textarea: { defaultProps: { radius: 'md' } },
     Select: { defaultProps: { radius: 'md' } },
+    // Dropdowns (selects, date pickers, menus) must open above the sheets they sit in, which stack up to 320,
+    // and stay pinned to the screen: positioned in the page, they can widen it on a phone and hide themselves.
+    Popover: { defaultProps: { zIndex: 1000, floatingStrategy: 'fixed' } },
     Tooltip: { defaultProps: { radius: 'md', withArrow: true } },
   },
 });
