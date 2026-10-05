@@ -349,7 +349,7 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
             description="Past days too"
             min={1}
             max={500}
-            value={habit.target ?? (habit.kind === 'water' ? 2 : 1)}
+            value={habit.target ?? (habit.kind === 'water' ? 3 : 1)}
             onChange={(v) => Number(v) >= 1 && editHabit(habit.id, { target: Number(v) })}
           />
           {habit.kind === 'count' && (

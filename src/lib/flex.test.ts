@@ -37,11 +37,11 @@ describe('edit any habit', () => {
   });
 
   it('the water target moves the label and what counts as done', () => {
-    const s = { ...defaultSettings(START), habitEdits: { water: { target: 3 } } };
-    expect(find(s, 'water').label).toBe('3 bottles of water');
-    const sum = summarize(data({ [START]: { water: 2 } }, s), START);
+    const s = { ...defaultSettings(START), habitEdits: { water: { target: 4 } } };
+    expect(find(s, 'water').label).toBe('4 bottles of water');
+    const sum = summarize(data({ [START]: { water: 3 } }, s), START);
     expect(sum.evals[0].items.find((i) => i.habit.id === 'water')!.done).toBe(false);
-    const sum3 = summarize(data({ [START]: { water: 3 } }, s), START);
+    const sum3 = summarize(data({ [START]: { water: 4 } }, s), START);
     expect(sum3.evals[0].items.find((i) => i.habit.id === 'water')!.done).toBe(true);
   });
 

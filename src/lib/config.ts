@@ -40,7 +40,7 @@ export interface Habit {
   optional?: boolean;
   /** Stay-clean habits only: slips allowed per Mon–Sun week before it counts as a miss. */
   weeklyLimit?: number;
-  /** Water and count habits: how many make it done (2 bottles, 10 pages…). */
+  /** Water and count habits: how many make it done (3 bottles, 10 pages…). */
   target?: number;
   /** Count habits: what you're counting ("pages", "mins"). */
   unit?: string;
@@ -113,7 +113,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'pillRefill', label: 'Refill pill organiser', emoji: '🗓️', section: 'morning', kind: 'chore', points: 15, schedule: { weekday: 0, everyWeeks: 2 } },
 
   // Through the day
-  { id: 'water', label: '2 bottles of water', emoji: '🚰', section: 'day', kind: 'water', points: 10, target: 2 },
+  { id: 'water', label: '3 bottles of water', emoji: '🚰', section: 'day', kind: 'water', points: 10, target: 3 },
   { id: 'macro', label: 'Logged on MacroFactor', emoji: '📱', section: 'day', kind: 'check', points: 10 },
   { id: 'protein', label: 'Hit protein', emoji: '🍗', section: 'day', kind: 'check', points: 15 },
   { id: 'creatine', label: 'Took creatine', emoji: '🥄', section: 'day', kind: 'check', points: 10, since: ADDED_CREATINE },
@@ -223,7 +223,7 @@ export function easyDays(settings: Pick<Settings, 'easyDays'>): number[] {
 export const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 7].map((n) => ({ value: String(n), label: n === 1 ? 'Every day' : n === 7 ? 'Weekly' : `Every ${n} days` }));
 
 /** Default bottles of water a day (change it on the habit). */
-export const WATER_TARGET = 2;
+export const WATER_TARGET = 3;
 
 /** Everything you log in Training. Only gym counts towards the weekly target — the 15 min workout and football are extra. */
 export const WORKOUTS: { id: WorkoutType; label: string; emoji: string; points: number }[] = [

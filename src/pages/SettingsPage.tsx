@@ -79,7 +79,7 @@ function TargetsCard() {
       </div>
       <SimpleGrid cols={2} spacing="sm">
         <TimeInput label="☕ No caffeine after" value={caffeineCutoff(settings)} onChange={(e) => e.currentTarget.value && updateSettings({ caffeineCutoff: e.currentTarget.value })} />
-        {water && <NumberInput label="🚰 Bottles of water" min={1} max={8} value={water.target ?? 2} onChange={(v) => Number(v) >= 1 && editHabit('water', { target: Number(v) })} />}
+        {water && <NumberInput label="🚰 Bottles of water" min={1} max={8} value={water.target ?? 3} onChange={(v) => Number(v) >= 1 && editHabit('water', { target: Number(v) })} />}
         <NumberInput
           label="🏋️ Gym sessions / week"
           description="0 hides Training"

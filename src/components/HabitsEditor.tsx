@@ -23,7 +23,7 @@ function describe(h: Habit, settings: Settings): string {
     bits.push(every > 1 ? scheduleLabel({ every }) : 'daily');
   }
   if (h.kind === 'count') bits.push(`to ${h.target ?? 1}${h.unit ? ` ${h.unit}` : ''}`);
-  if (h.kind === 'water') bits.push(`${h.target ?? 2} bottles`);
+  if (h.kind === 'water') bits.push(`${h.target ?? 3} bottles`);
   if (h.restDays?.length) bits.push(`not ${h.restDays.map((d) => WEEKDAYS[d].slice(0, 3)).join('/')}`);
   if (h.optional) bits.push('bonus');
   bits.push(`${h.points} XP`);
