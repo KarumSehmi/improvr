@@ -72,6 +72,14 @@ describe('chores carry over', () => {
     expect(days).not.toContain(5);
   });
 
+  it('bed sheets come round every other Sunday, starting the first Sunday after they were added', () => {
+    const t = trackChore(HABIT_BY_ID.sheets, data({ '2026-10-11': { done: { sheets: true } } }, { startDate: '2026-10-01' }), '2026-10-25');
+    expect(t.byDate['2026-10-05']).toBeUndefined(); // added on 6 October
+    expect(t.byDate['2026-10-11']).toMatchObject({ due: true, done: true });
+    expect(t.byDate['2026-10-18'].due).toBe(false);
+    expect(t.byDate['2026-10-25']).toMatchObject({ due: true, overdueDays: 0 });
+  });
+
   it('staggers rolling chores with an offset', () => {
     const t = trackChore(HABIT_BY_ID.paulas, data(), '2026-09-23');
     expect(t.byDate['2026-09-21'].due).toBe(false);
@@ -273,8 +281,14 @@ describe('scoring', () => {
 
   it('levels up as XP grows', () => {
     expect(levelFor(0).level).toBe(1);
-    expect(levelFor(300).level).toBe(2);
-    expect(levelFor(999).level).toBe(2);
-    expect(levelFor(1000).level).toBe(3);
+    expect(levelFor(999).level).toBe(1);
+    expect(levelFor(1000).level).toBe(2);
+    expect(levelFor(3299).level).toBe(2);
+    expect(levelFor(3300).level).toBe(3);
+  });
+
+  it('takes over a year of solid days to reach GOAT', () => {
+    expect(levelFor(250 * 365).level).toBeLessThan(13);
+    expect(levelFor(97_800)).toMatchObject({ level: 13, title: 'GOAT' });
   });
 });

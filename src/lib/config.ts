@@ -66,7 +66,7 @@ export const SECTIONS: { id: SectionId; title: string; short: string; emoji: str
   { id: 'morning', title: 'Morning', short: 'Morning', emoji: '🌅', subtitle: 'Weigh in, pills & minoxidil, teeth, face', color: 'orange', from: 4 },
   { id: 'day', title: 'Through the day', short: 'Day', emoji: '⚡', subtitle: 'Water, food & creatine', color: 'cyan', from: 10 },
   { id: 'room', title: 'Room', short: 'Room', emoji: '🧹', subtitle: 'Carries over until done', color: 'grape', from: 12 },
-  { id: 'night', title: 'Night', short: 'Night', emoji: '🌙', subtitle: 'Teeth, skin & finasteride', color: 'indigo', from: 20 },
+  { id: 'night', title: 'Night', short: 'Night', emoji: '🌙', subtitle: 'Teeth & floss, skin, finasteride', color: 'indigo', from: 20 },
   { id: 'clean', title: 'Stayed clean', short: 'Clean', emoji: '🛡️', subtitle: 'Be honest', color: 'teal', from: 20 },
 ];
 
@@ -77,11 +77,13 @@ export function sectionHour(settings: Pick<Settings, 'sectionHours'> | undefined
   return settings?.sectionHours?.[id] ?? SECTION_BY_ID[id].from;
 }
 
-/** Teeth, creatine and minoxidil were added part-way through, so earlier days don't count them. */
+/** Teeth, creatine, minoxidil, washing, sheets and flossing were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
 const ADDED_MINOXIDIL = '2026-09-30';
 const ADDED_WASHING = '2026-10-05';
+const ADDED_SHEETS = '2026-10-06';
+const ADDED_FLOSS = '2026-10-06';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -128,9 +130,11 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'bathroom', label: 'Deep clean bathroom', emoji: '🛁', section: 'room', kind: 'chore', points: 25, schedule: { weekday: 4 } },
   { id: 'hoover', label: 'Hoover & mop floor', emoji: '🧹', section: 'room', kind: 'chore', points: 20, schedule: { weekday: 6 } },
   { id: 'washing', label: 'Do the washing', emoji: '🧺', section: 'room', kind: 'chore', points: 20, hint: 'wash, dry, put away', schedule: { weekday: 0 }, since: ADDED_WASHING },
+  { id: 'sheets', label: 'Change bed sheets', emoji: '🛏️', section: 'room', kind: 'chore', points: 15, hint: 'in with the washing', schedule: { weekday: 0, everyWeeks: 2 }, since: ADDED_SHEETS },
 
   // Night
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
+  { id: 'floss', label: 'Flossed', emoji: '🦷', section: 'night', kind: 'check', points: 5, since: ADDED_FLOSS },
   { id: 'facePm', label: 'Face wash + moisturiser', emoji: '🫧', section: 'night', kind: 'check', points: 5, hint: 'PM' },
   { id: 'fin', label: 'Topical finasteride', emoji: '💧', section: 'night', kind: 'dose', points: 10 },
   {
