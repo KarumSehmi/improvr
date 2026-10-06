@@ -46,6 +46,20 @@ const STEPS: { id: string; run: () => void }[] = [
       }
     },
   },
+  {
+    // Sophia & me: our anniversary (8 July) on the calendar for the next few years, and a reminder for 6 months since we met (2 June).
+    id: 'sophia-dates',
+    run: () => {
+      const { events, todos } = useApp.getState();
+      for (let year = 2027; year <= 2031; year++) {
+        const id = `sophia-anniversary-${year}`;
+        if (!events[id]) upsert('events', { id, title: 'Sophia & me anniversary 💕', date: `${year}-07-08`, color: 'pink', createdAt: Date.now() });
+      }
+      if (!todos['sophia-6-months']) {
+        upsert('todos', { id: 'sophia-6-months', title: '6 months since meeting Sophia 💕', date: '2026-12-02', important: true, doneOn: null, notes: 'We first met on 2 June.', createdAt: Date.now() });
+      }
+    },
+  },
 ];
 
 export function runMigrations() {
