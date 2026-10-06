@@ -77,11 +77,12 @@ export function sectionHour(settings: Pick<Settings, 'sectionHours'> | undefined
   return settings?.sectionHours?.[id] ?? SECTION_BY_ID[id].from;
 }
 
-/** Teeth, creatine and minoxidil were added part-way through, so earlier days don't count them. */
+/** Teeth, creatine, minoxidil, washing and sheets were added part-way through, so earlier days don't count them. */
 const ADDED_TEETH = '2026-09-24';
 const ADDED_CREATINE = '2026-09-27';
 const ADDED_MINOXIDIL = '2026-09-30';
 const ADDED_WASHING = '2026-10-05';
+const ADDED_SHEETS = '2026-10-06';
 
 export const BUILT_IN_HABITS: Habit[] = [
   // Morning
@@ -128,6 +129,7 @@ export const BUILT_IN_HABITS: Habit[] = [
   { id: 'bathroom', label: 'Deep clean bathroom', emoji: '🛁', section: 'room', kind: 'chore', points: 25, schedule: { weekday: 4 } },
   { id: 'hoover', label: 'Hoover & mop floor', emoji: '🧹', section: 'room', kind: 'chore', points: 20, schedule: { weekday: 6 } },
   { id: 'washing', label: 'Do the washing', emoji: '🧺', section: 'room', kind: 'chore', points: 20, hint: 'wash, dry, put away', schedule: { weekday: 0 }, since: ADDED_WASHING },
+  { id: 'sheets', label: 'Change bed sheets', emoji: '🛏️', section: 'room', kind: 'chore', points: 15, hint: 'in with the washing', schedule: { weekday: 0, everyWeeks: 2 }, since: ADDED_SHEETS },
 
   // Night
   { id: 'teethPm', label: 'Brushed teeth', emoji: '🪥', section: 'night', kind: 'check', points: 5, hint: 'PM', since: ADDED_TEETH },
