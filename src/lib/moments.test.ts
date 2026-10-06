@@ -32,7 +32,7 @@ describe('toothbrush and haircut', () => {
     runMigrations();
     expect(useApp.getState().todos.haircut).toMatchObject({ title: 'Haircut 💈', date: '2026-10-04', repeat: 14 });
     runMigrations(); // only once
-    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut', 'dentist']);
+    expect(Object.keys(useApp.getState().todos)).toEqual(['haircut', 'dentist', 'sophia-6-months']);
   });
 
   it('adds "book the dentist" as a to-do for today, once', () => {
@@ -41,7 +41,20 @@ describe('toothbrush and haircut', () => {
     expect(useApp.getState().todos.dentist).toMatchObject({ title: 'Book the dentist 🦷', doneOn: null });
     expect(useApp.getState().todos.dentist.date).toBe(dateKey());
     runMigrations();
-    expect(Object.keys(useApp.getState().todos)).toEqual(['dentist']);
+    expect(Object.keys(useApp.getState().todos)).toEqual(['dentist', 'sophia-6-months']);
+  });
+});
+
+describe('Sophia & me', () => {
+  it('puts our anniversary on the calendar and a 6-month reminder in the to-dos, once', () => {
+    useApp.setState({ days: {}, events: {}, todos: {}, spending: {}, settings: { ...defaultSettings(START), migrations: ['haircut-todo', 'fin-every-3', 'dentist-todo', 'home-workout-to-training'] } });
+    runMigrations();
+    const { events, todos } = useApp.getState();
+    expect(events['sophia-anniversary-2027']).toMatchObject({ title: 'Sophia & me anniversary 💕', date: '2027-07-08' });
+    expect(Object.values(events).map((e) => e.date)).toEqual(['2027-07-08', '2028-07-08', '2029-07-08', '2030-07-08', '2031-07-08']);
+    expect(todos['sophia-6-months']).toMatchObject({ date: '2026-12-02', important: true, doneOn: null });
+    runMigrations(); // only once
+    expect(Object.keys(useApp.getState().events)).toHaveLength(5);
   });
 });
 
