@@ -305,14 +305,21 @@ export interface LevelInfo {
   need: number;
 }
 
+/**
+ * Each level costs 1,300 XP more than the last (1,000 for level 2), so GOAT (level 13) is 97,800 XP:
+ * a bit over a year of solid days (~250 XP) and about 9 months of near-perfect ones (~370 XP).
+ */
+const LEVEL_BASE = 1000;
+const LEVEL_STEP = 1300;
+
 export function levelFor(xp: number): LevelInfo {
   let level = 1;
-  let need = 300;
+  let need = LEVEL_BASE;
   let rem = Math.max(0, xp);
   while (rem >= need) {
     rem -= need;
     level++;
-    need = 300 + 400 * (level - 1);
+    need = LEVEL_BASE + LEVEL_STEP * (level - 1);
   }
   return { level, title: LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)], into: rem, need };
 }

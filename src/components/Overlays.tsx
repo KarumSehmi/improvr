@@ -30,6 +30,10 @@ export default function Overlays() {
   const fresh = list.filter((a) => a.unlocked && !seen.includes(a.id));
   const seenLevel = settings.seenLevel ?? 1;
   const levelUp = summary.level.level > seenLevel;
+  // If levels get harder you can end up below the last level you saw — catch up so the next level-up still shows.
+  useEffect(() => {
+    if (summary.level.level < seenLevel) updateSettings({ seenLevel: summary.level.level });
+  }, [summary.level.level, seenLevel]);
 
   // Weekly review: once per week, as soon as there's a finished week worth reviewing
   const ws = weekStart(today);

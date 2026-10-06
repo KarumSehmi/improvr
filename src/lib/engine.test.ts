@@ -273,8 +273,14 @@ describe('scoring', () => {
 
   it('levels up as XP grows', () => {
     expect(levelFor(0).level).toBe(1);
-    expect(levelFor(300).level).toBe(2);
-    expect(levelFor(999).level).toBe(2);
-    expect(levelFor(1000).level).toBe(3);
+    expect(levelFor(999).level).toBe(1);
+    expect(levelFor(1000).level).toBe(2);
+    expect(levelFor(3299).level).toBe(2);
+    expect(levelFor(3300).level).toBe(3);
+  });
+
+  it('takes over a year of solid days to reach GOAT', () => {
+    expect(levelFor(250 * 365).level).toBeLessThan(13);
+    expect(levelFor(97_800)).toMatchObject({ level: 13, title: 'GOAT' });
   });
 });
