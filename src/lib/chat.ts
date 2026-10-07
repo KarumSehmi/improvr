@@ -46,7 +46,14 @@ async function ask(messages: Message[]): Promise<{ content: Block[]; stop_reason
   }
   const body = (await res.json().catch(() => null)) as { content?: Block[]; stop_reason?: string | null; error?: string } | null;
   if (!res.ok || !Array.isArray(body?.content)) {
-    throw new Error(body?.error ?? (res.status === 404 ? 'The assistant only runs on the live site (it lives on Vercel).' : `The assistant isn't answering (${res.status}).`));
+    throw new Error(
+      body?.error ??
+        (res.status === 404
+          ? 'The assistant only runs on the live site (it lives on Vercel).'
+          : res.status >= 500
+            ? `The assistant's server crashed (${res.status}) — Vercel → your project → Logs shows why.`
+            : `The assistant isn't answering (${res.status}).`),
+    );
   }
   return { content: body.content, stop_reason: body.stop_reason ?? null };
 }
