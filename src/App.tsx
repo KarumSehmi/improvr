@@ -1,11 +1,12 @@
 import { AppShell, Button, Center, Container, Group, Kbd, Loader, Stack, Text } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
-import { IconCalendarEvent, IconChartBar, IconChecklist, IconPlus, IconSettings } from '@tabler/icons-react';
+import { IconCalendarEvent, IconChartBar, IconChecklist, IconMessageCircle, IconPlus, IconSettings } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import ChestModal from './components/ChestModal';
 import CravingSOS from './components/CravingSOS';
 import { CardSheet } from './components/BudgetCard';
+import ChatSheet from './components/ChatSheet';
 import HabitSheet from './components/HabitSheet';
 import { AddHabitSheet } from './components/HabitsEditor';
 import Overlays from './components/Overlays';
@@ -13,7 +14,7 @@ import QuickLog from './components/QuickLog';
 import { TodoEditor } from './components/Todos';
 import WrapUp from './components/WrapUp';
 import { FloaterLayer, Tap } from './components/ui';
-import { goTo, useNow, useSummary, useUi, type Page } from './lib/hooks';
+import { goTo, openChat, useNow, useSummary, useUi, type Page } from './lib/hooks';
 import { runMigrations } from './lib/migrations';
 import { clearDelivered } from './lib/push';
 import { badgeCount, daypart, logicalNow } from './lib/moments';
@@ -112,10 +113,11 @@ function Shell() {
     document.addEventListener('visibilitychange', clear);
     return () => document.removeEventListener('visibilitychange', clear);
   }, []);
-  // Keyboard: L or N to log something, 1–4 for the pages.
+  // Keyboard: L or N to log something, C to ask the assistant, 1–4 for the pages.
   useHotkeys([
     ['l', openLog],
     ['n', openLog],
+    ['c', openChat],
     ['1', () => goTo('today')],
     ['2', () => goTo('plan')],
     ['3', () => goTo('progress')],
@@ -158,8 +160,11 @@ function Shell() {
             Improvr
           </Text>
         </Group>
-        <Button variant="gradient" size="md" radius="lg" leftSection={<IconPlus size={18} stroke={2.6} />} rightSection={<Kbd size="xs">L</Kbd>} onClick={openLog} mb="lg" justify="space-between">
+        <Button variant="gradient" size="md" radius="lg" leftSection={<IconPlus size={18} stroke={2.6} />} rightSection={<Kbd size="xs">L</Kbd>} onClick={openLog} mb={8} justify="space-between">
           Log something
+        </Button>
+        <Button variant="light" color="violet" size="md" radius="lg" leftSection={<IconMessageCircle size={18} stroke={2.2} />} rightSection={<Kbd size="xs">C</Kbd>} onClick={openChat} mb="lg" justify="space-between">
+          Ask Improvr
         </Button>
         <Stack gap={4}>
           {TABS.map((t, i) => {
@@ -217,6 +222,7 @@ function Shell() {
       <ChestModal />
       <CravingSOS />
       <QuickLog />
+      <ChatSheet />
       <WrapUp />
       <HabitSheet />
       <AddHabitSheet />

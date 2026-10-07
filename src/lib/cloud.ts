@@ -162,6 +162,13 @@ export async function shortcutKey(): Promise<string> {
   return `${uid()}.${keys.shortcutSecret}`;
 }
 
+/** Proves to the server who you are (the chat assistant checks it). */
+export async function idToken(): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in');
+  return user.getIdToken();
+}
+
 export async function signIn(email: string, password: string) {
   await signInWithEmailAndPassword(auth, email.trim(), password);
 }

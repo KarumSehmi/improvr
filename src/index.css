@@ -1426,3 +1426,116 @@ body::before {
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   Ask Improvr: the chat assistant
+   ========================================================================== */
+
+/* The chat fills its sheet, with the message box at the bottom */
+.sheet-body:has(> .chat) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat {
+  flex: 1;
+  min-height: min(60dvh, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+
+.chat-empty {
+  margin: auto 0;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.chat-examples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chat-msg {
+  max-width: 85%;
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-msg[data-from='you'] {
+  align-self: flex-end;
+  background: var(--brand);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+
+.chat-msg[data-from='claude'] {
+  align-self: flex-start;
+  background: var(--raised);
+  border-bottom-left-radius: 6px;
+}
+
+.chat-change {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 92%;
+  padding: 5px 5px 5px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--mantine-color-teal-6) 14%, var(--raised));
+}
+
+.chat-change > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-change[data-undone] {
+  background: var(--raised);
+  color: var(--text-3);
+}
+
+.chat-change[data-undone] > span {
+  text-decoration: line-through;
+}
+
+.chat-launcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-violet-5) 35%, transparent);
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 650;
+}

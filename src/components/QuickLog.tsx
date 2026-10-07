@@ -10,11 +10,12 @@ import { beatUrge, bump, checkIn, logWorkout, toggleQuest, toggleWorkout, target
 import { CHECKINS, SECTION_BY_ID, WORKOUTS, featureOn } from '../lib/config';
 import { addDays, fmt, weekday } from '../lib/dates';
 import type { ItemEval } from '../lib/engine';
-import { logDate, openSos, useNow, useSummary, useToday, useUi } from '../lib/hooks';
+import { logDate, openChat, openSos, useNow, useSummary, useToday, useUi } from '../lib/hooks';
 import { checkinStates, currentCheckin, logicalNow, questFor } from '../lib/moments';
 import { useApp } from '../lib/store';
 import { openTodos } from '../lib/todos';
 import { openNowAndLater } from '../lib/wrap';
+import { ChatLauncher } from './ChatSheet';
 import { EnergyPicker } from './Checkins';
 import HabitRow from './HabitRow';
 import { QuickAdd, TodoRow } from './Todos';
@@ -125,6 +126,8 @@ function Body({ close }: { close: () => void }) {
           {e.completed}/{e.required} done
         </Text>
       </Group>
+
+      <ChatLauncher onOpen={openChat} />
 
       <TextInput
         placeholder="Find a habit or to-do…"

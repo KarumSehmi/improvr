@@ -1,5 +1,6 @@
-import { diffDays, type DateKey } from './dates';
-import type { Birthday, CalEvent } from './types';
+// .js endings because this file also runs on the server (api/chat.ts, via assistant.ts).
+import { diffDays, type DateKey } from './dates.js';
+import type { Birthday, CalEvent } from './types.js';
 
 const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
