@@ -133,7 +133,7 @@ describe('chat endpoint', () => {
 
     answer = { status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } } };
     expect(await call({ body: chat, token: await token() })).toEqual({ status: 500, json: { error: expect.stringMatching(/API key was rejected/) } });
-    answer = { status: 400, body: { type: 'error', error: { type: 'invalid_request_error', message: 'bad' } } };
-    expect((await call({ body: chat, token: await token() })).status).toBe(400);
+    answer = { status: 400, body: { type: 'error', error: { type: 'invalid_request_error', message: 'Too many optional parameters' } } };
+    expect(await call({ body: chat, token: await token() })).toEqual({ status: 400, json: { error: 'Claude couldn’t read that chat — try a new one. (Too many optional parameters)' } });
   });
 });

@@ -123,7 +123,9 @@ export default async function handler(req: Req, res: Res) {
     if (err instanceof Anthropic.RateLimitError) return res.status(429).json({ error: 'Too many messages at once — try again in a minute.' });
     if (err instanceof Anthropic.BadRequestError) {
       console.error('chat: bad request', err.message);
-      return res.status(400).json({ error: 'Claude couldn’t read that chat — start a new one.' });
+      // Anthropic's own reason, so it can be passed on (it's about the request, nothing secret).
+      const reason = (err.error as { error?: { message?: string } } | undefined)?.error?.message ?? err.message;
+      return res.status(400).json({ error: `Claude couldn’t read that chat — try a new one. (${reason})` });
     }
     if (err instanceof Anthropic.APIError) {
       console.error(`chat: API error ${err.status}`, err.message);
