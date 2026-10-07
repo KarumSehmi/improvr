@@ -102,6 +102,8 @@ interface UiState {
   settingsSheet: string | null;
   /** The quick log sheet (the + button). */
   logOpen: boolean;
+  /** The chat assistant. */
+  chatOpen: boolean;
   /** Wrap up: going through what's left of this day, one at a time. */
   wrapDate: DateKey | null;
   /** A habit's sheet: details, today's options and editing. `date` = the day it was opened from. */
@@ -129,6 +131,7 @@ export const useUi = create<UiState>()(() => ({
   sos: null,
   settingsSheet: null,
   logOpen: false,
+  chatOpen: false,
   wrapDate: null,
   habitSheet: null,
   addHabit: false,
@@ -147,6 +150,11 @@ export function openDay(date: DateKey | null) {
 /** Open the craving SOS (10-minute timer). */
 export function openSos(habit: string | null = null) {
   useUi.setState({ sos: { habit, start: Date.now() }, logOpen: false });
+}
+
+/** Open the chat assistant (from anywhere; the + sheet closes). */
+export function openChat() {
+  useUi.setState({ chatOpen: true, logOpen: false });
 }
 
 export function goTo(page: Page, extra: Partial<UiState> = {}) {

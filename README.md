@@ -34,7 +34,11 @@ On a computer the tabs sit in a sidebar (keys **1–4** switch pages, **L** open
 
 ### ➕ Log
 
-The + opens a sheet: water, gym, the 15-minute workout, the quest, card spending, craving SOS, "beat an urge", Wrap up and today's check-in as one-tap tiles; add a to-do in plain English; then everything still open — **due now first**, later today and bonuses folded underneath — with the same controls as Today. Search finds any habit or to-do.
+The + opens a sheet: **💬 Ask Improvr** at the top, then water, gym, the 15-minute workout, the quest, card spending, craving SOS, "beat an urge", Wrap up and today's check-in as one-tap tiles; add a to-do in plain English; then everything still open — **due now first**, later today and bonuses folded underneath — with the same controls as Today. Search finds any habit or to-do.
+
+### 💬 Ask Improvr
+
+A chat with Claude (Sonnet 5.5) that does the typing for you. Message it how you'd text a mate — *"dentist fri 3pm"*, *"remind me to call the bank tomorrow"*, *"gym done and 2 bottles of water"*, *"mum's birthday is 12 march"*, *"move the essay to monday"*, *"what's on this week?"* — and it adds to-dos, calendar events and birthdays, ticks off today's habits and workouts, moves, renames and deletes things. Each change shows up in the chat with an **Undo**. Open it from the **+** sheet, the sidebar on a computer, or press **C**. Needs a one-off setup ([below](#-ask-improvr-chat-assistant)).
 
 ### 🌙 Wrap up
 
@@ -122,9 +126,9 @@ Put Improvr on a subdomain so it doesn't touch the main karum.co.uk site.
 
 ---
 
-## Extras (all optional, all free)
+## Extras (all optional)
 
-These need one "server key" from Firebase. Get it once and paste it in two places.
+Notifications and Apple Watch sleep are free; the chat assistant costs a little per message (paid to Anthropic). They all need one "server key" from Firebase. Get it once and paste it in where each one says.
 
 **Get the key:** Firebase console → ⚙️ **Project settings** → **Service accounts** → **Generate new private key**. A `.json` file downloads. Open it and copy everything. ⚠️ Keep it secret: never commit it or post it anywhere.
 
@@ -146,6 +150,17 @@ Backup timer: add the same JSON as a GitHub secret (repo → **Settings → Secr
    - **Get Contents of URL**: the URL, Method **POST**, Request Body **JSON**, three Text fields: `key` → your key · `asleep` → Health Samples → **Start Date** · `awake` → Health Samples → **End Date**.
    - Automation → Alarm *Is Stopped* → Run Immediately.
 
+### 💬 Ask Improvr (chat assistant)
+
+Uses Claude Sonnet 5.5 through your own Anthropic account. Your API key only ever lives in Vercel; the app talks to it through `/api/chat`, which only answers when you're signed in.
+
+1. **Get an API key:** go to the [Claude Console](https://platform.claude.com) → sign up → **Billing** → add some credit (a few pounds lasts ages) → **API keys** → **Create key** → copy it. ⚠️ Keep it secret like the Firebase key. While you're there, set a monthly **spend limit** under Limits for peace of mind.
+2. **Vercel** → your project → **Settings → Environment Variables** → add `ANTHROPIC_API_KEY` with the key. Also add `FIREBASE_SERVICE_ACCOUNT` (the same JSON as above) if you haven't already.
+3. Recommended: add `ASSISTANT_EMAILS` with the email you sign in with, so nobody else who makes an account can use your credit (or switch off new sign-ups in Firebase, see Setup step 2).
+4. **Deployments → ⋯ → Redeploy.** Then tap **+** → **Ask Improvr** and try *"gym done"*.
+
+**Cost:** roughly 1–3p per message (Sonnet 5.5 is $2 per million tokens in and $10 per million out; each message sends your to-dos, calendar and habits along so it knows what's there). If it says it can't reach the assistant, check the variables above are set and that you redeployed.
+
 ---
 
 ## Changing things
@@ -160,8 +175,10 @@ Needs Node **20.19+** or **22.12+** (`node -v` to check). Run `npm install` once
 npm install
 npm run dev        # http://localhost:5173
 npm run dev:local  # same, but local mode (no sign-in) — try things without touching your real data
-npm test           # logic tests (streaks, fines, day off, insights, badges, notifications, sleep, quick add)
+npm test           # logic tests (streaks, fines, day off, insights, badges, notifications, sleep, quick add, assistant)
 npm run build
 ```
 
-Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), web-push + Vercel functions + cron-job.org (notifications, Apple Watch sleep), GitHub Actions (backup timer), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.
+The `/api` functions (notifications, Apple Watch sleep, the chat assistant) only run on Vercel — use `npx vercel dev` with the same environment variables to try them on your computer.
+
+Built with Vite + React + [Mantine](https://mantine.dev) (UI, calendar, charts), Motion (animations), ios-haptics, ics (calendar reminders), Firebase (login + database), web-push + Vercel functions + cron-job.org (notifications, Apple Watch sleep), the Claude API (Ask Improvr), GitHub Actions (backup timer), Zustand, dayjs, canvas-confetti, Plus Jakarta Sans and vite-plugin-pwa.

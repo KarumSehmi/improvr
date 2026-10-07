@@ -131,23 +131,26 @@ export function setSkipped(date: DateKey, h: Habit, skipped: boolean) {
   });
 }
 
+/** Change a day's log so the habit is an honest "didn't do it" (or not). Mutates `l`. */
+export function applyMissed(l: DayLog, h: Habit, missed: boolean) {
+  if (h.kind === 'time') {
+    l.done = { ...l.done, [h.id]: missed ? false : undefined } as Record<string, boolean>;
+    return;
+  }
+  if (h.kind === 'avoid') {
+    const avoid = { ...l.avoid };
+    if (missed) avoid[h.id] = 'slip';
+    else delete avoid[h.id];
+    l.avoid = avoid;
+    return;
+  }
+  l.missed = { ...l.missed, [h.id]: missed };
+  if (!missed) delete l.missed[h.id];
+}
+
 /** "Didn't do it" — an honest no, so its section can close (doing it later still counts). */
 export function setMissed(date: DateKey, h: Habit, missed: boolean) {
-  updateDay(date, (l) => {
-    if (h.kind === 'time') {
-      l.done = { ...l.done, [h.id]: missed ? false : undefined } as Record<string, boolean>;
-      return;
-    }
-    if (h.kind === 'avoid') {
-      const avoid = { ...l.avoid };
-      if (missed) avoid[h.id] = 'slip';
-      else delete avoid[h.id];
-      l.avoid = avoid;
-      return;
-    }
-    l.missed = { ...l.missed, [h.id]: missed };
-    if (!missed) delete l.missed[h.id];
-  });
+  updateDay(date, (l) => applyMissed(l, h, missed));
 }
 
 // ---------------------------------------------------------------------------
