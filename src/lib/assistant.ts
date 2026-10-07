@@ -40,12 +40,22 @@ const DATE = { type: 'string', format: 'date', description: 'YYYY-MM-DD.' } as c
 const TIME = { type: 'string', description: '24-hour time, HH:mm (e.g. "15:00").' } as const;
 const ID = { type: 'string', description: 'The id from the context (or from an earlier tool result).' } as const;
 
-/** Strict schemas: Claude's arguments always match them (the app still checks them). */
-const tool = (name: string, description: string, properties: Record<string, unknown>, required: string[]): Anthropic.Beta.BetaTool => ({
+/**
+ * Anthropic's limits for strict tools, summed over every strict tool in a request (over them, every
+ * request is rejected): https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+ */
+export const STRICT_LIMITS = { tools: 20, optionalParams: 24, unionParams: 16 };
+
+/**
+ * Strict schemas guarantee Claude's arguments match (the app still checks them either way). The
+ * "change only what's given" tools have lots of optional fields, so they're left loose to stay
+ * inside STRICT_LIMITS — the app's checks tell Claude what to fix if it sends something odd.
+ */
+const tool = (name: string, description: string, properties: Record<string, unknown>, required: string[], strict = true): Anthropic.Beta.BetaTool => ({
   name,
   description,
   input_schema: { type: 'object', properties, required, additionalProperties: false },
-  strict: true,
+  ...(strict && { strict: true }),
 });
 
 export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
@@ -79,6 +89,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
       notes: { type: 'string', description: 'Replaces the notes ("" to clear).' },
     },
     ['id'],
+    false,
   ),
   tool('delete_todo', 'Delete a to-do completely (for mistakes or things no longer needed — use update_todo with done: true when it was done).', { id: ID }, ['id']),
   tool(
@@ -105,6 +116,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
       color: { type: 'string', enum: EVENT_COLORS },
     },
     ['id'],
+    false,
   ),
   tool('delete_event', 'Delete a calendar event.', { id: ID }, ['id']),
   tool(

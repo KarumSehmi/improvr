@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ASSISTANT_TOOLS, MAX_CHAT_CHARS, MAX_MESSAGES, MAX_ROUNDS } from './assistant';
+import { ASSISTANT_TOOLS, MAX_CHAT_CHARS, MAX_MESSAGES, MAX_ROUNDS, STRICT_LIMITS } from './assistant';
 import { buildContext, runTool } from './assistantTools';
 import { chatFull, chatItems, newChat, sendMessage, undoChange, useChat } from './chat';
 import { defaultSettings } from './config';
@@ -22,16 +22,24 @@ const state = () => useApp.getState();
 const todo = (t: Partial<Todo> & { id: string; title: string }): Todo => ({ date: TODAY, doneOn: null, createdAt: 1, ...t });
 
 describe('tool definitions', () => {
-  it('only use schema features strict tools accept, and name every required field', () => {
+  it('are well formed: unique names, every required field defined, no unsupported keywords', () => {
     const names = ASSISTANT_TOOLS.map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
     for (const t of ASSISTANT_TOOLS) {
-      expect(t.strict).toBe(true);
       expect(t.input_schema.additionalProperties).toBe(false);
       const props = t.input_schema.properties as Record<string, object>;
       for (const r of t.input_schema.required ?? []) expect(props).toHaveProperty(r);
       expect(JSON.stringify(t.input_schema)).not.toMatch(/"(minimum|maximum|minLength|maxLength|pattern|multipleOf)"/);
     }
+  });
+
+  it('stay inside Anthropic’s limits for strict tools (summed over all of them — over these, every request fails)', () => {
+    const strict = ASSISTANT_TOOLS.filter((t) => t.strict);
+    const params = strict.flatMap((t) => Object.entries(t.input_schema.properties as Record<string, { anyOf?: unknown; type?: unknown }>).map(([k, v]) => ({ optional: !(t.input_schema.required ?? []).includes(k), union: !!v.anyOf || Array.isArray(v.type) })));
+    expect(strict.length).toBeGreaterThan(0);
+    expect(strict.length).toBeLessThanOrEqual(STRICT_LIMITS.tools);
+    expect(params.filter((p) => p.optional).length).toBeLessThanOrEqual(STRICT_LIMITS.optionalParams);
+    expect(params.filter((p) => p.union).length).toBeLessThanOrEqual(STRICT_LIMITS.unionParams);
   });
 });
 
