@@ -182,6 +182,16 @@ export interface Settings {
   costPerWeek?: Record<string, number>;
   /** Weekly allowance for stay-clean habits (e.g. 1 drinking night a week). */
   weeklyLimits?: Record<string, number>;
+  /**
+   * Stay-clean habits that cost a charity fine every time you slip (e.g. £5 a nicotine slip).
+   * Only slips on or after `from` are fined, so turning it on never charges for the past.
+   */
+  slipFines?: Record<string, SlipFineRule>;
+}
+
+export interface SlipFineRule {
+  amount: number;
+  from: DateKey;
 }
 
 export interface ReminderSettings {

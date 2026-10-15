@@ -4,16 +4,20 @@ import { notifications } from '@mantine/notifications';
 import { IconTrash } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useState } from 'react';
+import { slipWord } from '../lib/actions';
 import { fireworks } from '../lib/celebrate';
 import { fmt } from '../lib/dates';
+import { slipFineRules } from '../lib/engine';
 import { useSummary } from '../lib/hooks';
 import { newId, removeItem, upsert, useApp } from '../lib/store';
 import { PanelHead } from './ui';
 
-/** What you owe for days not locked in on time, paying it off, and the history. */
+/** What you owe for days not locked in on time and for fined slips, paying it off, and the history. */
 export default function FinesCard() {
   const summary = useSummary();
   const settings = useApp((s) => s.settings);
+  // Each stay-clean habit with a fine, e.g. "£5 a nicotine slip".
+  const slipRules = slipFineRules(summary.habits, settings).map(({ habit, amount }) => `£${amount} a ${slipWord(habit)} slip`);
   const payments = useApp((s) => s.payments);
   const [amount, setAmount] = useState<number | string>('');
   const history = Object.values(payments).sort((a, b) => b.paidAt - a.paidAt);
@@ -33,7 +37,7 @@ export default function FinesCard() {
         emoji="💷"
         color={summary.owed ? 'red' : 'teal'}
         title="Charity fines"
-        sub={`£${settings.fineAmount} for every day not locked in on time`}
+        sub={[`£${settings.fineAmount} a day not locked in on time`, ...slipRules].join(' · ')}
         right={
           <Text fw={900} fz={18} c={summary.owed ? 'var(--bad)' : 'var(--good)'} className="num">
             {summary.owed ? `£${summary.owed} owed` : 'All clear'}
@@ -46,10 +50,22 @@ export default function FinesCard() {
           <Text size="sm">
             Donate <b>£{summary.owed}</b> to <b>{settings.charity}</b>, then log it here.
           </Text>
-          <Text size="xs" c="dimmed">
-            Missed: {summary.fineDays.slice(-10).map((d) => fmt(d, 'ddd D MMM')).join(', ')}
-            {summary.fineDays.length > 10 && ` and ${summary.fineDays.length - 10} more`}
-          </Text>
+          {summary.lateDays.length > 0 && (
+            <Text size="xs" c="dimmed">
+              Not locked in: {summary.lateDays.slice(-10).map((d) => fmt(d, 'ddd D MMM')).join(', ')}
+              {summary.lateDays.length > 10 && ` and ${summary.lateDays.length - 10} more`}
+            </Text>
+          )}
+          {summary.slipFines.length > 0 && (
+            <Text size="xs" c="dimmed">
+              Slips:{' '}
+              {summary.slipFines
+                .slice(-10)
+                .map((f) => `${f.habit.emoji} ${fmt(f.date, 'ddd D MMM')}`)
+                .join(', ')}
+              {summary.slipFines.length > 10 && ` and ${summary.slipFines.length - 10} more`}
+            </Text>
+          )}
           {settings.donateUrl && (
             <Button component="a" href={settings.donateUrl} target="_blank" rel="noreferrer" color="red" variant="light">
               Donate £{summary.owed} now
@@ -64,11 +80,12 @@ export default function FinesCard() {
         </Stack>
       )}
 
-      <SimpleGrid cols={3} spacing="xs" mt="md">
+      <SimpleGrid cols={2} spacing="xs" mt="md">
         {[
           [`£${summary.fineTotal}`, 'fined in total'],
           [`£${summary.paid}`, 'donated'],
-          [summary.fineDays.length, 'days missed'],
+          [summary.lateDays.length, summary.lateDays.length === 1 ? 'day not locked in' : 'days not locked in'],
+          [summary.slipFines.length, summary.slipFines.length === 1 ? 'fined slip' : 'fined slips'],
         ].map(([v, l]) => (
           <div key={l} style={{ background: 'var(--raised)', borderRadius: 14, padding: '10px 12px' }}>
             <Text fw={900} fz={18} className="num">

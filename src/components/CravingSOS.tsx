@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react';
 import { BONUS } from '../lib/config';
 import { burst, pop } from '../lib/celebrate';
 import { IDEAS, SOS_MINUTES, breathAt, cravingPeak, logUrge } from '../lib/cravings';
-import { slipStats } from '../lib/engine';
+import { answerClean } from '../lib/actions';
+import { slipFineAmount, slipStats } from '../lib/engine';
 import { floatXp } from '../lib/feedback';
 import { openSos, useSummary, useUi } from '../lib/hooks';
 import { logicalNow } from '../lib/moments';
@@ -75,6 +76,9 @@ export default function CravingSOS() {
   const reason = settings.reasons?.[habit.id] ?? '';
   const date = logicalNow(new Date(now)).date;
   const beatenToday = days[date]?.urges?.[habit.id] ?? 0;
+  const fine = slipFineAmount(settings, habit.id, date);
+  // A slip is logged once a day, so logging it again today costs nothing more.
+  const slipCostNow = days[date]?.avoid?.[habit.id] === 'slip' ? 0 : fine;
   const close = () => useUi.setState({ sos: null });
 
   const passed = () => {
@@ -89,14 +93,22 @@ export default function CravingSOS() {
   const slipped = () =>
     modals.openConfirmModal({
       title: 'Log a slip?',
-      children: <Text size="sm">Honesty beats streaks. It'll show as a slip for today; tomorrow is a fresh start.</Text>,
-      labels: { confirm: 'Log it', cancel: 'Not yet' },
+      children: (
+        <Text size="sm">
+          {slipCostNow ? (
+            <>
+              Honesty beats streaks — but it costs <b>£{slipCostNow}</b> to {settings.charity}. It'll show as a slip for today; tomorrow is a fresh start.
+            </>
+          ) : (
+            "Honesty beats streaks. It'll show as a slip for today; tomorrow is a fresh start."
+          )}
+        </Text>
+      ),
+      labels: { confirm: slipCostNow ? `Log it · £${slipCostNow}` : 'Log it', cancel: 'Not yet' },
       confirmProps: { color: 'red' },
       onConfirm: () => {
-        updateDay(date, (l) => {
-          l.avoid = { ...l.avoid, [habit.id]: 'slip' };
-        });
-        notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Be better tomorrow than you were today.' });
+        // A fined slip says what it cost on its own.
+        if (!answerClean(date, habit, 'slip')) notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Be better tomorrow than you were today.' });
         close();
       },
     });
@@ -197,6 +209,11 @@ export default function CravingSOS() {
             {stats?.saved ? ` · 💰 £${stats.saved} saved` : ''} · 💪 {stats?.urgesAll ?? 0} cravings beaten
             {peak ? ` · they usually hit ${peak.label}` : ''}
           </Text>
+          {fine > 0 && (
+            <Text size="sm" fw={800} c="red.4" mt={8}>
+              💷 Giving in costs £{fine} to {settings.charity}.
+            </Text>
+          )}
           {next?.next && (
             <Text size="xs" fw={700} c="teal.3" mt={4}>
               {next.next.emoji} {next.inDays} day{next.inDays === 1 ? '' : 's'} to {next.next.title}: {next.next.text}

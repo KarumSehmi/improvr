@@ -6,10 +6,10 @@ import { Button, Divider, Group, NumberInput, SegmentedControl, Select, SimpleGr
 import { DatePickerInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { useState, type ReactNode } from 'react';
-import { answerClean, answerTime, beatUrge, deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped } from '../lib/actions';
+import { answerClean, answerTime, beatUrge, deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped, setSlipFine } from '../lib/actions';
 import { FLEXIBLE_KINDS, completionRate, everyOn } from '../lib/engine';
 import { FREQUENCY_OPTIONS, KIND_LABEL, SECTIONS, WEEKDAYS, allHabits, easyDays, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
-import { dateKey, relativeDay, weekday } from '../lib/dates';
+import { dateKey, fmt, relativeDay, weekday } from '../lib/dates';
 import { useSummary, useToday, useUi } from '../lib/hooks';
 import { habitHistory } from '../lib/trend';
 import { updateSettings, useApp } from '../lib/store';
@@ -192,6 +192,7 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
   const settings = useApp((s) => s.settings);
   const summary = useSummary();
   const today = dateKey();
+  const slipFine = habit.kind === 'avoid' ? settings.slipFines?.[habit.id] : undefined;
   const on = !(settings.hiddenHabits ?? []).includes(habit.id);
   const section = SECTIONS.find((s) => s.id === habit.section)!;
   const streak = summary.habitStreaks[habit.id];
@@ -404,6 +405,22 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
               onChange={(v) => updateSettings({ costPerWeek: { ...settings.costPerWeek, [habit.id]: Number(v) || 0 } })}
             />
           </Group>
+          <NumberInput
+            label="Charity fine per slip"
+            description={
+              slipFine
+                ? `£${slipFine.amount} to ${settings.charity} every time you slip${habit.weeklyLimit ? ' past your allowance' : ''}, counted from ${fmt(slipFine.from, 'D MMM YYYY')}`
+                : 'Make slipping cost you. Empty = slips are free'
+            }
+            prefix="£"
+            min={0}
+            placeholder="£0"
+            inputMode="decimal"
+            key={slipFine ? 'on' : 'off'}
+            defaultValue={slipFine?.amount ?? ''}
+            onChange={(v) => Number(v) > 0 && setSlipFine(habit.id, Number(v))}
+            onBlur={(e) => !(Number(e.currentTarget.value.replace(/[^0-9.]/g, '')) > 0) && setSlipFine(habit.id, 0)}
+          />
           <Textarea
             label="Why you're doing this"
             description="Shows when a craving hits"

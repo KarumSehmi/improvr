@@ -348,7 +348,10 @@ export interface Summary {
   totalXp: number;
   level: LevelInfo;
   /** Days that missed the logging deadline → each costs the fine amount. */
-  fineDays: DateKey[];
+  lateDays: DateKey[];
+  /** Slips on stay-clean habits that carry a fine (Settings → Habits → the habit), oldest first. */
+  slipFines: SlipFine[];
+  /** Late days and fined slips together. */
   fineTotal: number;
   paid: number;
   owed: number;
@@ -406,8 +409,9 @@ export function summarize(data: AppData, today: DateKey): Summary {
   const trainingStreak = runStreak(weeks.map((w) => w.outcome));
 
   const totalXp = evals.reduce((s, e) => s + e.points, 0);
-  const fineDays = evals.filter((e, i) => !openFlags[i] && !e.onTime).map((e) => e.date);
-  const fineTotal = fineDays.length * data.settings.fineAmount;
+  const lateDays = evals.filter((e, i) => !openFlags[i] && !e.onTime).map((e) => e.date);
+  const slipFines = evals.flatMap((e) => finedSlips(e, data.settings));
+  const fineTotal = lateDays.length * data.settings.fineAmount + slipFines.reduce((sum, f) => sum + f.amount, 0);
   const paid = Object.values(data.payments).reduce((s, p) => s + p.amount, 0);
   const openUnlogged = evals.filter((e, i) => openFlags[i] && !e.closed).map((e) => e.date);
 
@@ -424,12 +428,55 @@ export function summarize(data: AppData, today: DateKey): Summary {
     weeks,
     totalXp,
     level: levelFor(totalXp),
-    fineDays,
+    lateDays,
+    slipFines,
     fineTotal,
     paid,
     owed: Math.max(0, fineTotal - paid),
     openUnlogged,
   };
+}
+
+export interface SlipFine {
+  date: DateKey;
+  habit: Habit;
+  amount: number;
+}
+
+/**
+ * What a slip on this habit costs on this date (0 = nothing). Slips inside a weekly allowance are free,
+ * and so is anything before the fine was turned on. A day off doesn't excuse one: slips you log still count.
+ */
+export function slipFineAmount(settings: Pick<Settings, 'slipFines'>, habitId: string, date: DateKey): number {
+  const rule = settings.slipFines?.[habitId];
+  return rule && rule.amount > 0 && date >= rule.from ? rule.amount : 0;
+}
+
+/** Stay-clean habits that cost a fine for every slip, with the amount (e.g. £5 a nicotine slip). */
+export function slipFineRules(habits: Habit[], settings: Pick<Settings, 'slipFines'>): { habit: Habit; amount: number }[] {
+  return habits.flatMap((habit) => {
+    const amount = habit.kind === 'avoid' ? (settings.slipFines?.[habit.id]?.amount ?? 0) : 0;
+    return amount > 0 ? [{ habit, amount }] : [];
+  });
+}
+
+/** What the slip logged on this date costs, once any weekly allowance is used up (0 = free). Read after logging it. */
+export function slipCost(data: Pick<AppData, 'days' | 'settings'>, h: Habit, date: DateKey): number {
+  const amount = slipFineAmount(data.settings, h.id, date);
+  if (!amount) return 0;
+  if (h.weeklyLimit != null && slipsThisWeek(data, h.id, date) <= h.weeklyLimit) return 0;
+  return amount;
+}
+
+/** The fined slips logged on one day. */
+export function finedSlips(e: DayEval, settings: Pick<Settings, 'slipFines'>): SlipFine[] {
+  const out: SlipFine[] = [];
+  for (const i of e.items) {
+    if (i.habit.kind !== 'avoid' || !i.missed) continue;
+    const amount = slipFineAmount(settings, i.habit.id, e.date);
+    if (amount) out.push({ date: e.date, habit: i.habit, amount });
+  }
+  return out;
 }
 
 /** One day off per Mon–Sun week. Returns the day already used this week, if any. */

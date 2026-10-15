@@ -19,6 +19,8 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
   const stats = slipStats(summary).find((s) => s.habit.id === 'vape');
   const perWeek = settings.costPerWeek?.vape ?? 0;
   const reason = settings.reasons?.vape ?? '';
+  const fine = settings.slipFines?.vape?.amount ?? 0;
+  const finedSoFar = summary.slipFines.filter((f) => f.habit.id === 'vape').reduce((sum, f) => sum + f.amount, 0);
   const from = r.latest?.days ?? 0;
   const pct = r.next ? ((days - from) / (r.next.days - from)) * 100 : 100;
 
@@ -112,6 +114,12 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
               if (n > 0) updateSettings({ costPerWeek: { ...settings.costPerWeek, vape: n } });
             }}
           />
+        )}
+        {fine > 0 && (
+          <Text size="xs" fw={700} c="red.4" mt={4}>
+            💷 Every slip is £{fine} to {settings.charity}
+            {finedSoFar > 0 ? ` · £${finedSoFar} so far` : ''}
+          </Text>
         )}
         {(stats?.urgesAll ?? 0) > 0 && (
           <Text size="xs" fw={600} c="grape.3" mt={4}>

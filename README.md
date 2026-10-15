@@ -57,19 +57,19 @@ The quickest way to log a whole day: everything that's still open, **one big car
 - **Overview**: days logged in a row, nicotine-free, average score, gym weeks, perfect days, fines; **🧠 insights** from your own data ("after nights asleep before 1am you get 86% done vs 61%", "nicotine slips are 3x more likely after a late night", "you feel better on training days"…); this week vs the same point last week, and last week's review.
 - **Habits**: the 🚭 nicotine-free timeline (what stopping is doing for you and what's next), staying-clean stats, every habit's last 7 days as dots with its 30-day rate and best run (tap one for its sheet), gym sessions per week.
 - **Trends**: "better than last month?" (a 7-day average against last month), personal bests, the score heatmap, sleep from the Watch, notes to self.
-- **Money**: 💳 card spending against your **£800 limit** (pace marker, what you can spend a day, how much to cut), 💰 money kept by staying clean, and 💷 charity fines with one-tap donating.
+- **Money**: 💳 card spending against your **£800 limit** (pace marker, what you can spend a day, how much to cut), 💰 money kept by staying clean, and 💷 charity fines (late days and nicotine slips) with one-tap donating.
 - **Badges**: 36 to unlock, nearest first.
 
 ### ⚙️ Settings
 
-- **Habits**: every habit by part of the day — switch any off, **Reorder**, or tap one to change **anything**: name, emoji, part of the day, XP, how often (every day, every 3 days, weekly…), job schedules (every N days, or a weekday every 1–4 weeks), **days off from it**, bonus or key, targets, finasteride amount and strength, stay-clean allowance, what it cost you and why you're quitting. Built-in habits can be reset. **Add your own**: a tick, a **count** (e.g. read 10 pages), a stay-clean habit or a job.
+- **Habits**: every habit by part of the day — switch any off, **Reorder**, or tap one to change **anything**: name, emoji, part of the day, XP, how often (every day, every 3 days, weekly…), job schedules (every N days, or a weekday every 1–4 weeks), **days off from it**, bonus or key, targets, finasteride amount and strength, stay-clean allowance, what it cost you, why you're quitting and a **charity fine for every slip**. Built-in habits can be reset. **Add your own**: a tick, a **count** (e.g. read 10 pages), a stay-clean habit or a job.
 - **Targets & times**: weekday and weekend bed and wake times, the caffeine cutoff, water bottles, gym sessions a week (0 hides Training), **easy days** (Monday and Friday to start: room jobs that repeat every few days, like the bin, wait for the next normal day) and when each part of Today comes due. Labels, Up next, insights, notifications and the Apple Watch all follow them.
 - **Today page**: switch off check-ins, the bonus quest, the reward chest, racing yesterday, the craving SOS or card spending if you don't want them.
 - Charity fines, the rules, card spending, 🔔 notifications, ⌚ Apple Watch sleep, ☁️ sync & backup, your name and start date, theme (dark, light, auto) and sounds.
 
 ### Also
 
-- **🆘 Craving SOS** (top of Today): a 10-minute timer with a breathing guide, one thing to do instead, your own reason for quitting and your streak and money saved. "It passed" logs the win (+5 XP).
+- **🆘 Craving SOS** (top of Today): a 10-minute timer with a breathing guide, one thing to do instead, your own reason for quitting, your streak and money saved, and what giving in would cost (£5 to charity). "It passed" logs the win (+5 XP).
 - **📊 Weekly review** every Monday: a grade, vs the week before, what you smashed and what needs work, your nicotine/drinking/sleep/card week, and **one focus habit** for the week (pinned on Today, followed up next week).
 - **🔔 Smart notifications** only when something needs doing — at most 4 a day (fine and lock-in warnings always come through), they replace each other and opening the app clears them. Each can be switched off.
 - **Dopamine**: animated ticks, iPhone haptics, little sounds, "+XP" pop-ups, confetti, level-ups, streak milestones and the reward chest.
@@ -79,7 +79,8 @@ The quickest way to log a whole day: everything that's still open, **one big car
 1. **Log every day.** Hit *Lock in* by **midnight at the end of the next day** (a 24h grace period). If you miss it, you owe **£5 to charity** for that day. The app tells you what you owe, and you mark it paid once you've donated. That's the only punishment.
 2. **One day off per week** (Mon–Sun). Streaks freeze, nothing counts against you, and it counts as logged.
 3. **Tick everything and the day locks itself**, plus you get a perfect-day bonus. Locking in on time opens a reward chest.
-4. Chores carry over until done. Slips never cost money; they just reset that streak.
+4. **Every nicotine slip is £5 to charity** (counted from the day this rule reached the app — slips before it stay free). Saying *Slipped* on 🚭 No nicotine — on Today, in Wrap up or from the Craving SOS — adds it to what you owe, and it counts on a day off too. You can change the amount, or give any other stay-clean habit its own fine, in the habit's sheet. Other slips just reset that streak.
+5. Chores carry over until done.
 
 ---
 

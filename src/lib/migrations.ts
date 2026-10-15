@@ -60,6 +60,15 @@ const STEPS: { id: string; run: () => void }[] = [
       }
     },
   },
+  {
+    // Every nicotine slip is now £5 to charity, from today (slips before this stay free).
+    id: 'nicotine-slip-fine',
+    run: () => {
+      const { slipFines } = useApp.getState().settings;
+      if (slipFines?.vape) return;
+      updateSettings({ slipFines: { ...slipFines, vape: { amount: 5, from: dateKey() } } });
+    },
+  },
 ];
 
 export function runMigrations() {

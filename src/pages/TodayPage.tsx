@@ -14,7 +14,7 @@ import UpNextCard from '../components/UpNextCard';
 import WrapUpCard from '../components/WrapUpCard';
 import { Tap } from '../components/ui';
 import { accent } from '../lib/style';
-import { markNotDone, tickAll } from '../lib/actions';
+import { markNotDone, slipWord, tickAll } from '../lib/actions';
 import { birthdaysOn } from '../lib/calendar';
 import { QUOTE, SECTIONS, STREAK_MILESTONES, featureOn, sectionHour } from '../lib/config';
 import { burst, fireworks } from '../lib/celebrate';
@@ -26,6 +26,17 @@ import { logicalNow, sectionLater, sectionStatus } from '../lib/moments';
 import { updateDay, useApp } from '../lib/store';
 
 const hourLabel = (h: number) => (h % 12 || 12) + (h % 24 < 12 ? 'am' : 'pm');
+
+/** What the fines were for: "2 days not locked in · 1 nicotine slip". */
+function fineReasons(summary: Summary): string {
+  const out: string[] = [];
+  const late = summary.lateDays.length;
+  if (late) out.push(`${late} day${late === 1 ? '' : 's'} not locked in on time`);
+  const slips = new Map<string, number>();
+  for (const f of summary.slipFines) slips.set(slipWord(f.habit), (slips.get(slipWord(f.habit)) ?? 0) + 1);
+  for (const [what, n] of slips) out.push(`${n} ${what} slip${n === 1 ? '' : 's'}`);
+  return out.join(' · ');
+}
 
 function sectionsComplete(e: DayEval): Record<string, boolean> {
   const out: Record<string, boolean> = {};
@@ -136,7 +147,7 @@ export default function TodayPage() {
             emoji="💷"
             color="red"
             title={`You owe £${summary.owed} to ${settings.charity}`}
-            sub={`${summary.fineDays.length} day${summary.fineDays.length === 1 ? '' : 's'} not locked in on time`}
+            sub={fineReasons(summary)}
             action={{ label: 'Pay', onClick: () => goTo('progress', { progressTab: 'money' }) }}
           />
         )}

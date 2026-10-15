@@ -100,7 +100,8 @@ function WelcomeModal({ opened }: { opened: boolean }) {
           <Stack gap={6}>
             <Text size="sm">✅ Tick things off through the day — about 2 minutes total.</Text>
             <Text size="sm">🔒 Lock in each day by midnight the next day.</Text>
-            <Text size="sm">💷 Miss it and you owe £{settings.fineAmount} to charity. That's the only punishment.</Text>
+            <Text size="sm">💷 Miss it and you owe £{settings.fineAmount} to charity.</Text>
+            {(settings.slipFines?.vape?.amount ?? 0) > 0 && <Text size="sm">🚭 Every nicotine slip is £{settings.slipFines!.vape.amount} to charity too.</Text>}
             <Text size="sm">🏖️ One day off per week. Streaks freeze.</Text>
             <Text size="sm">➕ Tap + to log anything from anywhere, and press and hold any habit to change it.</Text>
           </Stack>
