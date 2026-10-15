@@ -12,7 +12,7 @@ import { sound } from './sound';
 import type { DayLog, Settings, Todo, WorkoutType } from './types';
 import type { DateKey } from './dates';
 import { addDays, dateKey } from './dates';
-import { everyOn } from './engine';
+import { everyOn, slipCost } from './engine';
 import { newId, removeItem, setDay, updateDay, updateSettings, upsert, useApp } from './store';
 
 type At = { clientX: number; clientY: number } | undefined;
@@ -83,8 +83,12 @@ export function bump(date: DateKey, h: Habit, delta: number, e?: At): number {
   return next;
 }
 
-/** Stay-clean answer: clean, slipped, or back to unanswered. */
-export function answerClean(date: DateKey, h: Habit, value: 'clean' | 'slip' | null, e?: At) {
+/**
+ * Stay-clean answer: clean, slipped, or back to unanswered. A slip that costs a charity fine says so
+ * straight away; returns what it cost (0 = free), so callers only add their own message when it's free.
+ */
+export function answerClean(date: DateKey, h: Habit, value: 'clean' | 'slip' | null, e?: At): number {
+  const before = useApp.getState().days[date]?.avoid?.[h.id];
   updateDay(date, (l) => {
     const avoid = { ...l.avoid };
     if (value) avoid[h.id] = value;
@@ -95,6 +99,33 @@ export function answerClean(date: DateKey, h: Habit, value: 'clean' | 'slip' | n
     pop(e);
     floatXp(e, `+${h.points}`);
   }
+  if (value !== 'slip') return 0;
+  const { days, settings } = useApp.getState();
+  const cost = slipCost({ days, settings }, h, date);
+  if (cost && before !== 'slip') {
+    notifications.show({
+      color: 'red',
+      autoClose: 8000,
+      title: `💷 £${cost} to ${settings.charity}`,
+      message: `That's the deal for every ${slipWord(h)} slip. Donate it, then tap "I've paid" under Progress → Money. Tomorrow is a fresh start.`,
+    });
+  }
+  return cost;
+}
+
+/** "nicotine" from "No nicotine" — what a stay-clean habit is keeping you off. */
+export const slipWord = (h: Habit) => h.label.replace(/^No /i, '').toLowerCase();
+
+/**
+ * A charity fine for every slip on a stay-clean habit (0 = none). It counts from the day it's turned on
+ * (changing the amount keeps that day), so it never charges for slips before the deal was made.
+ */
+export function setSlipFine(habitId: string, amount: number) {
+  const { slipFines } = useApp.getState().settings;
+  const next = { ...slipFines };
+  if (amount > 0) next[habitId] = { amount, from: slipFines?.[habitId]?.from ?? dateKey() };
+  else delete next[habitId];
+  updateSettings({ slipFines: next });
 }
 
 /** A craving came and went without giving in: +5 XP (up to a few a day), and it remembers when. */

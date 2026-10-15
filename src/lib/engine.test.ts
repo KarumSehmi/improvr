@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUILT_IN_BY_ID as HABIT_BY_ID, WORKOUTS, defaultSettings } from './config';
 import { addDays, logDeadline, startOfDay } from './dates';
-import { dayOffUsedInWeek, levelFor, runStreak, summarize, trackChore } from './engine';
+import { dayOffUsedInWeek, levelFor, runStreak, slipCost, slipFineAmount, summarize, trackChore } from './engine';
 import type { AppData, DayLog } from './types';
 
 const START = '2026-09-21'; // a Monday
@@ -126,8 +126,8 @@ describe('chores carry over', () => {
 describe('fines', () => {
   it('fines a day only once its 24h grace period has passed', () => {
     const d = data({});
-    expect(summarize(d, '2026-09-22').fineDays).toEqual([]);
-    expect(summarize(d, '2026-09-23').fineDays).toEqual(['2026-09-21']);
+    expect(summarize(d, '2026-09-22').lateDays).toEqual([]);
+    expect(summarize(d, '2026-09-23').lateDays).toEqual(['2026-09-21']);
   });
 
   it('logging late still costs the fine; logging on time does not', () => {
@@ -136,7 +136,7 @@ describe('fines', () => {
       '2026-09-22': { closedAt: logDeadline('2026-09-22') + 1 },
     });
     const s = summarize(d, '2026-09-26');
-    expect(s.fineDays).toEqual(['2026-09-22', '2026-09-23', '2026-09-24']);
+    expect(s.lateDays).toEqual(['2026-09-22', '2026-09-23', '2026-09-24']);
     expect(s.fineTotal).toBe(15);
   });
 
@@ -147,6 +147,69 @@ describe('fines', () => {
     expect(s.fineTotal).toBe(10);
     expect(s.owed).toBe(5);
     expect(s.openUnlogged).toEqual(['2026-09-23', '2026-09-24']);
+  });
+});
+
+describe('slip fines', () => {
+  // Every day locked in on time, so only slips cost anything.
+  const onTime = (date: string, log: DayLog = {}): DayLog => ({ ...log, closedAt: logDeadline(date) - 1 });
+  const nicotine = { slipFines: { vape: { amount: 5, from: '2026-09-22' } } };
+
+  it('every nicotine slip from the day the fine started costs £5, and slips before it stay free', () => {
+    const d = data(
+      {
+        '2026-09-21': onTime('2026-09-21', { avoid: { vape: 'slip' } }),
+        '2026-09-22': onTime('2026-09-22', { avoid: { vape: 'slip' } }),
+        '2026-09-23': onTime('2026-09-23', { avoid: { vape: 'clean' } }),
+        '2026-09-24': onTime('2026-09-24', { avoid: { vape: 'slip' } }),
+      },
+      nicotine,
+    );
+    const s = summarize(d, '2026-09-24');
+    expect(s.slipFines.map((f) => [f.date, f.habit.id, f.amount])).toEqual([
+      ['2026-09-22', 'vape', 5],
+      ['2026-09-24', 'vape', 5],
+    ]);
+    expect(s.lateDays).toEqual([]);
+    expect(s.fineTotal).toBe(10);
+    expect(s.owed).toBe(10);
+  });
+
+  it('counts as soon as the slip is logged, on a day off too, and adds to late-day fines', () => {
+    const d = data({ '2026-09-22': { dayOff: true, avoid: { vape: 'slip' } } }, nicotine);
+    const s = summarize(d, '2026-09-23');
+    expect(s.lateDays).toEqual(['2026-09-21']);
+    expect(s.slipFines.map((f) => f.date)).toEqual(['2026-09-22']);
+    expect(s.fineTotal).toBe(10);
+  });
+
+  it('no fine set means slips are free; payments cover slip fines like any other', () => {
+    expect(summarize(data({ '2026-09-22': onTime('2026-09-22', { avoid: { vape: 'slip' } }) }), '2026-09-22').slipFines).toEqual([]);
+    const d = data({ '2026-09-22': onTime('2026-09-22', { avoid: { vape: 'slip' } }) }, nicotine);
+    d.payments = { a: { id: 'a', amount: 5, paidAt: 0 } };
+    expect(summarize(d, '2026-09-22').owed).toBe(0);
+  });
+
+  it('slips inside a weekly allowance are free; the ones past it are fined', () => {
+    const d = data(
+      {
+        '2026-09-22': onTime('2026-09-22', { avoid: { alcohol: 'slip' } }),
+        '2026-09-24': onTime('2026-09-24', { avoid: { alcohol: 'slip' } }),
+      },
+      { slipFines: { alcohol: { amount: 3, from: START } } },
+    );
+    const s = summarize(d, '2026-09-24');
+    expect(s.slipFines.map((f) => [f.date, f.amount])).toEqual([['2026-09-24', 3]]);
+    expect(slipCost(d, HABIT_BY_ID.alcohol, '2026-09-22')).toBe(0);
+    expect(slipCost(d, HABIT_BY_ID.alcohol, '2026-09-24')).toBe(3);
+  });
+
+  it('a hidden habit or a fine of £0 costs nothing', () => {
+    const slip = { '2026-09-22': onTime('2026-09-22', { avoid: { vape: 'slip' as const } }) };
+    expect(summarize(data(slip, { ...nicotine, hiddenHabits: ['vape'] }), '2026-09-22').slipFines).toEqual([]);
+    expect(summarize(data(slip, { slipFines: { vape: { amount: 0, from: START } } }), '2026-09-22').slipFines).toEqual([]);
+    expect(slipFineAmount(nicotine, 'vape', '2026-09-21')).toBe(0);
+    expect(slipFineAmount(nicotine, 'vape', '2026-09-22')).toBe(5);
   });
 });
 

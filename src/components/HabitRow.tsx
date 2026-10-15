@@ -6,7 +6,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { answerClean, answerTime, beatUrge, bump, setDone, setSkipped, targetOf } from '../lib/actions';
 import { habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import type { DateKey } from '../lib/dates';
-import { everyOn, type ItemEval, type Streak } from '../lib/engine';
+import { everyOn, slipFineAmount, type ItemEval, type Streak } from '../lib/engine';
 import { openHabit } from '../lib/hooks';
 import { formatDuration, sleepMinutes } from '../lib/sleep';
 import { updateDay, updateSettings, useApp } from '../lib/store';
@@ -344,17 +344,18 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       const allowance = item.allowance;
       const urges = log?.urges?.[id] ?? 0;
       const slipLabel = habit.weeklyLimit ? (id === 'alcohol' ? 'Drank' : 'Did it') : 'Slipped';
+      // Stay-clean habits with a charity fine (e.g. £5 a nicotine slip) keep the stakes in sight.
+      const fine = slipFineAmount(settings, id, date);
       const choose = (value: 'clean' | 'slip', e: MouseEvent) => {
         const next = answer === value ? null : value;
-        if (next === 'slip') {
-          const usedAfter = (allowance?.used ?? 0) + 1;
-          if (allowance && usedAfter <= allowance.limit) {
-            notifications.show({ color: 'orange', title: 'Logged — within your allowance', message: `That's ${usedAfter} of ${allowance.limit} for this week. Streak's safe.` });
-          } else {
-            notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Tomorrow is a fresh start — be better than today.' });
-          }
+        const usedAfter = (allowance?.used ?? 0) + 1;
+        // A fined slip says what it cost; otherwise a word about honesty (or the allowance).
+        if (answerClean(date, habit, next, e) || next !== 'slip') return;
+        if (allowance && usedAfter <= allowance.limit) {
+          notifications.show({ color: 'orange', title: 'Logged — within your allowance', message: `That's ${usedAfter} of ${allowance.limit} for this week. Streak's safe.` });
+        } else {
+          notifications.show({ color: 'gray', title: 'Logged. Honesty beats streaks.', message: 'Tomorrow is a fresh start — be better than today.' });
         }
-        answerClean(date, habit, next, e);
       };
       return (
         <Row
@@ -372,6 +373,8 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
                   {allowance.used}/{allowance.limit} this week
                 </M>
               )}
+              {fine > 0 && answer === 'slip' && missed && <M tone="bad">£{fine} to charity</M>}
+              {fine > 0 && !answer && <M tone="bad">£{fine} a slip</M>}
               {streak.current >= 2 && <StreakBits streak={streak} atRisk={atRisk} />}
               {urges > 0 && (
                 <span

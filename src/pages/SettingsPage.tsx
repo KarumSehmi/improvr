@@ -10,11 +10,12 @@ import RemindersCard from '../components/RemindersCard';
 import SleepSyncCard from '../components/SleepSyncCard';
 import { Sheet, Tap } from '../components/ui';
 import { accent } from '../lib/style';
-import { editHabit } from '../lib/actions';
+import { editHabit, slipWord } from '../lib/actions';
 import { budgetSettings } from '../lib/budget';
 import { pop } from '../lib/celebrate';
 import { FEATURES, SECTIONS, WEEKDAYS, caffeineCutoff, clockLabel, easyDays, featureOn, sectionHour, weekdayTargets, weekendTargets } from '../lib/config';
 import { dateKey } from '../lib/dates';
+import { slipFineRules } from '../lib/engine';
 import { goTo, setHideDone, useSummary, useUi } from '../lib/hooks';
 import { getData, importData, updateSettings, useApp } from '../lib/store';
 import type { AppData } from '../lib/types';
@@ -167,13 +168,23 @@ function FeaturesCard() {
 
 function FinesSettings() {
   const settings = useApp((s) => s.settings);
-  const owed = useSummary().owed;
+  const summary = useSummary();
+  const owed = summary.owed;
+  const slipRules = slipFineRules(summary.habits, settings);
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Lock each day in by midnight the next day, or it's a fine to charity. That's the only punishment.
+        Lock each day in by midnight the next day, or it's a fine to charity. Stay-clean habits can carry a fine for every slip too.
       </Text>
       <NumberInput label="Fine per day not locked in" prefix="£" min={1} value={settings.fineAmount} onChange={(v) => Number(v) > 0 && updateSettings({ fineAmount: Number(v) })} />
+      {slipRules.map(({ habit, amount }) => (
+        <Text key={habit.id} size="sm">
+          {habit.emoji} <b>£{amount}</b> for every {slipWord(habit)} slip{' '}
+          <Text span size="xs" c="dimmed">
+            · change it under Habits → {habit.label}
+          </Text>
+        </Text>
+      ))}
       <TextInput label="Charity" defaultValue={settings.charity} onBlur={(e) => updateSettings({ charity: e.currentTarget.value.trim() || 'a charity of your choice' })} />
       <TextInput label="Donation link" description="Makes paying a fine one tap" placeholder="https://…" defaultValue={settings.donateUrl ?? ''} onBlur={(e) => updateSettings({ donateUrl: e.currentTarget.value.trim() || undefined })} />
       <Button variant={owed ? 'filled' : 'light'} color={owed ? 'red' : 'violet'} onClick={() => goTo('progress', { progressTab: 'money' })}>
@@ -223,14 +234,14 @@ function CardSettings() {
 
 function RulesCard() {
   const settings = useApp((s) => s.settings);
+  const slipRules = slipFineRules(useSummary().habits, settings);
   const fine = `£${settings.fineAmount}`;
   const wk = weekdayTargets(settings);
   const we = weekendTargets(settings);
   return (
     <List spacing="sm" size="sm">
       <List.Item>
-        <b>Log every day.</b> Tick things off as you go, then <i>Lock in</i>. You have until midnight at the end of the next day. Miss it and it's <b>{fine} to charity</b>. That's
-        the only punishment.
+        <b>Log every day.</b> Tick things off as you go, then <i>Lock in</i>. You have until midnight at the end of the next day. Miss it and it's <b>{fine} to charity</b>.
       </List.Item>
       <List.Item>
         <b>One day off per week</b> (Mon–Sun). Streaks freeze, nothing counts against you and it counts as logged. Slips you log still count.
@@ -253,8 +264,21 @@ function RulesCard() {
         <b>Bed & wake:</b> asleep by {clockLabel(wk.sleep)} and up by {clockLabel(wk.wake)} on weekdays; {clockLabel(we.sleep)} and {clockLabel(we.wake)} at the weekend.
       </List.Item>
       <List.Item>
-        <b>Bonus habits</b> earn XP but never count against you. <b>Stayed clean</b> must be answered honestly before you lock in — slips never cost money, they just reset the
-        streak.
+        <b>Bonus habits</b> earn XP but never count against you. <b>Stayed clean</b> must be answered honestly before you lock in — a slip resets the streak
+        {slipRules.length > 0 ? (
+          <>
+            , and{' '}
+            {slipRules.map(({ habit, amount }, i) => (
+              <span key={habit.id}>
+                {i > 0 && (i === slipRules.length - 1 ? ' and ' : ', ')}
+                every <b>{slipWord(habit)} slip is £{amount} to charity</b>
+              </span>
+            ))}
+            .
+          </>
+        ) : (
+          '.'
+        )}
       </List.Item>
     </List>
   );
@@ -437,7 +461,14 @@ export default function SettingsPage() {
           emoji="💷"
           color="red"
           title="Charity fines"
-          sub={summary.owed ? `£${summary.owed} owed · £${settings.fineAmount} a missed day` : `£${settings.fineAmount} a missed day · ${settings.charity}`}
+          sub={[
+            summary.owed ? `£${summary.owed} owed` : null,
+            `£${settings.fineAmount} a missed day`,
+            ...slipFineRules(summary.habits, settings).map(({ habit, amount }) => `£${amount} a ${slipWord(habit)} slip`),
+            summary.owed ? null : settings.charity,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
           onClick={() => open('fines')}
         />
         <Row emoji="📜" color="yellow" title="The rules" sub="How it all works" onClick={() => open('rules')} />
