@@ -6,13 +6,15 @@ import { Button, Divider, Group, NumberInput, SegmentedControl, Select, SimpleGr
 import { DatePickerInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { useState, type ReactNode } from 'react';
-import { answerClean, answerTime, beatUrge, deleteHabit, editHabit, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped, setSlipFine } from '../lib/actions';
+import { answerClean, beatUrge, deleteHabit, editHabit, logTime, resetHabit, setDone, setFrequency, setHabitOn, setMissed, setSchedule, setSkipped, setSlipFine } from '../lib/actions';
 import { FLEXIBLE_KINDS, completionRate, everyOn } from '../lib/engine';
 import { FREQUENCY_OPTIONS, KIND_LABEL, SECTIONS, WEEKDAYS, allHabits, easyDays, habitLabel, scheduleLabel, type ChoreSchedule, type Habit, type SectionId } from '../lib/config';
 import { dateKey, fmt, relativeDay, weekday } from '../lib/dates';
-import { useSummary, useToday, useUi } from '../lib/hooks';
+import { openStats, useSummary, useToday, useUi } from '../lib/hooks';
 import { habitHistory } from '../lib/trend';
+import { loggedTime } from '../lib/sleep';
 import { updateSettings, useApp } from '../lib/store';
+import { TimeChips } from './TimeLogger';
 import { Sheet, Tap, Tile, WeekDots } from './ui';
 import { accent } from '../lib/style';
 
@@ -130,13 +132,39 @@ function DayActions({ habit, date }: { habit: Habit; date: string }) {
     </Button>
   );
 
+  if (habit.kind === 'time') {
+    const answered = log?.done?.[habit.id] != null;
+    return (
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>
+          {when} · {habit.id === 'sleep' ? 'when did you fall asleep?' : 'when did you get up?'}
+        </div>
+        <TimeChips
+          habit={habit}
+          date={date}
+          layout="grid"
+          selected={answered ? (log?.times?.[habit.id] ?? loggedTime(habit.id, log)) : null}
+          onPick={(t, e) => {
+            logTime(date, habit, t, e);
+            close();
+          }}
+          onClear={
+            answered
+              ? () => {
+                  logTime(date, habit, null);
+                  close();
+                }
+              : undefined
+          }
+        />
+      </div>
+    );
+  }
+
   let buttons: ReactNode[] = [];
   if (habit.kind === 'avoid') {
     const a = log?.avoid?.[habit.id];
     buttons = [btn('Clean', () => answerClean(date, habit, 'clean'), 'teal', a === 'clean' ? 'filled' : 'light'), btn('Slipped', () => answerClean(date, habit, 'slip'), 'red', a === 'slip' ? 'filled' : 'light'), a ? btn('Clear', () => answerClean(date, habit, null)) : null].filter(Boolean);
-  } else if (habit.kind === 'time') {
-    const a = log?.done?.[habit.id];
-    buttons = [btn('Yes', () => answerTime(date, habit, true), 'teal', a === true ? 'filled' : 'light'), btn('No', () => answerTime(date, habit, false), 'red', a === false ? 'filled' : 'light'), a != null ? btn('Clear', () => answerTime(date, habit, null)) : null].filter(Boolean);
   } else {
     buttons = [
       item.done ? btn('Undo', () => setDone(date, habit, false)) : btn('Done ✓', () => setDone(date, habit, true), 'teal', 'filled'),
@@ -256,6 +284,9 @@ function Body({ habit, date, summaryHabits }: { habit: Habit; date: string | nul
             </Text>
             <WeekDots days={history} color={section.color} />
           </Group>
+          <Button mt="sm" fullWidth variant="light" color={section.color} onClick={() => openStats(habit.id)}>
+            📊 Full stats · calendar, charts & patterns
+          </Button>
         </div>
       )}
 

@@ -1,16 +1,16 @@
 import { Button, Group } from '@mantine/core';
-import { TimeInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconBottle, IconBottleFilled, IconCheck, IconMinus, IconPlus, IconX } from '@tabler/icons-react';
-import type { MouseEvent, ReactNode } from 'react';
-import { answerClean, answerTime, beatUrge, bump, setDone, setSkipped, targetOf } from '../lib/actions';
+import { IconBottle, IconBottleFilled, IconMinus, IconPlus } from '@tabler/icons-react';
+import { useState, type MouseEvent, type ReactNode } from 'react';
+import { answerClean, beatUrge, bump, logTime, setDone, setSkipped, targetOf } from '../lib/actions';
 import { habitLabel, scheduleLabel, sleepTargets } from '../lib/config';
 import type { DateKey } from '../lib/dates';
 import { everyOn, slipFineAmount, type ItemEval, type Streak } from '../lib/engine';
 import { openHabit } from '../lib/hooks';
-import { formatDuration, sleepMinutes } from '../lib/sleep';
+import { formatDuration, loggedTime, nightOf, offBy, targetFor } from '../lib/sleep';
 import { updateDay, updateSettings, useApp } from '../lib/store';
 import type { DayLog } from '../lib/types';
+import { TimeChips, TimePill } from './TimeLogger';
 import { CheckCircle, M, Meta, Seg, Stepper, Tap, Tile } from './ui';
 import { accent } from '../lib/style';
 
@@ -80,17 +80,70 @@ function StreakBits({ streak, atRisk }: { streak: Streak; atRisk: boolean }) {
   );
 }
 
+/**
+ * Sleep / wake: tap the time you fell asleep or got up, no yes or no. Once it's in, it shows with a ✓ (on target)
+ * or ✕ (late) — tap that to change it. The Apple Watch fills it in when it syncs.
+ */
+function TimeRow({ item, date, log, color, focus, common }: { item: ItemEval; date: DateKey; log: DayLog | undefined; color: string; focus: boolean; common: ReactNode }) {
+  const settings = useApp((s) => s.settings);
+  const [editing, setEditing] = useState(false);
+  const { habit, done, missed } = item;
+  const id = habit.id;
+  const answer = log?.done?.[id];
+  // What you logged, or the Watch's time. An old plain "yes" (or "close the rest") may have no time.
+  const time = answer == null ? null : (log?.times?.[id] ?? loggedTime(id, log));
+  const watch = !!log?.sleepAuto && time === (id === 'sleep' ? log.sleepAuto.asleep : log.sleepAuto.awake);
+  const mins = id === 'sleep' && time ? nightOf(log).mins : null;
+  const pick = (t: string, e?: MouseEvent) => {
+    logTime(date, habit, t, e);
+    setEditing(false);
+  };
+  const clear = () => {
+    logTime(date, habit, null);
+    setEditing(false);
+  };
+  return (
+    <Row
+      id={id}
+      date={date}
+      emoji={habit.emoji}
+      color={color}
+      label={habitLabel(habit, settings, date)}
+      focus={focus}
+      state={done ? 'done' : missed ? 'missed' : undefined}
+      meta={
+        <Meta>
+          {sleepTargets(settings, date).weekend && <M tone="accent">weekend</M>}
+          {time && (
+            <M tone={answer ? 'good' : 'bad'}>
+              {watch ? '⌚ ' : ''}
+              {offBy(id, time, targetFor(id, settings, date))}
+            </M>
+          )}
+          {!time && answer === false && <M tone="bad">late · what time?</M>}
+          {mins != null && <M>{formatDuration(mins)} asleep</M>}
+          {common}
+        </Meta>
+      }
+      right={answer != null ? <TimePill time={time} ok={answer} open={editing} onClick={() => setEditing(!editing)} /> : null}
+      below={answer == null || editing || (answer === false && !time) ? <TimeChips habit={habit} date={date} selected={time} onPick={pick} onClear={answer != null ? clear : undefined} /> : null}
+    />
+  );
+}
+
 export default function HabitRow({ item, date, log, streak, color, atRisk, focus }: Props) {
   const settings = useApp((s) => s.settings);
   const { habit, done, missed, overdueDays, skipped } = item;
   const id = habit.id;
   // Set to every few days in Settings → Habits
   const every = everyOn(settings, id, date);
+  // Once sleep or wake has its time, that says when ("last night" would just repeat it).
+  const hint = habit.hint && !(habit.kind === 'time' && log?.done?.[id] != null);
   const common = (
     <>
       {habit.important && !focus && <M tone="accent">★ key</M>}
       {habit.optional && <M tone="accent">bonus</M>}
-      {habit.hint && <M>{habit.hint}</M>}
+      {hint && <M>{habit.hint}</M>}
       <StreakBits streak={streak} atRisk={atRisk} />
     </>
   );
@@ -145,65 +198,8 @@ export default function HabitRow({ item, date, log, streak, color, atRisk, focus
       );
     }
 
-    case 'time': {
-      const answer = log?.done?.[id];
-      // Filled in by the Apple Watch Shortcut, if you've set it up.
-      const watch = log?.sleepAuto;
-      const watchTime = watch ? (id === 'sleep' ? watch.asleep : watch.awake) : null;
-      return (
-        <Row
-          id={id}
-          date={date}
-          emoji={habit.emoji}
-          color={color}
-          label={habitLabel(habit, settings, date)}
-          focus={focus}
-          state={state}
-          meta={
-            <Meta>
-              {sleepTargets(settings, date).weekend && <M tone="accent">weekend</M>}
-              {watch ? (
-                <M tone={missed ? 'bad' : undefined}>⌚ {id === 'sleep' ? `asleep ${watch.asleep} · ${formatDuration(sleepMinutes(watch.asleep, watch.awake))}` : `up ${watch.awake}`}</M>
-              ) : (
-                missed && log?.times?.[id] && <M tone="bad">~{log.times[id]}</M>
-              )}
-              {common}
-            </Meta>
-          }
-          right={
-            <Seg
-              value={answer === true ? 'yes' : answer === false ? 'no' : null}
-              options={[
-                { value: 'no', label: <IconX size={17} stroke={2.6} />, tone: 'bad', aria: 'No' },
-                { value: 'yes', label: <IconCheck size={17} stroke={2.8} />, tone: 'good', aria: 'Yes' },
-              ]}
-              onChange={(v, e) => {
-                const yes = v === 'yes';
-                if (yes) answerTime(date, habit, answer === true ? null : true, e);
-                else answerTime(date, habit, answer === false ? null : false, e);
-              }}
-            />
-          }
-          below={
-            missed && (
-              <TimeInput
-                mt="xs"
-                ml={48}
-                size="sm"
-                description={habit.missPrompt}
-                value={log?.times?.[id] ?? watchTime ?? ''}
-                onChange={(e) => {
-                  const v = e.currentTarget.value;
-                  updateDay(date, (l) => {
-                    l.times = { ...l.times, [id]: v };
-                  });
-                }}
-              />
-            )
-          }
-        />
-      );
-    }
+    case 'time':
+      return <TimeRow item={item} date={date} log={log} color={color} focus={focus} common={common} />;
 
     case 'water':
     case 'count': {

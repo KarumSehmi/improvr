@@ -17,7 +17,7 @@ function describe(h: Habit, settings: Settings): string {
   const bits: string[] = [];
   if (h.kind === 'chore' && h.schedule) bits.push(scheduleLabel(h.schedule));
   else if (h.kind === 'avoid') bits.push(h.weeklyLimit ? `stay clean · ${h.weeklyLimit} a week allowed` : 'stay clean');
-  else if (h.kind === 'time') bits.push('yes / no');
+  else if (h.kind === 'time') bits.push('tap the time');
   else {
     const every = everyOn(settings, h.id, dateKey());
     bits.push(every > 1 ? scheduleLabel({ every }) : 'daily');

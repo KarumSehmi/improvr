@@ -11,6 +11,7 @@ import HabitSheet from './components/HabitSheet';
 import { AddHabitSheet } from './components/HabitsEditor';
 import Overlays from './components/Overlays';
 import QuickLog from './components/QuickLog';
+import StatsSheet from './components/StatsSheet';
 import { TodoEditor } from './components/Todos';
 import WrapUp from './components/WrapUp';
 import { FloaterLayer, Tap } from './components/ui';
@@ -225,6 +226,7 @@ function Shell() {
       <ChatSheet />
       <WrapUp />
       <HabitSheet />
+      <StatsSheet />
       <AddHabitSheet />
       <TodoEditor />
       <CardSheet />

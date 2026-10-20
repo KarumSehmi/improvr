@@ -6,7 +6,7 @@ import { ActionIcon, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconCheck, IconLock, IconX } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { answerClean, answerTime, bump, moveTodo, setDone, setMissed, setSkipped, targetOf, toggleTodo } from '../lib/actions';
+import { answerClean, bump, logTime, moveTodo, setDone, setMissed, setSkipped, targetOf, toggleTodo } from '../lib/actions';
 import { pop } from '../lib/celebrate';
 import { SECTION_BY_ID, habitLabel, scheduleLabel } from '../lib/config';
 import { addDays, relativeDay, type DateKey } from '../lib/dates';
@@ -18,6 +18,7 @@ import { dayLabel, repeatLabel, timeLabel } from '../lib/quickadd';
 import { useApp } from '../lib/store';
 import { carriedDays } from '../lib/todos';
 import { wrapQueue, type WrapStep } from '../lib/wrap';
+import { TimeChips } from './TimeLogger';
 import { ScoreRing, Stepper, Tap } from './ui';
 import { accent } from '../lib/style';
 import { MoodPicker, NoteField } from './WrapUpCard';
@@ -126,6 +127,7 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
       const streak = summary.habitStreaks[h.id];
       const label = habitLabel(h, settings, date);
       const bits = [
+        h.kind === 'time' ? (h.id === 'sleep' ? 'When did you fall asleep?' : 'When did you get up?') : null,
         streak?.current >= 2 ? `🔥 ${streak.current} in a row — keep it going` : streak?.best >= 5 ? `🏁 Best run: ${streak.best}` : null,
         item.overdueDays > 0 ? `${item.overdueDays} day${item.overdueDays === 1 ? '' : 's'} overdue` : null,
         h.kind === 'chore' && h.schedule ? scheduleLabel(h.schedule) : null,
@@ -149,17 +151,8 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
           </>
         );
       } else if (h.kind === 'time') {
-        Object.assign(keys, { yes: () => (answerTime(date, h, true), next()), no: () => (answerTime(date, h, false), next()) });
-        buttons = (
-          <>
-            <Answer tone="bad" onClick={keys.no!}>
-              <IconX size={20} stroke={3} /> No
-            </Answer>
-            <Answer tone="good" onClick={keys.yes!}>
-              <IconCheck size={20} stroke={3} /> Yes
-            </Answer>
-          </>
-        );
+        // Tap the time: no yes or no to think about.
+        buttons = <TimeChips habit={h} date={date} layout="grid" color={sec.color} selected={log?.times?.[h.id] ?? null} onPick={(t, ev) => (logTime(date, h, t, ev), next())} />;
       } else {
         Object.assign(keys, { yes: () => (setDone(date, h, true), next()), no: () => (setMissed(date, h, true), next()) });
         buttons = (
@@ -182,7 +175,7 @@ function Flow({ date, close }: { date: DateKey; close: () => void }) {
               <Stepper value={value} target={targetOf(h)} color={sec.color} onChange={(d, ev) => bump(date, h, d, ev)} />
             </Group>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>{buttons}</div>
+          {h.kind === 'time' ? buttons : <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>{buttons}</div>}
           <Group justify="center" gap="lg">
             {h.kind === 'chore' && (
               <Button variant="subtle" color="gray" size="compact-sm" onClick={() => (setSkipped(date, h, true), next())}>

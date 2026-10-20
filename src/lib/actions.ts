@@ -6,7 +6,7 @@
 import { notifications } from '@mantine/notifications';
 import { floatXp, notifyUndo } from './feedback';
 import { burst, fireworks, pop } from './celebrate';
-import { BONUS, CHECKINS, WATER_TARGET, WORKOUTS, allHabits, type CheckinId, type ChoreSchedule, type Habit, type HabitEdit } from './config';
+import { BONUS, CHECKINS, WATER_TARGET, WORKOUTS, allHabits, sleepTargets, timeOnTarget, type CheckinId, type ChoreSchedule, type Habit, type HabitEdit } from './config';
 import { logUrge } from './cravings';
 import { sound } from './sound';
 import type { DayLog, Settings, Todo, WorkoutType } from './types';
@@ -45,11 +45,13 @@ export function applyDone(l: DayLog, h: Habit, done: boolean, settings: Settings
     case 'count':
       l.counts = { ...l.counts, [id]: done ? Math.max(l.counts?.[id] ?? 0, targetOf(h)) : 0 };
       return;
-    case 'time':
-      // Sleep / wake: "yes", or back to unanswered.
+    case 'time': {
+      // Sleep / wake: "yes" (a time already logged on target stays), or back to unanswered.
+      const kept = done && l.done?.[id] === true;
       l.done = { ...l.done, [id]: done ? true : undefined } as Record<string, boolean>;
-      if (l.times) delete l.times[id];
+      if (l.times && !kept) delete l.times[id];
       return;
+    }
     default:
       l.done = { ...l.done, [id]: done };
       if (l.skipped) delete l.skipped[id];
@@ -137,20 +139,27 @@ export function beatUrge(date: DateKey, h: Habit, e?: At) {
   notifications.show({ color: 'teal', title: `💪 Urge beaten${before ? ` (${before + 1} today)` : ''}`, message: 'Cravings peak and pass in about 10 minutes. Ride it out.' });
 }
 
-/** Sleep / wake: yes, an honest no (pre-filled with the Watch's time if there is one), or unanswered. */
-export function answerTime(date: DateKey, h: Habit, value: boolean | null, e?: At) {
-  updateDay(date, (l) => {
-    l.done = { ...l.done, [h.id]: value ?? undefined } as Record<string, boolean>;
-    if (value !== false) {
-      if (l.times) delete l.times[h.id];
-    } else if (l.sleepAuto && !l.times?.[h.id]) {
-      l.times = { ...l.times, [h.id]: h.id === 'sleep' ? l.sleepAuto.asleep : l.sleepAuto.awake };
-    }
-  });
-  if (value) {
+/** Sleep / wake from the time you give (null = back to unanswered): on target or not by that day's targets. Mutates `l`. */
+export function applyTime(l: DayLog, h: Habit, time: string | null, settings: Settings, date: DateKey) {
+  const times = { ...l.times };
+  if (time) times[h.id] = time;
+  else delete times[h.id];
+  l.times = times;
+  l.done = { ...l.done, [h.id]: time ? timeOnTarget(h.id, time, sleepTargets(settings, date)) : undefined } as Record<string, boolean>;
+  if (l.missed?.[h.id]) delete l.missed[h.id];
+}
+
+/** Log when you fell asleep or got up, or null to clear it. Returns whether it hit the target. */
+export function logTime(date: DateKey, h: Habit, time: string | null, e?: At): boolean {
+  const { settings, days } = useApp.getState();
+  const before = days[date]?.done?.[h.id] === true;
+  updateDay(date, (l) => applyTime(l, h, time, settings, date));
+  const ok = useApp.getState().days[date]?.done?.[h.id] === true;
+  if (ok && !before) {
     pop(e);
     floatXp(e, `+${h.points}`);
   }
+  return ok;
 }
 
 /** Skip a skippable job today (its cycle restarts), or undo the skip. */

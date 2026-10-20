@@ -178,6 +178,19 @@ describe('running tools', () => {
     expect(state().days[TODAY].avoid).toEqual({ vape: 'clean' });
   });
 
+  it('logs sleep and wake as times and works out the target, with Undo', () => {
+    const late = runTool('log_habit', { habit_id: 'sleep', status: 'done', time: '1:30' }, NOW);
+    expect(state().days[TODAY]).toMatchObject({ times: { sleep: '01:30' }, done: { sleep: false } });
+    expect(late.change!.label).toBe('✖️ Asleep before 1am: not done (asleep at 01:30)');
+    const up = runTool('log_habit', { habit_id: 'wake', status: 'not_done', time: '08:15' }, NOW);
+    expect(state().days[TODAY]).toMatchObject({ times: { sleep: '01:30', wake: '08:15' }, done: { sleep: false, wake: true } });
+    expect(up.result).toContain('done (up at 08:15)');
+    expect(buildContext(state(), NOW)).toContain('- wake: ☀️ Up before 9am — time — done (up at 08:15)');
+    up.change!.undo();
+    expect(state().days[TODAY].times).toEqual({ sleep: '01:30' });
+    expect(runTool('log_habit', { habit_id: 'sleep', status: 'done', time: '25:00' }, NOW).isError).toBe(true);
+  });
+
   it('logs and removes workouts, with Undo', () => {
     const out = runTool('log_workout', { type: 'gym' }, NOW);
     runTool('log_workout', { type: 'gym' }, NOW); // twice is still one session
