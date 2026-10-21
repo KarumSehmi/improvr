@@ -13,7 +13,7 @@ export interface DayLog {
   /** Things you marked "didn't do it", so their section can close (ticking one later still counts). */
   missed?: Record<string, boolean>;
   avoid?: Record<string, AvoidAnswer>;
-  /** Rough time (HH:mm) for sleep / wake when the target was missed. */
+  /** When you fell asleep / got up (HH:mm). `done` says whether it hit that day's target. */
   times?: Record<string, string>;
   water?: number;
   /** Count habits: how many so far (pages read, minutes…). */

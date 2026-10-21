@@ -8,6 +8,7 @@ import { Children, useCallback, useId, useRef, type CSSProperties, type Keyboard
 import { fmt, type DateKey } from '../lib/dates';
 import { accent } from '../lib/style';
 import { useFloaters } from '../lib/feedback';
+import { lastScroll } from '../lib/scroll';
 import type { HistoryState } from '../lib/trend';
 
 // Scrolling on a phone often ends on a row. Anything that moved, or landed during or just after a
@@ -15,10 +16,6 @@ import type { HistoryState } from '../lib/trend';
 const MOVE_PX = 10;
 const SETTLE_MS = 300;
 const LONG_MS = 480;
-let lastScroll = 0;
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', () => (lastScroll = performance.now()), { capture: true, passive: true });
-}
 
 type TapProps = BoxProps &
   ElementProps<'div', 'onClick'> & {
@@ -94,7 +91,7 @@ export function Tap({ onClick, onLongPress, haptic = true, children, style, ...r
       onClick={(e: MouseEvent) => {
         const p = press.current;
         press.current = null;
-        if (p && (p.moved || p.long || lastScroll > p.at - SETTLE_MS)) {
+        if (p && (p.moved || p.long || lastScroll() > p.at - SETTLE_MS)) {
           e.preventDefault(); // also flips the hidden switch back, so no buzz
           e.stopPropagation();
           return;

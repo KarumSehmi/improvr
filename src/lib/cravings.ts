@@ -45,12 +45,20 @@ export function logUrge(l: DayLog, habitId: string, at: number) {
   l.urgeAt = { ...l.urgeAt, [habitId]: [...(l.urgeAt?.[habitId] ?? []), at] };
 }
 
-const PARTS = [
-  { id: 'morning', label: 'the morning', from: 5, to: 12 },
-  { id: 'afternoon', label: 'the afternoon', from: 12, to: 17 },
-  { id: 'evening', label: 'the evening', from: 17, to: 21 },
-  { id: 'night', label: 'late at night', from: 21, to: 29 },
+/** Parts of the day cravings are grouped into (late night runs past midnight, until 5am). */
+export const PARTS = [
+  { id: 'morning', name: 'Morning', emoji: '🌅', label: 'the morning', from: 5, to: 12 },
+  { id: 'afternoon', name: 'Afternoon', emoji: '☀️', label: 'the afternoon', from: 12, to: 17 },
+  { id: 'evening', name: 'Evening', emoji: '🌆', label: 'the evening', from: 17, to: 21 },
+  { id: 'night', name: 'Late night', emoji: '🌙', label: 'late at night', from: 21, to: 29 },
 ];
+
+/** Which part of the day a moment falls in. */
+export function partOf(at: number): (typeof PARTS)[number] {
+  const h = new Date(at).getHours();
+  const hour = h < 5 ? h + 24 : h;
+  return PARTS.find((p) => hour >= p.from && hour < p.to)!;
+}
 
 /** When cravings for a habit usually hit (needs a few logged first). */
 export function cravingPeak(summary: Summary, habitId: string, days = 60): { label: string; count: number; total: number } | null {
@@ -60,9 +68,7 @@ export function cravingPeak(summary: Summary, habitId: string, days = 60): { lab
   for (const e of summary.evals) {
     if (e.date < since) continue;
     for (const at of e.log?.urgeAt?.[habitId] ?? []) {
-      const h = new Date(at).getHours();
-      const hour = h < 5 ? h + 24 : h;
-      const part = PARTS.find((p) => hour >= p.from && hour < p.to)!;
+      const part = partOf(at);
       counts.set(part.id, (counts.get(part.id) ?? 0) + 1);
       total++;
     }

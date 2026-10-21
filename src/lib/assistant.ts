@@ -28,6 +28,7 @@ How to help:
 - To-do or calendar? If they say which ("add to my to-dos", "put it in the calendar"), do that. Otherwise: things they need to do and tick off (tasks, errands, deadlines, "remember to…") are to-dos; things that happen at a set time or place (appointments, plans, matches, trips, nights out) are calendar events. Birthdays go in birthdays, not the calendar.
 - To-dos with no day mentioned go on today. Use "someday" only for things with no real date ("at some point", "one day").
 - Logging habits: tick off what they say they've done today ("brushed teeth", "took creatine") with log_habit, using the habit ids from the context. Gym sessions, 15-minute workouts and football are log_workout. Water is a count of bottles: "had another bottle" means one more than today's count. For stay-clean habits, done means they stayed clean and not_done means they slipped — only log those when they tell you. The app's day runs until 4am, so after midnight "tonight" means the date before.
+- Sleep and wake are times: when they say when they fell asleep or got up ("asleep by half 12", "up at 8"), log_habit with that time and the app works out whether it hit the target. Today's sleep habit is last night.
 - Never make up ids. Only change or delete things you can see in the context or that you made in this chat.
 
 Replying:
@@ -138,6 +139,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
       habit_id: { type: 'string', description: 'The habit id from the context.' },
       status: { type: 'string', enum: ['done', 'not_done', 'clear'], description: 'done = did it (stay-clean habits: stayed clean). not_done = didn’t (stay-clean: slipped). clear = back to unanswered.' },
       amount: { type: 'integer', description: 'Water and count habits only: the new total for the day (bottles, pages…).' },
+      time: { ...TIME, description: 'Sleep and wake habits only: when they fell asleep or got up, 24-hour HH:mm. The app works out whether it hit the target (status is then ignored, except clear).' },
       date: { ...DATE, description: 'YYYY-MM-DD. Leave out for today.' },
     },
     ['habit_id', 'status'],

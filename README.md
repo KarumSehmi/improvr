@@ -26,8 +26,9 @@ On a computer the tabs sit in a sidebar (keys **1–4** switch pages, **L** open
 - **⚡ Up next** looks at the time and tells you the 2–3 things that matter now, with one tap to do them: the whole morning routine, the caffeine countdown, water, "need 2 more gym sessions in 3 days", overdue jobs, to-dos (louder when carried over or starred), streaks at risk, bedtime, card spending, the morning after a drinking night, Monday football, nicotine-free milestones, and at night **Wrap up**.
 - **📝 To-dos** for today (carried-over ones say how late), with a plain-English add box.
 - **Your list**: Morning / Through the day / Room / Night / Stayed clean, each tinted its own colour (ticks included). Sections fold away when everything's answered, and before their time ("later · from 8pm"). **All ✓** / **All clean** per section with Undo, **"Didn't do the rest? Close it"**, and a **Hide done** switch to keep the list short as the day goes on.
-- **Press and hold any habit** (or right-click on a computer) for its sheet: done / not done / skip this one for that day, its streak, best run, last 2 weeks, and every setting it has.
-- Weigh-in, sleep and wake (tap ✕ to enter a rough time; the Apple Watch fills these in), pills and minoxidil, teeth (and flossing at night), face routine, finasteride every 3 days (− / + for any day's amount, one tap to make it your usual), water bottles, MacroFactor, protein, creatine. Room jobs **carry over** in orange until done, and the weekly ones get a day each so no day gets too much: Bud + Canvas Tuesday, surfaces Wednesday, bathroom Thursday, hoover Saturday, **washing Sunday** (bed sheets and the pill refill every other Sunday). Monday (football) and Friday stay free, and the bin never lands on them either. Stayed clean is answered honestly: *Clean* or *Slipped* (1 drinking night a week is allowed by default).
+- **Press and hold any habit** (or right-click on a computer) for its sheet: done / not done / skip this one for that day, its streak, best run, last 2 weeks, **📊 Full stats**, and every setting it has.
+- **Sleep and wake are times, not ticks**: tap the time you fell asleep or got up — **☀️ Now** when you've just got up, a dot on your usual time, *Other* for anything exact. It works out whether you hit your target (✓ or ✕, "20m early") and how long you slept; tap the time to change it, and the Apple Watch fills them in.
+- Weigh-in, pills and minoxidil, teeth (and flossing at night), face routine, finasteride every 3 days (− / + for any day's amount, one tap to make it your usual), water bottles, MacroFactor, protein, creatine. Room jobs **carry over** in orange until done, and the weekly ones get a day each so no day gets too much: Bud + Canvas Tuesday, surfaces Wednesday, bathroom Thursday, hoover Saturday, **washing Sunday** (bed sheets and the pill refill every other Sunday). Monday (football) and Friday stay free, and the bin never lands on them either. Stayed clean is answered honestly: *Clean* or *Slipped* (1 drinking night a week is allowed by default).
 - **Training**: gym sessions against your weekly target, with the 15-minute workout (Peloton) and football alongside — they earn XP but don't count towards it.
 - **🎲 Bonus quest**: one small optional challenge a day (+15 XP), swappable once.
 - **🌙 Wrap up**: mood, "how can I be better tomorrow?" (it shows up the next morning), and **Lock in** — on time earns +10 XP and a **reward chest**. Before the evening it's one compact line.
@@ -38,11 +39,11 @@ The + opens a sheet: **💬 Ask Improvr** at the top, then water, gym, the 15-mi
 
 ### 💬 Ask Improvr
 
-A chat with Claude (Sonnet 5.5) that does the typing for you. Message it how you'd text a mate — *"dentist fri 3pm"*, *"remind me to call the bank tomorrow"*, *"gym done and 2 bottles of water"*, *"mum's birthday is 12 march"*, *"move the essay to monday"*, *"what's on this week?"* — and it adds to-dos, calendar events and birthdays, ticks off today's habits and workouts, moves, renames and deletes things. Each change shows up in the chat with an **Undo**. Open it from the **+** sheet, the sidebar on a computer, or press **C**. Needs a one-off setup ([below](#-ask-improvr-chat-assistant)).
+A chat with Claude (Sonnet 5.5) that does the typing for you. Message it how you'd text a mate — *"dentist fri 3pm"*, *"remind me to call the bank tomorrow"*, *"gym done and 2 bottles of water"*, *"asleep by half 12, up at 8"*, *"mum's birthday is 12 march"*, *"move the essay to monday"*, *"what's on this week?"* — and it adds to-dos, calendar events and birthdays, ticks off today's habits and workouts, moves, renames and deletes things. Each change shows up in the chat with an **Undo**. Open it from the **+** sheet, the sidebar on a computer, or press **C**. Needs a one-off setup ([below](#-ask-improvr-chat-assistant)).
 
 ### 🌙 Wrap up
 
-The quickest way to log a whole day: everything that's still open, **one big card at a time** — Done / Not done, Clean / Slipped, Yes / No — then today's to-dos (done, tomorrow or someday), your mood and note, and Lock in. About a minute. Arrow keys work on a computer.
+The quickest way to log a whole day: everything that's still open, **one big card at a time** — Done / Not done, Clean / Slipped, a tap on the time for sleep and wake (*I'm up* in the morning) — then today's to-dos (done, tomorrow or someday), your mood and note, and Lock in. About a minute. Arrow keys work on a computer.
 
 ### 🗓️ Plan
 
@@ -55,8 +56,9 @@ The quickest way to log a whole day: everything that's still open, **one big car
 ### 📈 Progress
 
 - **Overview**: days logged in a row, nicotine-free, average score, gym weeks, perfect days, fines; **🧠 insights** from your own data ("after nights asleep before 1am you get 86% done vs 61%", "nicotine slips are 3x more likely after a late night", "you feel better on training days"…); this week vs the same point last week, and last week's review.
-- **Habits**: the 🚭 nicotine-free timeline (what stopping is doing for you and what's next), staying-clean stats, every habit's last 7 days as dots with its 30-day rate and best run (tap one for its sheet), gym sessions per week.
-- **Trends**: "better than last month?" (a 7-day average against last month), personal bests, the score heatmap, sleep from the Watch, notes to self.
+- **Habits**: the 🚭 nicotine-free timeline (what stopping is doing for you and what's next), staying-clean stats, every habit's last 7 days as dots with its 30-day rate and best run, gym sessions per week. **Tap any habit for its full stats** (press and hold for its settings).
+- **Trends**: "better than last month?" (a 7-day average against last month), personal bests, the score heatmap, sleep (average, usual bedtime, late nights and mornings — from the times you log or the Watch), notes to self.
+- **📊 Full stats** for any habit — tap it on Progress (or the nicotine-free tile), or *Full stats* in its sheet: the last 30 days, 90 days or all time; a month calendar of how each day went that you can tap into (and open that day to fix it); week by week; which days of the week; your longest runs; and **patterns** from your own days ("you slip on 40% of days after a late night, vs 8% after an early one", "after an early night you do it 94% of the time"). Stay-clean habits add **every slip with what else was going on** (late night, drinking, cravings, the fine), **when cravings hit** and the money. Sleep and wake add your usual time and how steady it is, a night-by-night chart against your targets, and hours asleep.
 - **Money**: 💳 card spending against your **£800 limit** (pace marker, what you can spend a day, how much to cut), 💰 money kept by staying clean, and 💷 charity fines (late days and nicotine slips) with one-tap donating.
 - **Badges**: 36 to unlock, nearest first.
 
@@ -176,7 +178,7 @@ Needs Node **20.19+** or **22.12+** (`node -v` to check). Run `npm install` once
 npm install
 npm run dev        # http://localhost:5173
 npm run dev:local  # same, but local mode (no sign-in) — try things without touching your real data
-npm test           # logic tests (streaks, fines, day off, insights, badges, notifications, sleep, quick add, assistant)
+npm test           # logic tests (streaks, fines, day off, insights, habit stats, badges, notifications, sleep, quick add, assistant)
 npm run build
 ```
 

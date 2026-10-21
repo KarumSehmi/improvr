@@ -1,7 +1,7 @@
-import { Button, Card, Group, NumberInput, Text, Textarea } from '@mantine/core';
+import { Button, Card, Group, NumberInput, SimpleGrid, Text, Textarea } from '@mantine/core';
 import { useState } from 'react';
 import { slipStats, type Summary } from '../lib/engine';
-import { openSos } from '../lib/hooks';
+import { openSos, openStats } from '../lib/hooks';
 import { NICOTINE_MILESTONES, recovery } from '../lib/recovery';
 import { updateSettings, useApp } from '../lib/store';
 import { Bar, PanelHead } from './ui';
@@ -150,9 +150,14 @@ export default function RecoveryCard({ summary }: { summary: Summary }) {
         )}
       </div>
 
-      <Button mt="md" fullWidth variant="light" color="teal" onClick={() => openSos('vape')}>
-        🆘 Craving? Ride it out
-      </Button>
+      <SimpleGrid cols={2} spacing="xs" mt="md">
+        <Button variant="light" color="teal" onClick={() => openStats('vape')}>
+          📊 Full stats
+        </Button>
+        <Button variant="light" color="teal" onClick={() => openSos('vape')}>
+          🆘 Craving SOS
+        </Button>
+      </SimpleGrid>
     </Card>
   );
 }

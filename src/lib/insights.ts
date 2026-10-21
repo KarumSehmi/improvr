@@ -18,7 +18,7 @@ export interface Insight {
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
 /** Day score leaving some items out (so "sleep → score" isn't just counting the sleep tick itself). */
-function pctWithout(e: DayEval, exclude: Set<string>): number | null {
+export function pctWithout(e: DayEval, exclude: Set<string>): number | null {
   const req = e.items.filter((i) => i.required && !exclude.has(i.habit.id));
   if (!req.length) return null;
   return (req.filter((i) => i.done).length / req.length) * 100;

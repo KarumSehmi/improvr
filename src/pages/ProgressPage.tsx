@@ -1,5 +1,6 @@
 import { AreaChart, BarChart, Heatmap } from '@mantine/charts';
 import { Button, Card, Group, Progress, SimpleGrid, Stack, Text, Timeline, useComputedColorScheme } from '@mantine/core';
+import { IconChevronRight } from '@tabler/icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import BudgetCard from '../components/BudgetCard';
 import FinesCard from '../components/FinesCard';
@@ -8,12 +9,12 @@ import { M, Meta, PanelHead, Tap, Tile, WeekDots } from '../components/ui';
 import { accent } from '../lib/style';
 import { targetOf } from '../lib/actions';
 import { achievements } from '../lib/achievements';
-import { SECTION_BY_ID, featureOn } from '../lib/config';
+import { SECTION_BY_ID, clockLabel, featureOn } from '../lib/config';
 import { addDays, fmt, maxKey, relativeDay, weekStart } from '../lib/dates';
 import { completionRate, grade, slipStats, totalSaved, weekStats, type Summary } from '../lib/engine';
-import { openHabit, openSos, useSummary, useToday, useUi } from '../lib/hooks';
+import { openHabit, openSos, openStats, useSummary, useToday, useUi } from '../lib/hooks';
 import { insights } from '../lib/insights';
-import { averageClock, formatDuration, sleepMinutes } from '../lib/sleep';
+import { formatDuration, nightOf, typicalTime } from '../lib/sleep';
 import { SCORE_COLORS } from '../lib/scoreColors';
 import { useApp } from '../lib/store';
 import { habitHistory, personalBests, scoreTrend } from '../lib/trend';
@@ -26,14 +27,16 @@ const TABS = [
   ['badges', 'Badges'],
 ] as const;
 
-function StatTile({ emoji, value, label, sub, color = 'violet' }: { emoji: string; value: string | number; label: string; sub?: string; color?: string }) {
-  return (
-    <Card p="md" style={accent(color)}>
+/** A number with its label. With `onClick` it opens more (a habit's full stats) and shows a › to say so. */
+function StatTile({ emoji, value, label, sub, color = 'violet', onClick }: { emoji: string; value: string | number; label: string; sub?: string; color?: string; onClick?: () => void }) {
+  const card = (
+    <Card p="md" style={{ ...accent(color), height: '100%' }}>
       <Group gap={8} wrap="nowrap">
         <Tile emoji={emoji} color={color} size={30} />
-        <Text size="xs" fw={700} c="dimmed" lh={1.2}>
+        <Text size="xs" fw={700} c="dimmed" lh={1.2} style={{ flex: 1 }}>
           {label}
         </Text>
+        {onClick && <IconChevronRight size={16} style={{ opacity: 0.4, flexShrink: 0 }} />}
       </Group>
       <Text fw={900} fz={28} lh={1.1} mt={10} className="num" lts={-0.5}>
         {value}
@@ -44,6 +47,13 @@ function StatTile({ emoji, value, label, sub, color = 'violet' }: { emoji: strin
         </Text>
       )}
     </Card>
+  );
+  return onClick ? (
+    <Tap onClick={onClick} aria-label={`${label}: full stats`} style={{ borderRadius: 'var(--mantine-radius-xl)' }}>
+      {card}
+    </Tap>
+  ) : (
+    card
   );
 }
 
@@ -90,19 +100,22 @@ function CleanCard({ summary }: { summary: Summary }) {
   if (!stats.length) return null;
   return (
     <Card p="md">
-      <PanelHead emoji="🛡️" color="teal" title="Staying clean" sub="How often you slip — the honest numbers" />
+      <PanelHead emoji="🛡️" color="teal" title="Staying clean" sub="How often you slip — tap one for its calendar, cravings and triggers" />
       <Stack gap="sm" mt="md">
         {stats.map((s) => {
           const streak = summary.habitStreaks[s.habit.id];
           return (
-            <Tap key={s.habit.id} onClick={() => openHabit(s.habit.id)} onLongPress={() => openHabit(s.habit.id)} style={{ background: 'var(--raised)', borderRadius: 16, padding: '12px 14px' }}>
+            <Tap key={s.habit.id} onClick={() => openStats(s.habit.id)} onLongPress={() => openHabit(s.habit.id)} aria-label={`${s.habit.label}: full stats`} style={{ background: 'var(--raised)', borderRadius: 16, padding: '12px 14px' }}>
               <Group justify="space-between" wrap="nowrap">
                 <Text fw={750}>
                   {s.habit.emoji} {s.habit.label}
                 </Text>
-                <Text fw={850} c="var(--streak)" className="num">
-                  <span className="flame">🔥</span> {streak.current}d
-                </Text>
+                <Group gap={4} wrap="nowrap">
+                  <Text fw={850} c="var(--streak)" className="num">
+                    <span className="flame">🔥</span> {streak.current}d
+                  </Text>
+                  <IconChevronRight size={16} style={{ opacity: 0.4 }} />
+                </Group>
               </Group>
               <SimpleGrid cols={4} mt={8} spacing={4}>
                 {[
@@ -149,13 +162,13 @@ function HabitList({ summary }: { summary: Summary }) {
     .map((h) => ({ h, streak: summary.habitStreaks[h.id], rate: completionRate(summary, h.id, 30), week: habitHistory(summary, h.id) }));
   return (
     <Card p="md">
-      <PanelHead emoji="🔥" color="orange" title="Habit streaks" sub="Last 7 days (today on the right) · % of the last 30 days · tap one for more" />
+      <PanelHead emoji="🔥" color="orange" title="Habit streaks" sub="Last 7 days (today on the right) · % of the last 30 days · tap one for its full stats" />
       <div style={{ marginTop: 6 }}>
         {rows.map(({ h, streak, rate, week }) => {
           const color = SECTION_BY_ID[h.section].color;
           return (
             <div key={h.id} className="hrow" style={accent(color)}>
-              <Tap onClick={() => openHabit(h.id)} aria-label={`${h.label} details`}>
+              <Tap onClick={() => openStats(h.id)} onLongPress={() => openHabit(h.id)} aria-label={`${h.label}: full stats`}>
                 <div className="hrow-main" style={{ minHeight: 0 }}>
                   <Tile emoji={h.emoji} color={color} size={32} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -281,22 +294,23 @@ function BodyCard({ summary }: { summary: Summary }) {
   const avgMl = finDays.length ? finTotalMl / finDays.length : 0;
   const mgPerMl = settings.finConcentration * 10;
   const water = summary.habits.find((h) => h.kind === 'water');
-  const fin = summary.habits.some((h) => h.kind === 'dose');
-  // Apple Watch nights (only if the Shortcut is set up)
-  const watched = last30.map((e) => e.log?.sleepAuto).filter((s): s is NonNullable<typeof s> => !!s);
-  const avgSleep = watched.length ? watched.reduce((sum, s) => sum + sleepMinutes(s.asleep, s.awake), 0) / watched.length : null;
+  const fin = summary.habits.find((h) => h.kind === 'dose');
+  const has = (id: string) => summary.habits.some((h) => h.id === id);
+  const stats = (id: string) => (has(id) ? () => openStats(id) : undefined);
+  // The times you logged (or your Apple Watch's)
+  const nights = last30.map((e) => nightOf(e.log));
+  const slept = nights.filter((n) => n.mins != null);
+  const avgSleep = slept.length ? slept.reduce((sum, n) => sum + n.mins!, 0) / slept.length : null;
+  const bed = typicalTime('sleep', nights.flatMap((n) => (n.asleep ? [n.asleep] : [])));
+  const up = typicalTime('wake', nights.flatMap((n) => (n.awake ? [n.awake] : [])));
   return (
     <SimpleGrid cols={2} spacing="sm">
-      {avgSleep != null && (
-        <>
-          <StatTile emoji="⌚" color="indigo" value={formatDuration(avgSleep)} label="Average sleep" sub={`${watched.length} night${watched.length === 1 ? '' : 's'} from your Watch`} />
-          <StatTile emoji="🛏️" color="indigo" value={averageClock(watched.map((s) => s.asleep)) ?? '—'} label="Average bedtime" sub={`up around ${averageClock(watched.map((s) => s.awake))}`} />
-        </>
-      )}
-      <StatTile emoji="🌙" color="indigo" value={lateNights.length} label="Late nights" sub="past your target · 30 days" />
-      <StatTile emoji="⏰" color="orange" value={lateWakes.length} label="Late mornings" sub="past your target · 30 days" />
-      {fin && <StatTile emoji="💧" color="cyan" value={`${finDays.length}/${last30.length}`} label="Finasteride days" sub={`avg ${avgMl.toFixed(2)} ml · ${(avgMl * mgPerMl).toFixed(3)} mg`} />}
-      {water && <StatTile emoji="🚰" color="cyan" value={last30.filter((e) => (e.log?.water ?? 0) >= targetOf(water)).length} label="Water target days" sub="last 30 days" />}
+      {avgSleep != null && <StatTile emoji="😴" color="indigo" value={formatDuration(avgSleep)} label="Average sleep" sub={`${slept.length} night${slept.length === 1 ? '' : 's'} · 30 days`} onClick={stats('sleep')} />}
+      {bed && <StatTile emoji="🛏️" color="indigo" value={clockLabel(bed)} label="Usual bedtime" sub={up ? `up around ${clockLabel(up)}` : undefined} onClick={stats('sleep')} />}
+      {has('sleep') && <StatTile emoji="🌙" color="indigo" value={lateNights.length} label="Late nights" sub="past your target · 30 days" onClick={stats('sleep')} />}
+      {has('wake') && <StatTile emoji="⏰" color="orange" value={lateWakes.length} label="Late mornings" sub="past your target · 30 days" onClick={stats('wake')} />}
+      {fin && <StatTile emoji="💧" color="cyan" value={`${finDays.length}/${last30.length}`} label="Finasteride days" sub={`avg ${avgMl.toFixed(2)} ml · ${(avgMl * mgPerMl).toFixed(3)} mg`} onClick={stats(fin.id)} />}
+      {water && <StatTile emoji="🚰" color="cyan" value={last30.filter((e) => (e.log?.water ?? 0) >= targetOf(water)).length} label="Water target days" sub="last 30 days" onClick={stats(water.id)} />}
     </SimpleGrid>
   );
 }
@@ -426,7 +440,7 @@ export default function ProgressPage() {
           <SimpleGrid cols={2} spacing="sm">
             <StatTile emoji="🔥" color="orange" value={logStreak.current} label="Days logged in a row" sub={`best ${logStreak.best}`} />
             {vape ? (
-              <StatTile emoji="🚭" color="teal" value={vape.current} label="Days nicotine-free" sub={`best ${vape.best}`} />
+              <StatTile emoji="🚭" color="teal" value={vape.current} label="Days nicotine-free" sub={`best ${vape.best} · tap for stats`} onClick={() => openStats('vape')} />
             ) : (
               <StatTile emoji="🏆" color="yellow" value={perfectDays} label="Perfect days" />
             )}

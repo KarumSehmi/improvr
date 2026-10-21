@@ -4,7 +4,7 @@
  */
 import { addDays, weekday, type DateKey } from './dates';
 import type { Summary } from './engine';
-import { averageClock, sleepMinutes } from './sleep';
+import { averageClock, nightOf } from './sleep';
 import type { DayLog } from './types';
 
 /** Nights you usually drink: Friday and Saturday, plus any night you've drunk on twice in the last 8 weeks. */
@@ -34,7 +34,7 @@ export interface WeekExtras {
   sleep: { asleep: string; awake: string; mins: number; nights: number } | null;
 }
 
-/** The personal side of a Mon–Sun week: nicotine, drinking nights and Apple Watch sleep. */
+/** The personal side of a Mon–Sun week: nicotine, drinking nights and sleep (the times you logged, or the Watch's). */
 export function weekExtras(summary: Summary, start: DateKey): WeekExtras {
   const end = addDays(start, 6);
   const evals = summary.evals.filter((e) => e.date >= start && e.date <= end);
@@ -51,13 +51,13 @@ export function weekExtras(summary: Summary, start: DateKey): WeekExtras {
   const alcohol = has('alcohol');
   const drinks = alcohol ? { nights: evals.filter((e) => e.log?.avoid?.alcohol === 'slip').map((e) => e.date), limit: alcohol.weeklyLimit ?? 0 } : null;
 
-  const watched = evals.map((e) => e.log?.sleepAuto).filter((s): s is NonNullable<typeof s> => !!s);
-  const sleep = watched.length
+  const nights = evals.map((e) => nightOf(e.log)).filter((n) => n.mins != null);
+  const sleep = nights.length
     ? {
-        asleep: averageClock(watched.map((s) => s.asleep)) ?? '',
-        awake: averageClock(watched.map((s) => s.awake)) ?? '',
-        mins: Math.round(watched.reduce((n, s) => n + sleepMinutes(s.asleep, s.awake), 0) / watched.length),
-        nights: watched.length,
+        asleep: averageClock(nights.map((n) => n.asleep!)) ?? '',
+        awake: averageClock(nights.map((n) => n.awake!)) ?? '',
+        mins: Math.round(nights.reduce((sum, n) => sum + n.mins!, 0) / nights.length),
+        nights: nights.length,
       }
     : null;
 

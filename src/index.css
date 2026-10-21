@@ -410,6 +410,141 @@ body::before {
   background: linear-gradient(135deg, var(--mantine-color-orange-5), var(--mantine-color-orange-7));
 }
 
+/* Sleep & wake: tap the time. A scrolling line of chips under the row, lined up with its name.
+   It fills the width it's given but never asks for more (inside a grid it would stretch the whole sheet). */
+.tchips {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0 2px 2px 48px;
+  scroll-padding-left: 48px;
+  contain: inline-size;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tchips::-webkit-scrollbar {
+  display: none;
+}
+
+.tchip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  min-width: 50px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-2);
+  background: var(--raised);
+  border: 1px solid transparent;
+  transition:
+    background 160ms,
+    color 160ms,
+    transform 120ms;
+}
+
+.tchip:active {
+  transform: scale(0.95);
+}
+
+/* Times that would hit the target */
+.tchip[data-ok] {
+  color: var(--good);
+}
+
+.tchip[data-quiet] {
+  color: var(--text-3);
+}
+
+/* Your usual time: a small dot underneath */
+.tchip[data-usual]::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.tchip[data-now] {
+  color: var(--accent-text, var(--text-2));
+  background: var(--accent-soft, var(--raised));
+  border-color: color-mix(in srgb, var(--accent, var(--mantine-color-violet-5)) 45%, transparent);
+}
+
+.tchip[data-on] {
+  color: white;
+  background: var(--accent, var(--mantine-color-violet-6));
+}
+
+/* What's logged: the time with a ✓ (on target) or ✕ (late), tap to change */
+.tpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px 0 9px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: white;
+  background: linear-gradient(135deg, var(--mantine-color-red-6), var(--mantine-color-pink-6));
+}
+
+.tpill[data-ok] {
+  background: linear-gradient(135deg, var(--mantine-color-teal-5), var(--mantine-color-green-6));
+  box-shadow: 0 4px 14px rgba(18, 184, 134, 0.3);
+}
+
+.tpill[data-open] {
+  outline: 2px solid var(--line-strong);
+  outline-offset: 2px;
+}
+
+/* Wrap up and the habit sheet: the same times as big buttons */
+.tgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tgrid .tchip {
+  height: 48px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+.tnow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 56px;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--mantine-color-orange-5), var(--mantine-color-yellow-6));
+  box-shadow: 0 8px 22px rgba(253, 126, 20, 0.3);
+}
+
 /* − 3/10 + */
 .stepper {
   display: inline-flex;
@@ -1400,6 +1535,308 @@ body::before {
 .recovery-step[data-next] .recovery-dot {
   border-color: var(--mantine-color-teal-5);
   border-style: dashed;
+}
+
+/* ==========================================================================
+   A habit's stats (tap a habit on Progress)
+   ========================================================================== */
+
+.stats-panel {
+  padding: 14px 14px 12px;
+  border-radius: 20px;
+  background: var(--raised);
+}
+
+.stats-title {
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.stats-tile {
+  min-width: 0;
+  padding: 11px 12px 10px;
+  border-radius: 16px;
+  background: var(--raised);
+}
+
+.stats-tile-value {
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.stats-tile-value[data-tone='good'] {
+  color: var(--good);
+}
+.stats-tile-value[data-tone='bad'] {
+  color: var(--bad);
+}
+.stats-tile-value[data-tone='streak'] {
+  color: var(--streak);
+}
+
+.stats-tile-label {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.stats-tile-sub {
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-2);
+}
+
+/* The month: each day coloured by how it went (and marked, so colour isn't the only clue) */
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-head {
+  padding-bottom: 2px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.cal-day {
+  position: relative;
+  width: 100%;
+  max-width: 52px;
+  justify-self: center;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  border: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-mark {
+  position: absolute;
+  top: 1px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.cal-day[data-today]::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cal-day[data-picked] {
+  outline: 2px solid var(--mantine-color-text);
+  outline-offset: 1px;
+}
+
+.cal-day[data-state='done'],
+.cal-swatch[data-state='done'] {
+  color: white;
+  background: var(--accent, var(--mantine-color-teal-6));
+}
+.cal-day[data-state='missed'],
+.cal-swatch[data-state='missed'] {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--mantine-color-red-6) 75%, transparent);
+}
+.cal-day[data-state='allowed'],
+.cal-swatch[data-state='allowed'] {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--mantine-color-orange-5) 16%, transparent);
+  border-color: color-mix(in srgb, var(--mantine-color-orange-5) 60%, transparent);
+}
+.cal-day[data-state='blank'],
+.cal-day[data-state='open'],
+.cal-swatch[data-state='blank'],
+.cal-swatch[data-state='open'] {
+  color: var(--text-2);
+  border-style: dashed;
+  border-color: var(--ring-idle);
+}
+.cal-day[data-state='off'],
+.cal-swatch[data-state='off'] {
+  color: var(--info);
+  background: color-mix(in srgb, var(--mantine-color-blue-5) 18%, transparent);
+}
+.cal-day[data-state='none'] {
+  color: var(--text-3);
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-2);
+}
+
+.cal-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cal-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+.cal-detail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.cal-word[data-state='done'] {
+  color: var(--good);
+}
+.cal-word[data-state='missed'] {
+  color: var(--bad);
+}
+.cal-word[data-state='allowed'] {
+  color: var(--warn);
+}
+
+/* Days of the week: one small bar each, value on top */
+.wbars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  align-items: end;
+}
+
+.wbar {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.wbar-val {
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.wbar-track {
+  width: 100%;
+  max-width: 24px;
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 6px;
+  background: var(--ring-track);
+  overflow: hidden;
+}
+
+.wbar-track > span {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent, var(--mantine-color-violet-5));
+}
+
+.wbars[data-tone='bad'] .wbar-track > span {
+  background: var(--mantine-color-red-6);
+}
+
+.wbar-day {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-3);
+}
+
+/* Parts of the day, longest bar first in colour, the rest grey */
+.hbars {
+  display: grid;
+  gap: 9px;
+}
+
+.hbar {
+  display: grid;
+  grid-template-columns: 108px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.hbar-track {
+  height: 10px;
+  border-radius: 6px;
+  background: var(--ring-track);
+  overflow: hidden;
+}
+
+.hbar-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--text-3);
+}
+
+.hbar[data-top] .hbar-track > span {
+  background: var(--mantine-color-grape-5);
+}
+
+.hbar-val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+/* A slip's date, like a little calendar page */
+.slip-date {
+  width: 38px;
+  flex-shrink: 0;
+  display: grid;
+  justify-items: center;
+  padding: 5px 0 4px;
+  border-radius: 10px;
+  line-height: 1.05;
+  color: var(--bad);
+  background: color-mix(in srgb, var(--mantine-color-red-6) 16%, transparent);
+}
+
+.slip-date[data-allowed] {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--mantine-color-orange-5) 16%, transparent);
+}
+
+.slip-date b {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.slip-date span {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 /* ==========================================================================

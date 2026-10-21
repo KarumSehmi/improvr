@@ -108,6 +108,8 @@ interface UiState {
   wrapDate: DateKey | null;
   /** A habit's sheet: details, today's options and editing. `date` = the day it was opened from. */
   habitSheet: { id: string; date: DateKey | null } | null;
+  /** A habit's full stats: calendar, charts, runs and patterns. */
+  statsHabit: string | null;
   /** Adding a new habit (Settings → Habits → Add). */
   addHabit: boolean;
   /** The to-do editor: an existing one by id, or a new one starting from whatever was typed. */
@@ -134,6 +136,7 @@ export const useUi = create<UiState>()(() => ({
   chatOpen: false,
   wrapDate: null,
   habitSheet: null,
+  statsHabit: null,
   addHabit: false,
   todoEdit: null,
   cardOpen: false,
@@ -163,7 +166,12 @@ export function goTo(page: Page, extra: Partial<UiState> = {}) {
 }
 
 export function openHabit(id: string, date: DateKey | null = null) {
-  useUi.setState({ habitSheet: { id, date } });
+  useUi.setState({ habitSheet: { id, date }, statsHabit: null });
+}
+
+/** A habit's full stats (its sheet closes: one at a time). */
+export function openStats(id: string) {
+  useUi.setState({ statsHabit: id, habitSheet: null });
 }
 
 export function editTodo(id: string) {

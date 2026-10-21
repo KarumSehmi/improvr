@@ -9,7 +9,7 @@ export type SectionId = 'morning' | 'day' | 'room' | 'night' | 'clean';
 
 export type HabitKind =
   | 'check' // simple tick
-  | 'time' // yes/no with a rough time if you missed it (sleep / wake)
+  | 'time' // the time it happened, judged against a target (sleep / wake)
   | 'water' // tap bottles
   | 'count' // count up to a target (10 pages, 20 mins…)
   | 'dose' // finasteride ml
@@ -30,8 +30,6 @@ export interface Habit {
   hint?: string;
   schedule?: ChoreSchedule;
   skippable?: boolean;
-  /** For `time` habits: what the "no" prompt asks for. */
-  missPrompt?: string;
   /** Added part-way through — days before this don't count. */
   since?: DateKey;
   /** Weekdays it doesn't apply (0 Sun … 6 Sat) — hidden and not counted those days. */
@@ -51,7 +49,7 @@ export interface Habit {
 export const KIND_LABEL: Record<HabitKind, string> = {
   check: 'Daily tick',
   chore: 'Repeating job · carries over until done',
-  time: 'Yes / no, with a rough time',
+  time: 'Tap the time · it checks your target',
   water: 'Bottles of water',
   count: 'Count up to a target',
   dose: 'Measured dose',
@@ -96,7 +94,6 @@ export const BUILT_IN_HABITS: Habit[] = [
     kind: 'time',
     points: 15,
     hint: 'last night',
-    missPrompt: 'Roughly when did you fall asleep? (check Apple Watch)',
   },
   {
     id: 'wake',
@@ -106,7 +103,6 @@ export const BUILT_IN_HABITS: Habit[] = [
     kind: 'time',
     points: 20,
     important: true,
-    missPrompt: 'Roughly when did you get up?',
   },
   { id: 'pills', label: 'Took all my pills', emoji: '💊', section: 'morning', kind: 'check', points: 10 },
   { id: 'minoxidil', label: 'Took minoxidil', emoji: '💆', section: 'morning', kind: 'check', points: 10, hint: 'with pills', since: ADDED_MINOXIDIL },
@@ -386,6 +382,20 @@ export function nightMinutes(time: string | number): number {
   const [h, m] = typeof time === 'number' ? [0, time] : time.split(':').map(Number);
   const t = h * 60 + m;
   return t >= 12 * 60 ? t - 24 * 60 : t;
+}
+
+/** '08:30' → 510: minutes past midnight. */
+export function clockMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Did a time hit its target? Asleep strictly before the bedtime (the evening counts as before midnight),
+ * up strictly before the wake-up time. The app and the Apple Watch both judge times with this.
+ */
+export function timeOnTarget(habitId: string, hhmm: string, targets: { sleep: string; wake: string }): boolean {
+  return habitId === 'sleep' ? nightMinutes(hhmm) < nightMinutes(targets.sleep) : clockMinutes(hhmm) < clockMinutes(targets.wake);
 }
 
 /**

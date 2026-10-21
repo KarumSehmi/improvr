@@ -4,7 +4,7 @@
  * and comes with an Undo.
  */
 import dayjs from 'dayjs';
-import { addTodo, applyDone, applyMissed, targetOf, toggleTodo } from './actions';
+import { addTodo, applyDone, applyMissed, applyTime, targetOf, toggleTodo } from './actions';
 import { EVENT_COLORS, upcomingBirthdays } from './calendar';
 import { WORKOUTS, habitsFor, type Habit } from './config';
 import { addDays, dateKey, fmt, type DateKey } from './dates';
@@ -35,8 +35,10 @@ function habitState(h: Habit, log: DayLog | undefined): string {
   if (h.kind === 'water') return `${log?.water ?? 0}/${targetOf(h)} bottles`;
   if (h.kind === 'count') return `${log?.counts?.[h.id] ?? 0}/${targetOf(h)}${h.unit ? ` ${h.unit}` : ''}`;
   if (h.kind === 'avoid') return log?.avoid?.[h.id] === 'clean' ? 'stayed clean' : log?.avoid?.[h.id] === 'slip' ? 'slipped' : 'not answered';
-  if (isDone(h, log)) return 'done';
-  if (log?.missed?.[h.id] || (h.kind === 'time' && log?.done?.[h.id] === false)) return 'not done';
+  // Sleep and wake say when, too.
+  const at = h.kind === 'time' && log?.times?.[h.id] ? ` (${h.id === 'sleep' ? 'asleep' : 'up'} at ${log.times[h.id]})` : '';
+  if (isDone(h, log)) return `done${at}`;
+  if (log?.missed?.[h.id] || (h.kind === 'time' && log?.done?.[h.id] === false)) return `not done${at}`;
   return 'not yet';
 }
 
@@ -278,6 +280,7 @@ function logHabitTool(input: Input, today: DateKey): ToolOutcome {
   const status = text(input, 'status', true);
   if (!['done', 'not_done', 'clear'].includes(status)) fail('"status" must be done, not_done or clear.');
   const amount = int(input, 'amount', 0, 1000);
+  const at = time(input);
   const d = date(input) ?? today;
   if (d > today) fail("Habits can't be logged for a future day.");
   const { settings } = useApp.getState();
@@ -287,7 +290,8 @@ function logHabitTool(input: Input, today: DateKey): ToolOutcome {
     if (status === 'clear') {
       applyDone(l, h, false, settings);
       applyMissed(l, h, false);
-    } else if (status === 'not_done') applyMissed(l, h, true);
+    } else if (at && h.kind === 'time') applyTime(l, h, at, settings, d);
+    else if (status === 'not_done') applyMissed(l, h, true);
     else if (amount != null && (h.kind === 'water' || h.kind === 'count')) {
       if (h.kind === 'water') l.water = amount;
       else l.counts = { ...l.counts, [h.id]: amount };
@@ -297,7 +301,7 @@ function logHabitTool(input: Input, today: DateKey): ToolOutcome {
 
   const state = habitState(h, useApp.getState().days[d]);
   const on = d === today ? '' : ` · ${dayLabel(d, today)}`;
-  const icon = state === 'done' || state === 'stayed clean' ? '✅' : state === 'not done' || state === 'slipped' ? '✖️' : h.emoji;
+  const icon = state.startsWith('done') || state === 'stayed clean' ? '✅' : state.startsWith('not done') || state === 'slipped' ? '✖️' : h.emoji;
   return {
     result: `${h.label} on ${d}: ${state}.`,
     change: { label: `${icon} ${h.kind === 'water' ? 'Water' : h.label}: ${state}${on}`, undo: () => updateDay(d, (l) => restoreHabit(l, h, before)) },
