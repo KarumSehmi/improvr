@@ -69,6 +69,22 @@ const STEPS: { id: string; run: () => void }[] = [
       updateSettings({ slipFines: { ...slipFines, vape: { amount: 5, from: dateKey() } } });
     },
   },
+  {
+    // Giving blood: Friday 6 November 2026 at 3:50pm, Harvest Fields Centre in Sutton Coldfield.
+    id: 'blood-donation-2026-11-06',
+    run: () => {
+      if (useApp.getState().events['blood-donation-2026-11-06']) return;
+      upsert('events', {
+        id: 'blood-donation-2026-11-06',
+        title: 'Giving blood 🩸',
+        date: '2026-11-06',
+        time: '15:50',
+        color: 'red',
+        notes: 'Sutton Coldfield, Harvest Fields Centre, Harvest Fields Way, Sutton Coldfield B75 5TJ',
+        createdAt: Date.now(),
+      });
+    },
+  },
 ];
 
 export function runMigrations() {

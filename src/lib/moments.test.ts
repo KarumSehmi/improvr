@@ -51,10 +51,21 @@ describe('Sophia & me', () => {
     runMigrations();
     const { events, todos } = useApp.getState();
     expect(events['sophia-anniversary-2027']).toMatchObject({ title: 'Sophia & me anniversary 💕', date: '2027-07-08' });
-    expect(Object.values(events).map((e) => e.date)).toEqual(['2027-07-08', '2028-07-08', '2029-07-08', '2030-07-08', '2031-07-08']);
+    const sophia = (evs: typeof events) => Object.values(evs).filter((e) => e.id.startsWith('sophia-'));
+    expect(sophia(events).map((e) => e.date)).toEqual(['2027-07-08', '2028-07-08', '2029-07-08', '2030-07-08', '2031-07-08']);
     expect(todos['sophia-6-months']).toMatchObject({ date: '2026-12-02', important: true, doneOn: null });
     runMigrations(); // only once
-    expect(Object.keys(useApp.getState().events)).toHaveLength(5);
+    expect(sophia(useApp.getState().events)).toHaveLength(5);
+  });
+});
+
+describe('giving blood', () => {
+  it('puts the appointment on the calendar at 3:50pm on Friday 6 November, once', () => {
+    useApp.setState({ days: {}, events: {}, todos: {}, spending: {}, settings: { ...defaultSettings(START), migrations: [] } });
+    runMigrations();
+    expect(useApp.getState().events['blood-donation-2026-11-06']).toMatchObject({ title: 'Giving blood 🩸', date: '2026-11-06', time: '15:50', color: 'red' });
+    runMigrations(); // only once
+    expect(Object.values(useApp.getState().events).filter((e) => e.title === 'Giving blood 🩸')).toHaveLength(1);
   });
 });
 
